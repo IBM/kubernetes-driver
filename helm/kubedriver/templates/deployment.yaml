@@ -1,0 +1,78 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: kubedriver
+spec:
+  replicas: {{ .Values.app.replicas }}
+  template:
+    metadata:
+      labels:
+        app: kubedriver
+        part-of: lm
+    spec:
+{{- if .Values.app.affinity }}
+      affinity:
+{{ toYaml .Values.app.affinity | indent 8 }}
+{{- end }}
+{{- if .Values.app.tolerations }}
+      tolerations:
+{{ toYaml .Values.app.tolerations | indent 8 }}
+{{- end }}
+      containers:
+        - name: kubedriver
+          image: {{ .Values.docker.image }}:{{ .Values.docker.version }}
+          imagePullPolicy: {{ .Values.docker.imagePullPolicy }}
+          securityContext:
+            # run as kubedriver user created in docker image
+            runAsUser: 100
+          ports:
+          - containerPort: 8294
+            protocol: TCP
+          {{- if .Values.app.livenessProbe.enabled }}
+          livenessProbe:
+            failureThreshold: {{ .Values.app.livenessProbe.failureThreshold }}
+            httpGet:
+              path: /management/health
+              port: 8294
+              scheme: HTTP
+            initialDelaySeconds: {{ .Values.app.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.app.livenessProbe.periodSeconds }}
+          {{- end }}
+          {{- if .Values.app.readinessProbe.enabled }}
+          readinessProbe:
+            failureThreshold: {{ .Values.app.readinessProbe.failureThreshold }}
+            httpGet:
+              path: /management/health
+              port: 8294
+              scheme: HTTP
+            initialDelaySeconds: {{ .Values.app.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.app.readinessProbe.periodSeconds }}         
+          {{- end }}
+          envFrom:
+          - configMapRef:
+              name: kubedriver-env
+          resources:
+{{ toYaml .Values.app.resources | indent 12 }}   
+          volumeMounts:
+          - name: config
+            mountPath: /var/kubedriver/kubedriver_config.yml
+            subPath: kubedriver_config.yml
+      volumes:
+      - name: config
+        configMap:
+          name: kubedriver
+{{- if .Values.app.autoscaler.enabled }}
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: kubedriver
+spec:
+  maxReplicas: {{ .Values.app.autoscaler.maxReplicas }}
+  minReplicas: {{ .Values.app.autoscaler.minReplicas }}
+  scaleTargetRef:
+    apiVersion: extensions/v1beta1
+    kind: Deployment
+    name: kubedriver
+  targetCPUUtilizationPercentage: {{ .Values.app.autoscaler.targetCPUUtilizationPercentage }}
+{{- end }}

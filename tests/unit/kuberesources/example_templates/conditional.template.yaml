@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  annotations:
+{%- if network_type == 'complex_network' %}
+    complex_network/network_name: {{ network_name }}
+{%- else %} 
+    simple_network/network_name: {{ network_name }}
+{% endif %}
+  name: {{ name }}

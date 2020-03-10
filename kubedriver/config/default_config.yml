@@ -1,0 +1,6 @@
+---
+application:
+  port: 8294
+
+messaging:
+  connection_address: kafka:9092

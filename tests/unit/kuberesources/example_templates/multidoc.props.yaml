@@ -1,0 +1,6 @@
+name: testing
+dataA: TestA
+dataB: TestB
+host: somehost
+serviceName: test
+servicePort: 7777

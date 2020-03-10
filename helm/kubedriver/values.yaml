@@ -1,0 +1,115 @@
+## Docker Image for the Openstack VIM Driver
+docker:
+  ## Make this the full path, including registry host and port if using one
+  image: kubedriver
+  version: 0.0.1
+  imagePullPolicy: IfNotPresent
+
+## Configuration for the application deployment
+app:
+  ## Number of pods to deploy 
+  replicas: 1
+  ## os-vim-driver specific configuration
+  config:
+    ## Configure logging 
+    log:
+      level: INFO
+
+    ## Pass additional environment variables to the application containers
+    env:
+      ## to support indexing of logs in Elasticsearch using Filebeat, we use logstash format. This allows
+      ## us to bundle the log message and other metadata in a json log message and let Filebeat extract them
+      ## as top level fields in the Elasticsearch index.
+      LOG_TYPE: logstash
+
+      ## configuration for WSGI container
+      ## WSGI_CONTAINER can be uwsgi or gunicorn
+      WSGI_CONTAINER: uwsgi
+      ## the number of processes and threads to spawn to handle requests
+      NUM_PROCESSES: "4"
+      NUM_THREADS: "2"
+
+    ## default_config.yml (driver configuration) overrides
+    override:
+      messaging:
+        # Kafka connection url
+        connection_address: foundation-kafka:9092
+  
+  ## Probe configuration for checking Application availability
+  livenessProbe:
+    enabled: true
+    failureThreshold: 3
+    initialDelaySeconds: 90
+    periodSeconds: 30
+  readinessProbe:
+    enabled: true
+    failureThreshold: 3
+    initialDelaySeconds: 20
+    periodSeconds: 10
+    
+  ## Affinity for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  affinity:
+    podAntiAffinity:
+      ## Default anti-affinity rule is to try and schedule multiple pods of this app on different nodes
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          topologyKey: "kubernetes.io/hostname"
+          labelSelector:
+            matchExpressions:
+            - key: app
+              operator: In
+              values:
+              - kubedriver
+    ## Example of node affinity rule to require this pod is only scheduled on a Node with a label (key=value) of "Stateless=True"
+    #nodeAffinity:
+    #  requiredDuringSchedulingIgnoredDuringExecution:
+    #    nodeSelectorTerms:
+    #    - matchExpressions:
+    #      - key: Stateless
+    #        operator: In
+    #        values:
+    #        - "True"
+    
+  ## Node tolerations for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  tolerations: []
+  ## Example of allowing this pod to be deployed onto a Node that has been tainted with "ReservedForLm"
+  #- key: ReservedForLm
+  #  operator: Exists
+  #  effect: NoSchedule
+
+  ## Configure resource requests and limits for each container of the application
+  ## Default is to have no limit
+  ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+  resources: {}
+    # limits:
+    #  cpu: 250m
+    #  memory: 384Mi
+    # requests:
+    #  cpu: 250m
+    #  memory: 384Mi
+
+  ## Autoscaler
+  ## Enabling this deploys a Horizontal Pod Autoscaler that will monitor the CPU usage and scale this deployment 
+  ## ref: https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/
+  ## NOTE: requires Kubernetes Metrics Server
+  autoscaler:
+    enabled: false
+    maxReplicas: 10
+    minReplicas: 1
+    targetCPUUtilizationPercentage: 80
+
+service:
+  # Using NodePort allows access to the IPs through http://k8s-host:nodePort/
+  type: NodePort
+  nodePort: 31684
+
+ingress:
+  enabled: true
+  ## The host used to access the service externally i.e. http://<server.ingress.hostname>/
+  ## If not making use of a DNS to resolve this host you must add this to the client hosts file with the K8s IP
+  ## E.g.
+  ## 10.220.1.2     kubedriver.lm
+  host: kubedriver.lm

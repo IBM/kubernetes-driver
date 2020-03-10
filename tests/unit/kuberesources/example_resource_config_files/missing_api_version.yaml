@@ -1,0 +1,6 @@
+kind: ConfigMap
+metadata:
+  name: testing
+data:
+  dataA: TestA
+  dataB: TestB
