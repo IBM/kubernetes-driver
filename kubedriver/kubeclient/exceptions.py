@@ -1,6 +1,6 @@
 
-class InvalidDeploymentLocationError(Exception):
+class ClientMethodNotFoundError(Exception):
     pass
 
-class InvalidResourceConfiguration(Exception):
+class UnrecognisedObjectKindError(Exception):
     pass

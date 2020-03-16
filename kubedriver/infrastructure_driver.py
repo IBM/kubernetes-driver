@@ -4,8 +4,9 @@ from ignition.service.infrastructure import InfrastructureDriverCapability
 
 class InfrastructureDriver(Service, InfrastructureDriverCapability):
 
-    def __init__(self, deployment_location_translator):
+    def __init__(self, deployment_location_translator, kube_api_ctl_provider):
         self.deployment_location_translator = deployment_location_translator
+        self.kube_api_ctl_provider = kube_api_ctl_provider
 
     def __get_client(self, deployment_location):
         kube_location = self.deployment_location_translator.translate(deployment_location)

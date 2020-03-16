@@ -1,7 +1,7 @@
 import unittest
 import os
 from unittest.mock import patch
-from kubedriver.kubeclient.deployment_location import KubernetesDeploymentLocation
+from kubedriver.location import KubernetesDeploymentLocation
 
 EXAMPLE_CONFIG = {
                     'apiVersion': 'v1',
@@ -43,7 +43,7 @@ class TestKubernetesDeploymentLocation(unittest.TestCase):
         self.assertEqual(location.name, 'TestKube')
         self.assertEqual(location.client_config, EXAMPLE_CONFIG)
 
-    @patch('kubedriver.kubeclient.deployment_location.kubeconfig')
+    @patch('kubedriver.location.deployment_location.kubeconfig')
     def test_build_client(self, mock_kube_config):
         location = KubernetesDeploymentLocation('TestKube', EXAMPLE_CONFIG)
         client = location.build_client()
