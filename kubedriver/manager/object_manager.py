@@ -1,3 +1,4 @@
+import uuid
 from .object_records import DeployedObjectRecord, DeployedObjectGroupRecord
 from kubedriver.kubeclient.defaults import DEFAULT_NAMESPACE
 
@@ -12,7 +13,11 @@ class KubeObjectManager:
         self.__persist_group_record(object_group)
         #TODO: Errors here mean we have a group persisted that will never be cleared?
         self.__create_group_objects(object_group)
-        
+
+    def get_object_group_record(self, identifier):
+        object_group_record = self.record_persistence.get_object_group_record(identifier)
+        return object_group_record
+
     def delete_object_group(self, identifier):
         object_group_record = self.record_persistence.get_object_group_record(identifier)
         #TODO: Again, error handling?

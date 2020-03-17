@@ -104,7 +104,7 @@ venv.bak/
 .mypy_cache/
 
 # Driver 
-Kubedriver_boot
+kubedriver_boot
 test_workspace/
 
 # Docker whls

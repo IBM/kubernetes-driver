@@ -1,5 +1,7 @@
 import yaml
+import re
 from kubedriver.kubeobjects.object_config import ObjectConfiguration
+from kubedriver.kubeobjects import namehelper
 from .object_records import DeployedObjectGroupRecord, DeployedObjectRecord
 
 class ConfigMapRecordPersistence:
@@ -12,7 +14,8 @@ class ConfigMapRecordPersistence:
         self.cm_data_field = cm_data_field
 
     def __determine_config_map_name(self, identifier):
-        return 'Kubedriver-Record-{0}'.format(identifier)
+        potential_name = 'kdr-{0}'.format(identifier)
+        return namehelper.safe_subdomain_name(potential_name)
 
     def __build_config_map_for_record(self, object_group_record):
         object_records_cm_list = []

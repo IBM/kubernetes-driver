@@ -24,10 +24,9 @@ app:
 
       ## configuration for WSGI container
       ## WSGI_CONTAINER can be uwsgi or gunicorn
-      WSGI_CONTAINER: uwsgi
+      WSGI_CONTAINER: gunicorn
       ## the number of processes and threads to spawn to handle requests
-      NUM_PROCESSES: "4"
-      NUM_THREADS: "2"
+      NUM_PROCESSES: "2"
 
     ## default_config.yml (driver configuration) overrides
     override:

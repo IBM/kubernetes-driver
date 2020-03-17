@@ -47,7 +47,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
             }
         ]
         expected_cm_metadata = {
-            ObjectConfiguration.NAME: 'Kubedriver-Record-123',
+            ObjectConfiguration.NAME: 'kdr-123',
             ObjectConfiguration.NAMESPACE: self.storage_namespace
         }
         expected_cm_data = {
@@ -69,11 +69,34 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
             }
         ]
         expected_cm_metadata = {
-            ObjectConfiguration.NAME: 'Kubedriver-Record-123',
+            ObjectConfiguration.NAME: 'kdr-123',
             ObjectConfiguration.NAMESPACE: self.storage_namespace
         }
         expected_cm_data = {
             DeployedObjectGroupRecord.IDENTIFIER: '123',
+            DeployedObjectGroupRecord.OBJECT_RECORDS: yaml.safe_dump(expected_object_records)
+        }
+        return group_record, expected_cm_metadata, expected_cm_data
+
+    def __build_group_with_unsafe_identifier(self):
+        identifier = 'Capital-letters-and_underscore-removed'
+        object_records = []
+        object_records.append(DeployedObjectRecord('v1', 'ConfigMap', 'NamespaceA', 'ConfigA'))
+        group_record = DeployedObjectGroupRecord(identifier, object_records)
+        expected_object_records = [
+            {
+                DeployedObjectRecord.API_VERSION: 'v1',
+                DeployedObjectRecord.KIND: 'ConfigMap',
+                DeployedObjectRecord.NAMESPACE: 'NamespaceA',
+                DeployedObjectRecord.NAME: 'ConfigA'
+            }
+        ]
+        expected_cm_metadata = {
+            ObjectConfiguration.NAME: 'kdr-capital-letters-and-underscore-removed',
+            ObjectConfiguration.NAMESPACE: self.storage_namespace
+        }
+        expected_cm_data = {
+            DeployedObjectGroupRecord.IDENTIFIER: 'Capital-letters-and_underscore-removed',
             DeployedObjectGroupRecord.OBJECT_RECORDS: yaml.safe_dump(expected_object_records)
         }
         return group_record, expected_cm_metadata, expected_cm_data
@@ -89,6 +112,17 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
 
     def test_persist_object_group_record(self):
         group_record, expected_cm_metadata, expected_cm_data = self.__build_group_with_two_objects()
+        expected_config_map = {
+            ObjectConfiguration.API_VERSION: 'v1',
+            ObjectConfiguration.KIND: 'ConfigMap',
+            ObjectConfiguration.METADATA: expected_cm_metadata,
+            'data': expected_cm_data
+        }
+        self.persistence.persist_object_group_record(group_record)
+        self.kube_api_ctl.create_object.assert_called_once_with(ObjectConfigurationMatcher(expected_config_map), default_namespace=self.storage_namespace)
+
+    def test_persist_object_group_record_unsafe_identifier(self):
+        group_record, expected_cm_metadata, expected_cm_data = self.__build_group_with_unsafe_identifier()
         expected_config_map = {
             ObjectConfiguration.API_VERSION: 'v1',
             ObjectConfiguration.KIND: 'ConfigMap',
@@ -153,7 +187,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
         mock_config_map_result = V1ConfigMap(api_version='v1', binary_data=None, data=cm_data, kind='ConfigMap', metadata=cm_metadata)
         self.kube_api_ctl.read_object.return_value = mock_config_map_result
         result_group_record = self.persistence.get_object_group_record('123')
-        self.kube_api_ctl.read_object.assert_called_once_with('v1', 'ConfigMap', 'Kubedriver-Record-123', namespace=self.storage_namespace)
+        self.kube_api_ctl.read_object.assert_called_once_with('v1', 'ConfigMap', 'kdr-123', namespace=self.storage_namespace)
         self.assertEqual(result_group_record.identifier, '123')
         self.assertEqual(len(result_group_record.object_records), 2)
         self.assertEqual(result_group_record.object_records[0].api_version, group_record.object_records[0].api_version)
@@ -170,7 +204,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
         mock_config_map_result = V1ConfigMap(api_version='v1', binary_data=None, data=cm_data, kind='ConfigMap', metadata=cm_metadata)
         self.kube_api_ctl.read_object.return_value = mock_config_map_result
         result_group_record = self.persistence.get_object_group_record('123')
-        self.kube_api_ctl.read_object.assert_called_once_with('v1', 'ConfigMap', 'Kubedriver-Record-123', namespace=self.storage_namespace)
+        self.kube_api_ctl.read_object.assert_called_once_with('v1', 'ConfigMap', 'kdr-123', namespace=self.storage_namespace)
         self.assertEqual(result_group_record.identifier, '123')
         self.assertEqual(len(result_group_record.object_records), 1)
         self.assertEqual(result_group_record.object_records[0].api_version, group_record.object_records[0].api_version)
@@ -184,7 +218,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
         mock_config_map_result = V1ConfigMap(api_version='v2', binary_data=None, data=cm_data, kind='ConfigMap', metadata=cm_metadata)
         self.kube_api_ctl.read_object.return_value = mock_config_map_result
         result_group_record = self.persistence.get_object_group_record('123')
-        self.kube_api_ctl.read_object.assert_called_once_with('v2', 'ConfigMap', 'Kubedriver-Record-123', namespace=self.storage_namespace)
+        self.kube_api_ctl.read_object.assert_called_once_with('v2', 'ConfigMap', 'kdr-123', namespace=self.storage_namespace)
     
     def test_get_object_group_record_customise_cm_kind(self):
         self.__rebuild_persistence_with_cm_kind('SuperConfigMap')
@@ -192,18 +226,18 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
         mock_config_map_result = V1ConfigMap(api_version='v1', binary_data=None, data=cm_data, kind='SuperConfigMap', metadata=cm_metadata)
         self.kube_api_ctl.read_object.return_value = mock_config_map_result
         result_group_record = self.persistence.get_object_group_record('123')
-        self.kube_api_ctl.read_object.assert_called_once_with('v1', 'SuperConfigMap', 'Kubedriver-Record-123', namespace=self.storage_namespace)
+        self.kube_api_ctl.read_object.assert_called_once_with('v1', 'SuperConfigMap', 'kdr-123', namespace=self.storage_namespace)
 
     def test_delete_object_group_record(self):
         self.persistence.delete_object_group_record('123')
-        self.kube_api_ctl.delete_object.assert_called_once_with('v1', 'ConfigMap', 'Kubedriver-Record-123', namespace=self.storage_namespace)
+        self.kube_api_ctl.delete_object.assert_called_once_with('v1', 'ConfigMap', 'kdr-123', namespace=self.storage_namespace)
 
     def test_delete_object_group_record_customise_cm_api_version(self):
         self.__rebuild_persistence_with_cm_api_version('v2')
         result_group_record = self.persistence.delete_object_group_record('123')
-        self.kube_api_ctl.delete_object.assert_called_once_with('v2', 'ConfigMap', 'Kubedriver-Record-123', namespace=self.storage_namespace)
+        self.kube_api_ctl.delete_object.assert_called_once_with('v2', 'ConfigMap', 'kdr-123', namespace=self.storage_namespace)
     
     def test_delete_object_group_record_customise_cm_kind(self):
         self.__rebuild_persistence_with_cm_kind('SuperConfigMap')
         result_group_record = self.persistence.delete_object_group_record('123')
-        self.kube_api_ctl.delete_object.assert_called_once_with('v1', 'SuperConfigMap', 'Kubedriver-Record-123', namespace=self.storage_namespace)
+        self.kube_api_ctl.delete_object.assert_called_once_with('v1', 'SuperConfigMap', 'kdr-123', namespace=self.storage_namespace)

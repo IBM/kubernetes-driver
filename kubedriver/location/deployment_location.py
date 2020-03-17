@@ -59,6 +59,8 @@ class KubernetesDeploymentLocation:
         if properties is None:
             raise InvalidDeploymentLocationError('Deployment location missing \'{0}\' value'.format(KubernetesDeploymentLocation.PROPERTIES))
         client_config = get_property_or_default(properties, KubernetesDeploymentLocation.CONFIG_PROP, KubernetesDeploymentLocation.CONFIG_OPT2_PROP, error_if_not_found=True)
+        if type(client_config) is str:
+            client_config = yaml.safe_load(client_config)
         kwargs = {}
         crd_api_version = get_property_or_default(properties, KubernetesDeploymentLocation.CRD_API_VERSION_PROP, KubernetesDeploymentLocation.CRD_API_VERSION_OPT2_PROP)
         if crd_api_version is not None:
@@ -98,7 +100,7 @@ class KubernetesDeploymentLocation:
 
     def build_client(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            tmp_file_path = pathlib.Path(tmpdir).joinpath('kubeconf')
+            tmp_file_path = pathlib.Path(tmpdir).joinpath('kubeconf.yaml')
             with open(tmp_file_path, 'w') as f:
                 yaml.dump(self.client_config, f)
             client = kubeconfig.new_client_from_config(str(tmp_file_path), persist_config=False)

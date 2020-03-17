@@ -5,46 +5,6 @@ from kubedriver.kubeobjects.object_config import ObjectConfiguration
 from kubedriver.kubeobjects.object_group import ObjectConfigurationGroup
 from kubedriver.manager.object_records import DeployedObjectGroupRecord, DeployedObjectRecord
 
-class ObjectConfigurationMatcher:
-
-    def __init__(self, expected_conf):
-        self.expected_conf = expected_conf
-
-    def __eq__(self, other):
-        return other.conf == self.expected_conf
-
-    def __str__(self):
-        return str(self.expected_conf)
-
-    def __repr__(self):
-        return f'{self.expected_conf!r}'
-        
-
-class ObjectRecordMatcher:
-
-    def __init__(self, expected_record):
-        self.expected_record = expected_record
-
-    def __eq__(self, other):
-        return self.__matches_object_record(other, self.expected_record) 
-
-    def __str__(self):
-        return str(self.expected_record)
-
-    def __repr__(self):
-        return f'{self.expected_record!r}'
-
-    def __matches_object_record(self, first_record, second_record):
-        if first_record.api_version != second_record.api_version:
-            return False
-        if first_record.kind != second_record.kind:
-            return False
-        if first_record.namespace != second_record.namespace:
-            return False
-        if first_record.name != second_record.name:
-            return False
-        return True
-
 class ObjectGroupRecordMatcher:
 
     def __init__(self, expected_group_record):

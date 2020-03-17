@@ -6,7 +6,7 @@ class ObjectConfigurationGroup:
         self.objects = objects
 
     def __str__(self):
-        return f'{self.__class__.__name__}(identifier: {self.identifier}, objects: {self.object})'
+        return f'{self.__class__.__name__}(identifier: {self.identifier}, objects: {self.objects})'
 
     def __repr__(self):
-        return f'{self.__class__.__name__}(identifier: {self.identifier!r}, objects: {self.object!r})'
+        return f'{self.__class__.__name__}(identifier: {self.identifier!r}, objects: {self.objects!r})'
