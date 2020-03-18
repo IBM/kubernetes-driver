@@ -9,7 +9,12 @@ spec:
       editable: true
       isDefault: false
       jsonData:
-        timeInterval: 5s
+        esVersion: 5
+        logLevelField: ""
+        logMessageField: ""
+        maxConcurrentShardRequests: 256
+        timeField: "@timestamp"
+        timeInterval: 5s        
       name: Elasticsearch
       type: elasticsearch
       url: 'http://foundation-elasticsearch-client:9200'
