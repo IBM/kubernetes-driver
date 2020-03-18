@@ -1,0 +1,32 @@
+apiVersion: integreatly.org/v1alpha1
+kind: Grafana
+metadata:
+  name: example-grafana
+spec:
+  ingress:
+    enabled: False
+  service:
+    labels:                 # Additional labels for the Service
+      app: grafana
+    annotations:            # Additional annotations for the Service
+      app: grafana
+    type: NodePort          # Set Service type, either NodePort, ClusterIP or LoadBalancer
+    ports:                  # Additional ports to add to the service
+      - name: grafana-proxy
+        port: 9091
+        protocol: TCP
+  config:
+    log:
+      mode: "console"
+      level: "warn"
+    security:
+      admin_user: "root"
+      admin_password: "secret"
+    auth:
+      disable_login_form: False
+      disable_signout_menu: True
+    auth.anonymous:
+      enabled: True
+  dashboardLabelSelector:
+    - matchExpressions:
+        - {key: app, operator: In, values: [grafana]}

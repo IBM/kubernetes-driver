@@ -112,3 +112,7 @@ docker/whls/
 
 # IDEs
 .vscode
+.idea/
+*.iml
+*.bak
+_lmctl*/

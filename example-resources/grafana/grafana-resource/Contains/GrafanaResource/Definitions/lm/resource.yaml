@@ -1,0 +1,13 @@
+infrastructure:
+  Kubernetes:
+    template:
+      file: kube.yaml
+      template-type: Kubernetes
+description: descriptor for GrafanaResource
+default-driver:
+  ansible:
+    infrastructure-type:
+    - '*'
+lifecycle:
+  Create: {}
+  Delete: {}
