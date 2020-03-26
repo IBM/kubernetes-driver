@@ -1,0 +1,34 @@
+properties:
+  deploymentLocation:
+    type: string
+    default: local-kube
+  resourceManager:
+    type: string
+    default: brent
+designerLayout:
+  description: >-
+    The following information is solely used to determine the presentation of
+    this Assembly Design in the LM UI. It does not form part of
+    operational/behavioural description of the Assembly and should not be edited
+    directly.
+  elements:
+    GrafanaDataSource:
+      x: 840
+      y: 26.666666666666668
+    assembly::GrafanaDataSource::1.0:
+      x: 172
+      y: -27.99999237060547
+  canvas:
+    translate:
+      x: -22
+      y: 157
+    scale: 0.75
+description: descriptor for GrafanaDataSource
+composition:
+  GrafanaDataSource:
+    properties:
+      deploymentLocation:
+        value: ${deploymentLocation}
+      resourceManager:
+        value: ${resourceManager}
+    type: $lmctl:/contains:/GrafanaDataSource:/descriptor_name

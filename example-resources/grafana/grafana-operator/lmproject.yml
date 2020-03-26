@@ -1,0 +1,10 @@
+## Lmctl has updated this file with the latest schema changes. A backup of your existing project file has been placed in the same directory with a .bak extension
+schema: '1.0'
+type: Assembly
+contains:
+- type: Resource
+  directory: GrafanaOperator
+  name: GrafanaOperator
+  resource-manager: lm
+name: GrafanaOperator
+version: '1.0'

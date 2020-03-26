@@ -112,6 +112,12 @@ docker/whls/
 
 # IDEs
 .vscode
+.idea/
+*.iml
+*.bak
+
+# Lmctl 
+_lmctl*/
 
 # Packaged Helm Chart
 kubedriver-*.tgz
