@@ -14,7 +14,7 @@ class TestObjectConfiguration(unittest.TestCase):
     def test_init_valid(self):
         conf = load_yaml('simple')
         object_configuration = ObjectConfiguration(conf)
-        self.assertEqual(object_configuration.conf, conf)
+        self.assertEqual(object_configuration.config, conf)
         self.assertEqual(object_configuration.api_version, 'v1')
         self.assertEqual(object_configuration.kind, 'ConfigMap')
         self.assertEqual(object_configuration.name, 'testing')

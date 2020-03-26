@@ -17,3 +17,10 @@ class TestImports(unittest.TestCase):
 
     def test_invalid_object_configuration_error(self):
         imported = kubeobjects.InvalidObjectConfigurationError
+
+    def test_templating(self):
+        imported = kubeobjects.Templating
+
+    def test_namehelper(self):
+        imported = kubeobjects.NameHelper
+        imported = kubeobjects.namehelper

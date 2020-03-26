@@ -35,6 +35,13 @@ class KubeApiController:
         delete_args = self.__build_delete_arguments(api_version, kind, name, namespace, is_custom_object)
         delete_method(**delete_args)
 
+    def update_object(self, object_config, default_namespace=None):
+        update_method, is_namespaced, is_custom_object = self.client_director.determine_api_method_for_update_object(self.base_kube_client, object_config.api_version, object_config.kind)
+        if default_namespace is None:
+            default_namespace = self.default_namespace
+        update_args = self.__build_update_arguments(object_config, is_namespaced, default_namespace, is_custom_object)
+        update_method(**update_args)
+
     def is_object_namespaced(self, api_version, kind):
         read_method, is_namespaced, is_custom_object = self.client_director.determine_api_method_for_read_object(self.base_kube_client, api_version, kind)
         return is_namespaced
@@ -47,7 +54,7 @@ class KubeApiController:
 
     def __build_builtin_create_arguments(self, object_config, is_namespaced, default_namespace):
         args = {
-            'body': object_config.conf
+            'body': object_config.config
         }
         if is_namespaced:
             args['namespace'] = self.__determine_namespace(object_config, default_namespace)
@@ -60,7 +67,36 @@ class KubeApiController:
             'group': group,
             'version': version,
             'plural': plural,
-            'body': object_config.conf
+            'body': object_config.config
+        }
+        if is_namespaced:
+            args['namespace'] = self.__determine_namespace(object_config, default_namespace)
+        return args
+
+    def __build_update_arguments(self, object_config, is_namespaced, default_namespace, is_custom_object):
+        if is_custom_object:
+            return self.__build_custom_object_update_arguments(object_config, is_namespaced, default_namespace)
+        else:
+            return self.__build_builtin_update_arguments(object_config, is_namespaced, default_namespace)
+
+    def __build_builtin_update_arguments(self, object_config, is_namespaced, default_namespace):
+        args = {
+            'body': object_config.config,
+            'name': object_config.name
+        }
+        if is_namespaced:
+            args['namespace'] = self.__determine_namespace(object_config, default_namespace)
+        return args
+
+    def __build_custom_object_update_arguments(self, object_config, is_namespaced, default_namespace):
+        group, version = self.client_director.parse_api_version(object_config.api_version)
+        plural = self.__determine_custom_object_plural(group, version, object_config.kind)
+        args = {
+            'group': group,
+            'version': version,
+            'plural': plural,
+            'body': object_config.config,
+            'name': object_config.name
         }
         if is_namespaced:
             args['namespace'] = self.__determine_namespace(object_config, default_namespace)

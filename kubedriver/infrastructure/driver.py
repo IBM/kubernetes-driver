@@ -1,23 +1,22 @@
 import uuid
 import ignition.model.infrastructure as infrastructure_model
+import ignition.model.failure as failure_model
 from ignition.service.framework import Service
 from ignition.utils.propvaluemap import PropValueMap
 from ignition.service.infrastructure import InfrastructureDriverCapability
 from kubedriver.kubeobjects import ObjectConfigurationGroup, namehelper
+from kubedriver.manager.records import RequestStates
 
 class InfrastructureDriver(Service, InfrastructureDriverCapability):
 
-    def __init__(self, deployment_location_translator, location_based_management, templating):
+    def __init__(self, deployment_location_translator, object_manager, templating):
         self.deployment_location_translator = deployment_location_translator
-        self.location_based_management = location_based_management
+        self.object_manager = object_manager
         self.templating = templating
 
     def __translate_location(self, deployment_location_dict):
         kube_location = self.deployment_location_translator.translate(deployment_location_dict)
         return kube_location
-
-    def __build_manager(self, kube_location):
-        return self.location_based_management.build_manager(kube_location)
 
     def __build_render_properties(self, system_properties, properties):
         render_props = {k:v for k,v in properties.items()}
@@ -67,12 +66,9 @@ class InfrastructureDriver(Service, InfrastructureDriverCapability):
             ignition.service.infrastructure.InfrastructureError: there was an error handling this request
         """
         kube_location = self.__translate_location(deployment_location)
-        kube_manager = self.__build_manager(kube_location)
         kube_objects = self.__process_template_to_objects(template, system_properties, properties)
         object_group = self.__build_object_group(system_properties, kube_objects)
-        kube_manager.create_object_group(object_group)
-        ##TODO: request id
-        request_id = str(uuid.uuid4())
+        request_id = self.object_manager.create_group(kube_location, object_group)
         return infrastructure_model.CreateInfrastructureResponse(object_group.identifier, request_id)
 
     def get_infrastructure_task(self, infrastructure_id, request_id, deployment_location):
@@ -92,11 +88,15 @@ class InfrastructureDriver(Service, InfrastructureDriverCapability):
             ignition.service.infrastructure.InfrastructureError: there was an error handling this request
         """
         kube_location = self.__translate_location(deployment_location)
-        kube_manager = self.__build_manager(kube_location)
-        kube_manager.get_object_group_record(infrastructure_id)
-        ##TODO: Currently create_infrastructure would have failed but there would be a record
-        # but this method can do nothing but return complete until we track status on the record
-        return infrastructure_model.InfrastructureTask(infrastructure_id, request_id, infrastructure_model.STATUS_COMPLETE)
+        request_record = self.object_manager.get_request_record(kube_location, infrastructure_id, request_id)
+        task_status = infrastructure_model.STATUS_IN_PROGRESS
+        failure_details = None
+        if request_record.state == RequestStates.COMPLETE:
+            task_status = infrastructure_model.STATUS_COMPLETE
+        elif request_record.state == RequestStates.FAILED:
+            task_status = infrastructure_model.STATUS_FAILED
+            failure_details = failure_model.FailureDetails(failure_model.FAILURE_CODE_INTERNAL_ERROR, description=request_record.error)
+        return infrastructure_model.InfrastructureTask(infrastructure_id, request_id, task_status, failure_details=failure_details, outputs={})
 
     def delete_infrastructure(self, infrastructure_id, deployment_location):
         """
@@ -115,10 +115,7 @@ class InfrastructureDriver(Service, InfrastructureDriverCapability):
             ignition.service.infrastructure.InfrastructureError: there was an error handling this request
         """
         kube_location = self.__translate_location(deployment_location)
-        kube_manager = self.__build_manager(kube_location)
-        kube_manager.delete_object_group(infrastructure_id)
-        ##TODO: request id
-        request_id = str(uuid.uuid4())
+        request_id = self.object_manager.delete_group(kube_location, infrastructure_id)
         return infrastructure_model.DeleteInfrastructureResponse(infrastructure_id, request_id)
 
     def find_infrastructure(self, template, template_type, instance_name, deployment_location):
@@ -137,8 +134,4 @@ class InfrastructureDriver(Service, InfrastructureDriverCapability):
             ignition.service.infrastructure.TemporaryInfrastructureError: there is an issue handling this request at this time, an attempt should be made again at a later time
             ignition.service.infrastructure.InfrastructureError: there was an error handling this request
         """
-        print("Finding some Infrastructure")
-        supported = False
-        if not supported:
-            raise NotImplementedError('find_infrastructure not yet implemented')
-        return infrastructure_model.FindInfrastructureResponse()
+        raise NotImplementedError('find_infrastructure not yet implemented')

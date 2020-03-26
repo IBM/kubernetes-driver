@@ -4,12 +4,7 @@ from kubedriver.kubeobjects import ObjectConfigurationTemplate
 
 logger = logging.getLogger(__name__)
 
-class TemplatingCapability(Capability):
-
-    def render_template(self, template_content, input_properties):
-        pass
-
-class Templating(Service, TemplatingCapability):
+class Templating(Service, Capability):
 
     def render_template(self, template_content, input_properties):
         template = ObjectConfigurationTemplate(template_content)

@@ -29,7 +29,7 @@ def get_property_or_default(properties, *keys, default_provider=None, error_if_n
     else:
         return value
 
-class KubernetesDeploymentLocation:
+class KubeDeploymentLocation:
 
     NAME = 'name'
     PROPERTIES = 'properties'
@@ -52,38 +52,35 @@ class KubernetesDeploymentLocation:
 
     @staticmethod
     def from_dict(dl_data):
-        name = dl_data.get(KubernetesDeploymentLocation.NAME, None)
+        name = dl_data.get(KubeDeploymentLocation.NAME, None)
         if name is None:
-            raise InvalidDeploymentLocationError('Deployment location missing \'{0}\' value'.format(KubernetesDeploymentLocation.NAME))
-        properties = dl_data.get(KubernetesDeploymentLocation.PROPERTIES, None)
+            raise InvalidDeploymentLocationError('Deployment location missing \'{0}\' value'.format(KubeDeploymentLocation.NAME))
+        properties = dl_data.get(KubeDeploymentLocation.PROPERTIES, None)
         if properties is None:
-            raise InvalidDeploymentLocationError('Deployment location missing \'{0}\' value'.format(KubernetesDeploymentLocation.PROPERTIES))
-        client_config = get_property_or_default(properties, KubernetesDeploymentLocation.CONFIG_PROP, KubernetesDeploymentLocation.CONFIG_OPT2_PROP, error_if_not_found=True)
+            raise InvalidDeploymentLocationError('Deployment location missing \'{0}\' value'.format(KubeDeploymentLocation.PROPERTIES))
+        client_config = get_property_or_default(properties, KubeDeploymentLocation.CONFIG_PROP, KubeDeploymentLocation.CONFIG_OPT2_PROP, error_if_not_found=True)
         if type(client_config) is str:
             client_config = yaml.safe_load(client_config)
         kwargs = {}
-        crd_api_version = get_property_or_default(properties, KubernetesDeploymentLocation.CRD_API_VERSION_PROP, KubernetesDeploymentLocation.CRD_API_VERSION_OPT2_PROP)
+        crd_api_version = get_property_or_default(properties, KubeDeploymentLocation.CRD_API_VERSION_PROP, KubeDeploymentLocation.CRD_API_VERSION_OPT2_PROP)
         if crd_api_version is not None:
             kwargs['crd_api_version'] = crd_api_version
-        driver_namespace = get_property_or_default(properties, KubernetesDeploymentLocation.DRIVER_NAMESPACE_PROP, KubernetesDeploymentLocation.DRIVER_NAMESPACE_OPT2_PROP)
+        driver_namespace = get_property_or_default(properties, KubeDeploymentLocation.DRIVER_NAMESPACE_PROP, KubeDeploymentLocation.DRIVER_NAMESPACE_OPT2_PROP)
         if driver_namespace is not None:
             kwargs['driver_namespace'] = driver_namespace
-        auto_create_driver_namespace = get_property_or_default(properties, KubernetesDeploymentLocation.DRIVER_NAMESPACE_AUTO_CREATE_PROP, KubernetesDeploymentLocation.DRIVER_NAMESPACE_AUTO_CREATE_OPT2_PROP)
-        if auto_create_driver_namespace is not None:
-            kwargs['auto_create_driver_namespace'] = bool(auto_create_driver_namespace)
-        cm_api_version = get_property_or_default(properties, KubernetesDeploymentLocation.CM_API_VERSION_PROP, KubernetesDeploymentLocation.CM_API_VERSION_OPT2_PROP)
+        cm_api_version = get_property_or_default(properties, KubeDeploymentLocation.CM_API_VERSION_PROP, KubeDeploymentLocation.CM_API_VERSION_OPT2_PROP)
         if cm_api_version is not None:
             kwargs['cm_api_version'] = cm_api_version
-        cm_kind = get_property_or_default(properties, KubernetesDeploymentLocation.CM_KIND_PROP, KubernetesDeploymentLocation.CM_KIND_OPT2_PROP)
+        cm_kind = get_property_or_default(properties, KubeDeploymentLocation.CM_KIND_PROP, KubeDeploymentLocation.CM_KIND_OPT2_PROP)
         if cm_kind is not None:
             kwargs['cm_kind'] = cm_kind
-        cm_data_field = get_property_or_default(properties, KubernetesDeploymentLocation.CM_DATA_FIELD_PROP, KubernetesDeploymentLocation.CM_DATA_FIELD_OPT2_PROP)
+        cm_data_field = get_property_or_default(properties, KubeDeploymentLocation.CM_DATA_FIELD_PROP, KubeDeploymentLocation.CM_DATA_FIELD_OPT2_PROP)
         if cm_data_field is not None:
             kwargs['cm_data_field'] = cm_data_field
-        default_object_namespace = get_property_or_default(properties, KubernetesDeploymentLocation.DEFAULT_OBJECT_NAMESPACE_PROP, KubernetesDeploymentLocation.DEFAULT_OBJECT_NAMESPACE_OPT2_PROP)
+        default_object_namespace = get_property_or_default(properties, KubeDeploymentLocation.DEFAULT_OBJECT_NAMESPACE_PROP, KubeDeploymentLocation.DEFAULT_OBJECT_NAMESPACE_OPT2_PROP)
         if default_object_namespace is not None:
             kwargs['default_object_namespace'] = default_object_namespace
-        return KubernetesDeploymentLocation(name, client_config, **kwargs)
+        return KubeDeploymentLocation(name, client_config, **kwargs)
 
     def __init__(self, name, client_config, default_object_namespace=DEFAULT_NAMESPACE, crd_api_version=None, driver_namespace=None, \
                     cm_api_version=None, cm_kind=None, cm_data_field=None):
@@ -105,3 +102,17 @@ class KubernetesDeploymentLocation:
                 yaml.dump(self.client_config, f)
             client = kubeconfig.new_client_from_config(str(tmp_file_path), persist_config=False)
         return client
+
+    def to_dict(self):
+        return {
+            KubeDeploymentLocation.NAME: self.name,
+            KubeDeploymentLocation.PROPERTIES: {
+                KubeDeploymentLocation.CONFIG_PROP: self.client_config,
+                KubeDeploymentLocation.CRD_API_VERSION_PROP: self.crd_api_version,
+                KubeDeploymentLocation.DRIVER_NAMESPACE_PROP: self.driver_namespace,
+                KubeDeploymentLocation.CM_API_VERSION_PROP: self.cm_api_version,
+                KubeDeploymentLocation.CM_KIND_PROP: self.cm_kind,
+                KubeDeploymentLocation.CM_DATA_FIELD_PROP: self.cm_data_field,
+                KubeDeploymentLocation.DEFAULT_OBJECT_NAMESPACE_PROP: self.default_object_namespace
+            }
+        }

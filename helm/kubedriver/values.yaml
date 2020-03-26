@@ -2,14 +2,14 @@
 docker:
   ## Make this the full path, including registry host and port if using one
   image: kubedriver
-  version: 0.0.1
+  version: ${version}
   imagePullPolicy: IfNotPresent
 
 ## Configuration for the application deployment
 app:
   ## Number of pods to deploy 
   replicas: 1
-  ## os-vim-driver specific configuration
+  ## kubedriver specific configuration
   config:
     ## Configure logging 
     log:
@@ -23,7 +23,6 @@ app:
       LOG_TYPE: logstash
 
       ## configuration for WSGI container
-      ## WSGI_CONTAINER can be uwsgi or gunicorn
       WSGI_CONTAINER: gunicorn
       ## the number of processes and threads to spawn to handle requests
       NUM_PROCESSES: "2"

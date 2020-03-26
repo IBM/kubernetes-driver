@@ -1,2 +1,3 @@
-from .deployment_location import KubernetesDeploymentLocation
+from .deployment_location import KubeDeploymentLocation
+from .translator import KubeDeploymentLocationTranslator
 from .exceptions import InvalidDeploymentLocationError
