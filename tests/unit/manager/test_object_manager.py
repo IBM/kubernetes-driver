@@ -15,6 +15,20 @@ class CopyArgsMagicMock(MagicMock):
         """
         return super()._mock_call(*copy.deepcopy(args), **copy.deepcopy(kwargs))
 
+class ObjectConfigurationMatcher:
+
+    def __init__(self, expected_conf):
+        self.expected_conf = expected_conf
+
+    def __eq__(self, other):
+        return other.config == self.expected_conf
+
+    def __str__(self):
+        return str(self.expected_conf)
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self.expected_conf!r})'
+
 class GroupRecordMatcher:
 
     def __init__(self, expected_group_record):
@@ -185,9 +199,22 @@ class TestKubeObjectManager(unittest.TestCase):
         )
         return group_record
 
+    def __build_create_failed_group_record(self):
+        group = self.__build_group_with_two_objects()
+        group_record = GroupRecord(group.identifier,
+            objects=[
+                ObjectRecord(group.objects[0].config, state=ObjectStates.CREATE_FAILED, error=None),
+                ObjectRecord(group.objects[1].config, state=ObjectStates.CREATED, error=None)
+            ],
+            requests=[
+                RequestRecord('create123', RequestOperations.CREATE, state=RequestStates.FAILED, error=None)
+            ]
+        )
+        return group_record
+
     def __configure_mock_create_failure(self, on_matching_config):
         def side_effect(config, *args, **kwargs):
-            if on_matching_config == config:
+            if on_matching_config == config.config:
                 raise ValueError('A mock error')
         self.kube_api_ctl.create_object.side_effect = side_effect
 
@@ -259,8 +286,8 @@ class TestKubeObjectManager(unittest.TestCase):
         request_id = self.object_manager.create_group(self.kube_location, group)
         self.job_queue.process_next_job()
         self.context.api_ctl.create_object.assert_has_calls([
-            call(group.objects[0].config, default_namespace='default'),
-            call(group.objects[1].config, default_namespace='default')
+            call(ObjectConfigurationMatcher(group.objects[0].config), default_namespace='default'),
+            call(ObjectConfigurationMatcher(group.objects[1].config), default_namespace='default')
         ])
         self.assertEqual(len(self.context.api_ctl.create_object.call_args_list), 2)
 
@@ -270,8 +297,8 @@ class TestKubeObjectManager(unittest.TestCase):
         request_id = self.object_manager.create_group(self.kube_location, group)
         self.job_queue.process_next_job()
         self.context.api_ctl.create_object.assert_has_calls([
-            call(group.objects[0].config, default_namespace='AltDefault'),
-            call(group.objects[1].config, default_namespace='AltDefault')
+            call(ObjectConfigurationMatcher(group.objects[0].config), default_namespace='AltDefault'),
+            call(ObjectConfigurationMatcher(group.objects[1].config), default_namespace='AltDefault')
         ])
         self.assertEqual(len(self.context.api_ctl.create_object.call_args_list), 2)
 
@@ -403,4 +430,14 @@ class TestKubeObjectManager(unittest.TestCase):
         self.assertEqual(len(self.context.record_persistence.update.call_args_list), 3)
         last_update_args, _ = self.context.record_persistence.update.call_args_list[2]
         self.assertEqual(last_update_args[0], GroupRecordMatcher(expected_complete_record))
+        
+    def test_process_delete_job_ignores_objects_not_created(self):
+        existing_group_record = self.__build_create_failed_group_record()
+        self.record_persistence.create(existing_group_record)
+        request_id = self.object_manager.delete_group(self.kube_location, '123')
+        self.job_queue.process_next_job()
+        first_object_configuration = ObjectConfiguration(existing_group_record.objects[0].config)
+        second_object_configuration = ObjectConfiguration(existing_group_record.objects[1].config)
+        # First object failed to create so we don't delete
+        self.context.api_ctl.delete_object.assert_called_once_with(second_object_configuration.api_version, second_object_configuration.kind, second_object_configuration.name, namespace='default')
         

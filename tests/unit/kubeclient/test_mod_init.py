@@ -20,3 +20,6 @@ class TestImports(unittest.TestCase):
 
     def test_default_crd_api_version(self):
         imported = kubeclient.DEFAULT_CRD_API_VERSION
+
+    def test_error_reader(self):
+        imported = kubeclient.ErrorReader

@@ -1,6 +1,6 @@
 name: kubedriver
-version: 0.0.1
-appVersion: 0.0.1
+version: ${version}
+appVersion: ${version}
 apiVersion: v1
 description: A Helm chart for kubedriver
 keywords:

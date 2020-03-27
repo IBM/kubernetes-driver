@@ -39,8 +39,6 @@ class KubeDeploymentLocation:
     CRD_API_VERSION_OPT2_PROP = 'crd_api_version'
     DRIVER_NAMESPACE_PROP = 'driverNamespace'
     DRIVER_NAMESPACE_OPT2_PROP = 'driver_namespace'
-    DRIVER_NAMESPACE_AUTO_CREATE_PROP = 'autoCreateDriverNamespace'
-    DRIVER_NAMESPACE_AUTO_CREATE_OPT2_PROP = 'auto_create_driver_namespace'
     CM_API_VERSION_PROP = 'cmApiVersion'
     CM_API_VERSION_OPT2_PROP = 'cm_api_version'
     CM_KIND_PROP = 'cmKind'

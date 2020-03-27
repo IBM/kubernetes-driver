@@ -2,9 +2,24 @@ import unittest
 import yaml
 from unittest.mock import MagicMock
 from kubernetes.client import V1ConfigMap
+from kubernetes.client.rest import ApiException
 from kubedriver.kubeobjects.object_config import ObjectConfiguration
 from kubedriver.manager.record_persistence import ConfigMapRecordPersistence, ConfigMapStorageFormat
 from kubedriver.manager.records import GroupRecord, ObjectRecord, RequestRecord, ObjectStates, RequestStates, RequestOperations
+
+class MockHttpResponse:
+
+    def __init__(self, status=None, reason=None, data=None, headers=None):
+        self.status = status
+        self.reason = reason
+        self.data = data
+        self.headers = headers
+
+    def getheaders(self):
+        return self.headers
+
+def json_body(body):
+    return json.dumps(body)
 
 class ObjectConfigurationMatcher:
 
@@ -367,6 +382,11 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
         self.persistence.create(group_record)
         self.kube_api_ctl.create_object.assert_called_once_with(ObjectConfigurationMatcher(expected_config_map), default_namespace=self.storage_namespace)
         
+    def test_create_duplicate_raises_error(self):
+        self.kube_api_ctl.create_object.side_effect = ApiException(http_resp=MockHttpResponse(status=409, reason='Conflict', data=json_body({'reason': 'AlreadyExists'})))
+        #TODO
+        self.persistence.create(group_record)
+
     def test_get(self):
         group_record, cm_metadata, cm_data = self.__build_group_with_two_objects()
         mock_config_map_result = V1ConfigMap(api_version='v1', binary_data=None, data=cm_data, kind='ConfigMap', metadata=cm_metadata)

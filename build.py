@@ -25,6 +25,7 @@ parser.add_argument('--publish', default=False, action='store_true')
 parser.add_argument('--skip-tests', default=False, action='store_true')
 parser.add_argument('--skip-build', default=False, action='store_true')
 parser.add_argument('--skip-docker', default=False, action='store_true')
+parser.add_argument('--skip-helm', default=False, action='store_true')
 
 args = parser.parse_args()
 
@@ -113,19 +114,27 @@ class Builder:
     def doIt(self):
         self._establish_who_we_are()
         self.determine_version()
+        self.init_artifacts_directory()
         if args.skip_tests is not True:
             self.run_unit_tests()
         if args.skip_build is not True:
             self.build_python_wheel()
             if args.skip_docker is not True:
                 self.build_docker_image()
-            self.build_helm_chart()
+            if args.skip_helm is not True:
+                self.build_helm_chart()
         if args.publish is True:
             if args.skip_docker is not True:
-                self.push_vim_docker_image()
-                self.push_driver_docker_image()
-            self.push_helm_chart()
+                self.push_docker_image()
+            if args.skip_helm is not True:
+                self.push_helm_chart()
         self.report()
+
+    def init_artifacts_directory(self):
+        self.artifacts_path = os.path.join(self.project_path, 'release-artifacts')
+        if os.path.exists(self.artifacts_path):
+            shutil.rmtree(self.artifacts_path)
+        os.makedirs(self.artifacts_path)
 
     def determine_version(self):
         with self.stage('Gathering Version') as s:
@@ -189,7 +198,8 @@ class Builder:
                     self._template_helm_chart_directory(helm_chart_path, template_env, full_item_path, tmp_helm_path, resolvable_props)
                 else:
                     self._template_helm_chart_file(helm_chart_path, template_env, full_item_path, tmp_helm_path, resolvable_props)
-            s.run_cmd('helm', 'package', '{0}'.format(tmp_helm_path))
+            pkg_path = os.path.join(self.project_path, 'pkg')
+            s.run_cmd('helm', 'package', '--destination', self.artifacts_path, '{0}'.format(tmp_helm_path))
             shutil.rmtree(os.path.join(self.project_path, 'helm', 'build'))
     
     def _template_helm_chart_directory(self, base_path, template_env, orig_dir_path, target_parent_path, resolvable_props):
@@ -227,8 +237,8 @@ class Builder:
     def push_helm_chart(self):
         with self.stage('Push Helm Chart') as s:
             chart_name = HELM_CHART_NAME_FORMAT.format(self.project_version)
-            chart_path = '@{0}'.format(chart_name)
-            s.run_cmd('curl', '--fail', '--data-binary', '{0}'.format(chart_path), 'http://10.220.216.164:8080/accanto/stable/api/charts')
+            chart_path = os.path.join(self.artifacts_path, chart_name)
+            s.run_cmd('curl', '--fail', '--data-binary', '@{0}'.format(chart_path), 'http://10.220.216.164:8080/accanto/stable/api/charts')
 
 def main():
   builder = Builder()

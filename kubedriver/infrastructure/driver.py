@@ -5,7 +5,7 @@ from ignition.service.framework import Service
 from ignition.utils.propvaluemap import PropValueMap
 from ignition.service.infrastructure import InfrastructureDriverCapability
 from kubedriver.kubeobjects import ObjectConfigurationGroup, namehelper
-from kubedriver.manager.records import RequestStates
+from kubedriver.manager.records import RequestStates, RequestOperations
 
 class InfrastructureDriver(Service, InfrastructureDriverCapability):
 
@@ -65,6 +65,8 @@ class InfrastructureDriver(Service, InfrastructureDriverCapability):
             ignition.service.infrastructure.UnreachableDeploymentLocationError: the Deployment Location cannot be reached
             ignition.service.infrastructure.InfrastructureError: there was an error handling this request
         """
+        if template_type != 'ObjectConfiguration' and template_type != 'Kubernetes':
+            raise ValueError(f'Template type must be \'ObjectConfiguration\' or \'Kubernetes\' but was \'{template_type}\'')
         kube_location = self.__translate_location(deployment_location)
         kube_objects = self.__process_template_to_objects(template, system_properties, properties)
         object_group = self.__build_object_group(system_properties, kube_objects)
@@ -93,6 +95,9 @@ class InfrastructureDriver(Service, InfrastructureDriverCapability):
         failure_details = None
         if request_record.state == RequestStates.COMPLETE:
             task_status = infrastructure_model.STATUS_COMPLETE
+            if request_record.operation == RequestOperations.DELETE:
+                # Purge record of this Group after the Delete completes so we don't create a build up of zombie persistence records
+                self.object_manger.purge_group(kube_location, infrastructure_id)
         elif request_record.state == RequestStates.FAILED:
             task_status = infrastructure_model.STATUS_FAILED
             failure_details = failure_model.FailureDetails(failure_model.FAILURE_CODE_INTERNAL_ERROR, description=request_record.error)

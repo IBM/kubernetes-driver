@@ -119,11 +119,5 @@ docker/whls/
 # Lmctl 
 _lmctl*/
 
-# Packaged Helm Chart
-kubedriver-*.tgz
-
-# Packaged Image
-kubedriver-*.docker
-
-# Packaged Docs
-kubedriver-*-docs.tgz
+# Packaged Artifacts
+release-artifacts

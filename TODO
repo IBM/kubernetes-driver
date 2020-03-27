@@ -1,0 +1,12 @@
+
+- Record persistence error tests
+- Object manager catch persistence errors
+- Object manager handle create/delete errors (e.g. if not exists on Delete, don't fail)
+- Object manager error tests
+- Driver error tests
+- Driver tests
+- Validate class arguments (across the project)
+- Documentation 
+- Python Docs for classes
+- Allow deployment location properties to be used on templates
+- SSL support

@@ -1,10 +1,13 @@
 import uuid
+import logging
 from ignition.service.framework import Service, Capability
 from .records import ObjectRecord, GroupRecord, RequestRecord, ObjectStates, RequestStates, RequestOperations
 from .exceptions import RequestInvalidStateError, RequestNotFoundError
 from kubedriver.kubeclient.defaults import DEFAULT_NAMESPACE
 from kubedriver.kubeobjects import ObjectConfiguration
 from kubedriver.location import KubeDeploymentLocation
+
+logger = logging.getLogger(__name__)
 
 CREATE_JOB = 'kom.CreateObjectGroup'
 DELETE_JOB = 'kom.DeleteObjectGroup'
@@ -38,6 +41,10 @@ class KubeObjectManager(Service, Capability):
         context = self.context_loader.load(kube_location)
         group_record = context.record_persistence.get(group_uid)
         return self.__find_request_record(group_record, request_uid)
+
+    def purge_group(self, kube_location, group_uid):
+        context = self.context_loader.load(kube_location)
+        context.record_persistence.delete(group_uid)
 
     def __initiate_record(self, context, object_group):
         object_records = []
@@ -102,7 +109,7 @@ class KubeObjectManager(Service, Capability):
         request_errors = []
         for object_record in group_record.objects:
             try:
-                context.api_ctl.create_object(object_record.config, default_namespace=context.location.default_object_namespace)
+                context.api_ctl.create_object(ObjectConfiguration(object_record.config), default_namespace=context.location.default_object_namespace)
                 object_record.state = ObjectStates.CREATED
                 object_record.error = None
             except Exception as e:
@@ -116,13 +123,14 @@ class KubeObjectManager(Service, Capability):
         request_errors = []
         for object_record in group_record.objects:
             try:
-                object_config = ObjectConfiguration(object_record.config)
-                namespace = object_config.namespace
-                if namespace is None:
-                    namespace = context.location.default_object_namespace
-                context.api_ctl.delete_object(object_config.api_version, object_config.kind, object_config.name, namespace=namespace)
-                object_record.state = ObjectStates.DELETED
-                object_record.error = None
+                if object_record.state != ObjectStates.CREATE_FAILED and object_record.state != ObjectStates.DELETED:
+                    object_config = ObjectConfiguration(object_record.config)
+                    namespace = object_config.namespace
+                    if namespace is None:
+                        namespace = context.location.default_object_namespace
+                    context.api_ctl.delete_object(object_config.api_version, object_config.kind, object_config.name, namespace=namespace)
+                    object_record.state = ObjectStates.DELETED
+                    object_record.error = None
             except Exception as e:
                 error_msg = str(e)
                 request_errors.append(error_msg)
