@@ -48,6 +48,10 @@ class KubeDeploymentLocation:
     DEFAULT_OBJECT_NAMESPACE_PROP = 'defaultObjectNamepsace'
     DEFAULT_OBJECT_NAMESPACE_OPT2_PROP = 'default_object_namespace'
 
+    #Helm
+    HELM_VERSION_PROP = 'helmVersion'
+    HELM_VERSION_OPT2_PROP = 'helm_version'
+
     @staticmethod
     def from_dict(dl_data):
         name = dl_data.get(KubeDeploymentLocation.NAME, None)
@@ -78,10 +82,13 @@ class KubeDeploymentLocation:
         default_object_namespace = get_property_or_default(properties, KubeDeploymentLocation.DEFAULT_OBJECT_NAMESPACE_PROP, KubeDeploymentLocation.DEFAULT_OBJECT_NAMESPACE_OPT2_PROP)
         if default_object_namespace is not None:
             kwargs['default_object_namespace'] = default_object_namespace
+        helm_version = get_property_or_default(properties, KubeDeploymentLocation.HELM_VERSION_PROP, KubeDeploymentLocation.HELM_VERSION_OPT2_PROP)
+        if helm_version is not None:
+            kwargs['helm_version'] = helm_version
         return KubeDeploymentLocation(name, client_config, **kwargs)
 
     def __init__(self, name, client_config, default_object_namespace=DEFAULT_NAMESPACE, crd_api_version=None, driver_namespace=None, \
-                    cm_api_version=None, cm_kind=None, cm_data_field=None):
+                    cm_api_version=None, cm_kind=None, cm_data_field=None, helm_version='2.8.2'):
         self.name = name
         self.client_config = client_config
         self.crd_api_version = crd_api_version
@@ -92,6 +99,7 @@ class KubeDeploymentLocation:
         self.default_object_namespace = default_object_namespace
         if self.driver_namespace is None:
             self.driver_namespace = self.default_object_namespace
+        self.helm_version = helm_version
 
     def build_client(self):
         with tempfile.TemporaryDirectory() as tmpdir:

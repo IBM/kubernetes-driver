@@ -4,3 +4,4 @@ from .object_states import ObjectStates
 from .request_record import RequestRecord
 from .request_states import RequestStates
 from .request_operations import RequestOperations
+from .helm_record import HelmRecord

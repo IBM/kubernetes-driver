@@ -50,6 +50,14 @@ You will reference the custom-values.yml file when installing the chart with Hel
 
 ### Obtain Docker Image
 
+By default the chart expects the image to be available on the local docker system under the tag `kubedriver:<version>`
+
+```
+docker:
+  image: kubedriver
+  version: <version>
+```
+
 If you have the Docker image available in a registry then you must update the values file with the full path to the image:
 
 ```
@@ -57,7 +65,7 @@ docker:
   image: myregistry:registryport/kubedriver-<version>
 ```
 
-If you have instead saved the image and loaded into the system with docker CLI commands, check the path name of your image with `docker images | grep kubedriver`. If the image is just called `kubedriver`, you do not need to make changes to the values. However, if the image has a registry path infront of it you should tag thei mage to remove the registry or update your custom values file with the full path as displayed in the list.
+If you have instead saved the image and loaded into the system with docker CLI commands, check the path name of your image with `docker images | grep kubedriver`. If the image is tagged as `kubedriver:<version>`, you do not need to make changes to the values. However, if the image has a registry path infront of it you should tag the image to remove the registry or update your custom values file with the full path as displayed in the list.
 
 ### Install
 

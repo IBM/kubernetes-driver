@@ -1,0 +1,21 @@
+description: descriptor for controller
+properties:
+  httpPort: 
+    type: string
+  httpsPort:
+    type: string
+  namespace:
+    type: string
+    default: 'default'
+infrastructure:
+  Kubernetes:
+    template:
+      file: helm.yaml
+      template-type: Helm
+lifecycle:
+  Create: {}
+  Delete: {}
+default-driver:
+  ansible:
+    infrastructure-type:
+    - '*'

@@ -1,13 +1,15 @@
 from ignition.service.framework import Service, Capability, interface
 from kubedriver.kubeclient import KubeApiController, KubeClientDirector
 from kubedriver.manager import ConfigMapRecordPersistence
+from kubedriver.helmclient import HelmClient
 
 class ManagerContext:
 
-    def __init__(self, location, api_ctl, record_persistence):
+    def __init__(self, location, api_ctl, record_persistence, helm_client):
         self.location = location
         self.api_ctl = api_ctl
         self.record_persistence = record_persistence
+        self.helm_client = helm_client
 
 class ManagerContextLoader(Service, Capability):
 
@@ -18,7 +20,8 @@ class ManagerContextLoader(Service, Capability):
         kube_client = self.__build_client(kube_location)
         api_ctl = self.__build_api_ctl(kube_location, kube_client)
         record_persistence = self.__build_persistence(kube_location, api_ctl)
-        return ManagerContext(kube_location, api_ctl, record_persistence)
+        helm_client = HelmClient(kube_location)
+        return ManagerContext(kube_location, api_ctl, record_persistence, helm_client)
 
     def __build_client(self, kube_location):
         return kube_location.build_client()

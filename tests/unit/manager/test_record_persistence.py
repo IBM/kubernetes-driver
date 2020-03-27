@@ -1,5 +1,6 @@
 import unittest
 import yaml
+import json
 from unittest.mock import MagicMock
 from kubernetes.client import V1ConfigMap
 from kubernetes.client.rest import ApiException
@@ -54,7 +55,7 @@ class TestConfigMapStorageFormat(unittest.TestCase):
                     '  namespace: NamespaceA\n' + \
                     '  name: ConfigB'
         objects.append(ObjectRecord(second_object_config, state=ObjectStates.DELETE_FAILED, error='An error'))
-        group = GroupRecord('123', objects, requests)
+        group = GroupRecord('123', objects, requests=requests)
         dump = ConfigMapStorageFormat().dump_group_record(group)
         self.assertEqual(dump, {
             GroupRecord.UID: '123',
@@ -257,7 +258,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
         request_records = []
         request_records.append(RequestRecord('1', RequestOperations.CREATE, state=RequestStates.COMPLETE))
         request_records.append(RequestRecord('2', RequestOperations.DELETE, state=RequestStates.FAILED, error='An error'))
-        group_record = GroupRecord('123', object_records, request_records)
+        group_record = GroupRecord('123', object_records, requests=request_records)
         expected_object_records = [
             {
                 ObjectRecord.CONFIG: first_object_config,
@@ -385,7 +386,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
     def test_create_duplicate_raises_error(self):
         self.kube_api_ctl.create_object.side_effect = ApiException(http_resp=MockHttpResponse(status=409, reason='Conflict', data=json_body({'reason': 'AlreadyExists'})))
         #TODO
-        self.persistence.create(group_record)
+        #self.persistence.create(group_record)
 
     def test_get(self):
         group_record, cm_metadata, cm_data = self.__build_group_with_two_objects()

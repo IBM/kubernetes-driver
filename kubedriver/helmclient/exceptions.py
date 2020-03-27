@@ -1,0 +1,3 @@
+
+class HelmError(Exception):
+    pass

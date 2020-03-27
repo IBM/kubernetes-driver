@@ -4,7 +4,7 @@ from kubernetes.client.rest import ApiException
 from kubedriver.kubeclient import ErrorReader
 from kubedriver.kubeobjects.object_config import ObjectConfiguration
 from kubedriver.kubeobjects import namehelper
-from .records import GroupRecord, ObjectRecord, RequestRecord
+from .records import GroupRecord, ObjectRecord, RequestRecord, HelmRecord
 from .exceptions import GroupRecordAlreadyExistsError, GroupRecordNotFoundError
 
 class ConfigMapStorageFormat:
@@ -12,18 +12,23 @@ class ConfigMapStorageFormat:
     def dump_group_record(self, group_record):
         dump = {
             GroupRecord.UID: group_record.uid,
-            GroupRecord.OBJECTS: self.dump_object_records(group_record.objects),
             GroupRecord.REQUESTS: self.dump_request_records(group_record.requests)
         }
+        if len(group_record.objects) > 0:
+            dump[GroupRecord.OBJECTS] = self.dump_object_records(group_record.objects)
+        if len(group_record.helm_releases) > 0:
+            dump[GroupRecord.HELM_RELEASES] = self.dump_helm_records(group_record.helm_releases)
         return dump
 
     def load_group_record(self, data):
         uid = data.get(GroupRecord.UID)
-        raw_objects = data.get(GroupRecord.OBJECTS, [])
+        raw_objects = data.get(GroupRecord.OBJECTS, None)
         objects = self.load_object_records(raw_objects)
-        raw_requests = data.get(GroupRecord.REQUESTS)
+        raw_requests = data.get(GroupRecord.REQUESTS, None)
         requests = self.load_request_records(raw_requests)
-        return GroupRecord(uid, objects, requests)
+        raw_helm_releases = data.get(GroupRecord.HELM_RELEASES, None)
+        helm_releases = self.load_helm_records(raw_helm_releases)
+        return GroupRecord(uid, objects, helm_releases=helm_releases, requests=requests)
 
     def dump_request_record(self, request_record):
         dump = {
@@ -43,17 +48,52 @@ class ConfigMapStorageFormat:
 
     def dump_request_records(self, request_records):
         pre_dump = []
-        for request in request_records:
-            pre_dump.append(self.dump_request_record(request))
+        if request_records != None:
+            for request in request_records:
+                pre_dump.append(self.dump_request_record(request))
         return yaml.safe_dump(pre_dump)
 
     def load_request_records(self, data):
+        if data == None:
+            return []
         raw_records = yaml.safe_load(data)
         records = []
         for raw_record in raw_records:
             records.append(self.load_request_record(raw_record))
         return records
+
+    def dump_helm_record(self, helm_record):
+        dump = {
+            HelmRecord.CHART: helm_record.chart,
+            HelmRecord.NAME: helm_record.name,
+            HelmRecord.NAMESPACE: helm_record.namespace,
+            HelmRecord.VALUES: helm_record.values
+        }
+        return dump
+
+    def load_helm_record(self, data):
+        chart = data.get(HelmRecord.CHART)
+        name = data.get(HelmRecord.NAME)
+        namespace = data.get(HelmRecord.NAMESPACE)
+        values = data.get(HelmRecord.VALUES)
+        return HelmRecord(chart, name, namespace, values)
     
+    def dump_helm_records(self, helm_records):
+        pre_dump = []
+        if helm_records != None:
+            for record in helm_records:
+                pre_dump.append(self.dump_helm_record(record))
+        return yaml.safe_dump(pre_dump)
+    
+    def load_helm_records(self, data):
+        if data == None:
+            return []
+        raw_records = yaml.safe_load(data)
+        helm_records = []
+        for raw_record in raw_records:
+            helm_records.append(self.load_helm_record(raw_record))
+        return helm_records
+
     def dump_object_record(self, object_record):
         dump = {
             ObjectRecord.CONFIG: object_record.config,
@@ -70,11 +110,14 @@ class ConfigMapStorageFormat:
 
     def dump_object_records(self, object_records):
         pre_dump = []
-        for record in object_records:
-            pre_dump.append(self.dump_object_record(record))
+        if object_records != None:
+            for record in object_records:
+                pre_dump.append(self.dump_object_record(record))
         return yaml.safe_dump(pre_dump)
     
     def load_object_records(self, data):
+        if data == None:
+            return []
         raw_objs = yaml.safe_load(data)
         objects = []
         for raw_obj in raw_objs:

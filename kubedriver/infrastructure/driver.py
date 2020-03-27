@@ -4,8 +4,15 @@ import ignition.model.failure as failure_model
 from ignition.service.framework import Service
 from ignition.utils.propvaluemap import PropValueMap
 from ignition.service.infrastructure import InfrastructureDriverCapability
-from kubedriver.kubeobjects import ObjectConfigurationGroup, namehelper
+from kubedriver.kubeobjects import ObjectConfigurationGroup, HelmReleaseConfiguration, namehelper
 from kubedriver.manager.records import RequestStates, RequestOperations
+import base64
+import tempfile
+import tarfile
+import yaml
+import os
+import datetime
+from kubedriver.helmclient import HelmClient
 
 class InfrastructureDriver(Service, InfrastructureDriverCapability):
 
@@ -39,12 +46,19 @@ class InfrastructureDriver(Service, InfrastructureDriverCapability):
         obj_conf_doc = self.templating.render_template(template, render_props)
         return obj_conf_doc.read()
 
-    def __build_object_group(self, system_properties, kube_objects):
+    def __resource_unique_identifier(self, system_properties):
         if 'resourceId' in system_properties and 'resourceName' in system_properties:
             identifier = '{0}.{1}'.format(system_properties.get('resourceName'), system_properties.get('resourceId'))
         else:
             identifier = str(uuid.uuid4())
-        return ObjectConfigurationGroup(identifier, kube_objects)
+        return identifier
+
+    def __helm_release_name(self, system_properties):
+        if 'resourceName' in system_properties:
+            release_name = '{0}-{1}'.format(system_properties.get('resourceName'), datetime.datetime.now().timestamp()).replace('.', '-')
+        else:
+            release_name = str(uuid.uuid4())
+        return release_name
 
     def create_infrastructure(self, template, template_type, system_properties, properties, deployment_location):
         """
@@ -65,13 +79,51 @@ class InfrastructureDriver(Service, InfrastructureDriverCapability):
             ignition.service.infrastructure.UnreachableDeploymentLocationError: the Deployment Location cannot be reached
             ignition.service.infrastructure.InfrastructureError: there was an error handling this request
         """
-        if template_type != 'ObjectConfiguration' and template_type != 'Kubernetes':
-            raise ValueError(f'Template type must be \'ObjectConfiguration\' or \'Kubernetes\' but was \'{template_type}\'')
         kube_location = self.__translate_location(deployment_location)
-        kube_objects = self.__process_template_to_objects(template, system_properties, properties)
-        object_group = self.__build_object_group(system_properties, kube_objects)
+        if template_type == 'Helm':
+            object_group = self.__build_helm_group(kube_location, template, system_properties, properties)
+        elif template_type == 'ObjectConfiguration' or template_type == 'Kubernetes':
+            object_group = self.__build_objects_group(kube_location, template, system_properties, properties)
+        else:
+            raise ValueError(f'Template type must be \'ObjectConfiguration\' or \'Kubernetes\' or \'Helm\' but was \'{template_type}\'')
         request_id = self.object_manager.create_group(kube_location, object_group)
         return infrastructure_model.CreateInfrastructureResponse(object_group.identifier, request_id)
+
+    def __build_objects_group(self, kube_location, template, system_properties, properties):
+        kube_objects = self.__process_template_to_objects(template, system_properties, properties)
+        identifier = self.__resource_unique_identifier(system_properties)
+        return ObjectConfigurationGroup(identifier, objects=kube_objects)
+
+    def __build_helm_group(self, kube_location, template, system_properties, properties):
+        chart_path, values_path = self.__write_template_to_disk(template)
+        self.__template_helm_values(values_path, system_properties, properties)
+        release_name = namehelper.safe_subdomain_name(self.__helm_release_name(system_properties))
+        namespace = kube_location.default_object_namespace
+        if 'namespace' in properties:
+            namespace = properties.get('namespace')
+        helm_release_configuration = HelmReleaseConfiguration(chart_path, release_name, namespace, values_path)
+        identifier = self.__resource_unique_identifier(system_properties)
+        return ObjectConfigurationGroup(identifier, helm_releases=[helm_release_configuration])
+
+    def __template_helm_values(self, values_path, system_properties, properties):
+        render_props = self.__build_render_properties(system_properties, properties)
+        with open(values_path, 'r') as reader:
+            template_output = self.templating.render_template_as_str(reader.read(), render_props)
+        with open(values_path, 'w') as writer:
+            writer.write(template_output)
+
+    def __write_template_to_disk(self, template):
+        charts_def = yaml.safe_load(template)
+        chart_string = charts_def.get('chart')
+        tmp_dir = tempfile.mkdtemp()
+        chart_path = os.path.join(tmp_dir, 'chart.tgz')
+        with open(chart_path, 'wb') as writer:
+            writer.write(base64.b64decode(chart_string))
+        values = charts_def.get('values', '')
+        values_path = os.path.join(tmp_dir, 'values.yaml')
+        with open(values_path, 'w') as writer:
+            writer.write(values)
+        return chart_path, values_path
 
     def get_infrastructure_task(self, infrastructure_id, request_id, deployment_location):
         """
@@ -97,7 +149,7 @@ class InfrastructureDriver(Service, InfrastructureDriverCapability):
             task_status = infrastructure_model.STATUS_COMPLETE
             if request_record.operation == RequestOperations.DELETE:
                 # Purge record of this Group after the Delete completes so we don't create a build up of zombie persistence records
-                self.object_manger.purge_group(kube_location, infrastructure_id)
+                self.object_manager.purge_group(kube_location, infrastructure_id)
         elif request_record.state == RequestStates.FAILED:
             task_status = infrastructure_model.STATUS_FAILED
             failure_details = failure_model.FailureDetails(failure_model.FAILURE_CODE_INTERNAL_ERROR, description=request_record.error)

@@ -23,6 +23,13 @@ RUN addgroup -S kubedriver \
  && for i in /whls/*.whl; do pip install "$i"; done \
  && apk del .build-deps gcc musl-dev libffi-dev openssl-dev python3-dev make git
 
+COPY helm2.8.2 /usr/local/bin/helm2.8.2
+COPY helm2.11.0 /usr/local/bin/helm2.11.0
+
+RUN helm2.8.2 --help
+
+RUN helm2.11.0 --help
+
 USER kubedriver
 WORKDIR /home/kubedriver
 

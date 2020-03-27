@@ -1,0 +1,10 @@
+schema: '2.0'
+name: nginx
+version: '1.0'
+packaging: tgz
+type: Assembly
+contains:
+- name: controller
+  type: Resource
+  resource-manager: lm
+  directory: controller
