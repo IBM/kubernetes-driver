@@ -4,7 +4,7 @@ This driver implements the [Lifecycle Manager](http://servicelifecyclemanager.co
 
 # Install
 
-The driver can be installed on [Kubernetes](./k8s-install.md) using Helm.
+The driver can be installed on [Kubernetes](k8s-install.md) using Helm.
 
 # User Guide
 
