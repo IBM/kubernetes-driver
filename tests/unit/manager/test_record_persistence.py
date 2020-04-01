@@ -1,40 +1,18 @@
 import unittest
 import yaml
 import json
+import tests.matchers as matchers
+import tests.utils as testutils
 from unittest.mock import MagicMock
 from kubernetes.client import V1ConfigMap
 from kubernetes.client.rest import ApiException
 from kubedriver.kubeobjects.object_config import ObjectConfiguration
+from kubedriver.manager.exceptions import PersistenceError, InvalidUpdateError, RecordNotFoundError
 from kubedriver.manager.record_persistence import ConfigMapRecordPersistence, ConfigMapStorageFormat
 from kubedriver.manager.records import GroupRecord, ObjectRecord, RequestRecord, ObjectStates, RequestStates, RequestOperations
 
-class MockHttpResponse:
-
-    def __init__(self, status=None, reason=None, data=None, headers=None):
-        self.status = status
-        self.reason = reason
-        self.data = data
-        self.headers = headers
-
-    def getheaders(self):
-        return self.headers
-
 def json_body(body):
     return json.dumps(body)
-
-class ObjectConfigurationMatcher:
-
-    def __init__(self, expected_conf):
-        self.expected_conf = expected_conf
-
-    def __eq__(self, other):
-        return other.config == self.expected_conf
-
-    def __str__(self):
-        return str(self.expected_conf)
-
-    def __repr__(self):
-        return f'{self.__class__.__name__}({self.expected_conf!r})'
 
 class TestConfigMapStorageFormat(unittest.TestCase):
 
@@ -309,7 +287,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
             'data': expected_cm_data
         }
         self.persistence.create(group_record)
-        self.kube_api_ctl.create_object.assert_called_once_with(ObjectConfigurationMatcher(expected_config_map), default_namespace=self.storage_namespace)
+        self.kube_api_ctl.create_object.assert_called_once_with(matchers.object_config(expected_config_map), default_namespace=self.storage_namespace)
 
     def test_create_with_requests(self):
         group_record, expected_cm_metadata, expected_cm_data = self.__build_group_with_requests()
@@ -320,7 +298,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
             'data': expected_cm_data
         }
         self.persistence.create(group_record)
-        self.kube_api_ctl.create_object.assert_called_once_with(ObjectConfigurationMatcher(expected_config_map), default_namespace=self.storage_namespace)
+        self.kube_api_ctl.create_object.assert_called_once_with(matchers.object_config(expected_config_map), default_namespace=self.storage_namespace)
 
     def test_create_unsafe_uid(self):
         group_record, expected_cm_metadata, expected_cm_data = self.__build_group_with_unsafe_uid()
@@ -331,7 +309,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
             'data': expected_cm_data
         }
         self.persistence.create(group_record)
-        self.kube_api_ctl.create_object.assert_called_once_with(ObjectConfigurationMatcher(expected_config_map), default_namespace=self.storage_namespace)
+        self.kube_api_ctl.create_object.assert_called_once_with(matchers.object_config(expected_config_map), default_namespace=self.storage_namespace)
 
     def test_create_customise_cm_api_version(self):
         custom_cm_api_version = 'v2'
@@ -344,7 +322,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
             'data': expected_cm_data
         }
         self.persistence.create(group_record)
-        self.kube_api_ctl.create_object.assert_called_once_with(ObjectConfigurationMatcher(expected_config_map), default_namespace=self.storage_namespace)
+        self.kube_api_ctl.create_object.assert_called_once_with(matchers.object_config(expected_config_map), default_namespace=self.storage_namespace)
 
     def test_create_customise_cm_kind(self):
         custom_cm_kind = 'SuperConfigMap'
@@ -357,7 +335,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
             'data': expected_cm_data
         }
         self.persistence.create(group_record)
-        self.kube_api_ctl.create_object.assert_called_once_with(ObjectConfigurationMatcher(expected_config_map), default_namespace=self.storage_namespace)
+        self.kube_api_ctl.create_object.assert_called_once_with(matchers.object_config(expected_config_map), default_namespace=self.storage_namespace)
 
     def test_create_customise_cm_data_field(self):
         custom_cm_data_field = 'someData'
@@ -370,7 +348,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
             'someData': expected_cm_data
         }
         self.persistence.create(group_record)
-        self.kube_api_ctl.create_object.assert_called_once_with(ObjectConfigurationMatcher(expected_config_map), default_namespace=self.storage_namespace)
+        self.kube_api_ctl.create_object.assert_called_once_with(matchers.object_config(expected_config_map), default_namespace=self.storage_namespace)
 
     def test_create_non_namespaced(self):
         group_record, expected_cm_metadata, expected_cm_data = self.__build_group_with_non_namespaced_object()
@@ -381,12 +359,21 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
             'data': expected_cm_data
         }
         self.persistence.create(group_record)
-        self.kube_api_ctl.create_object.assert_called_once_with(ObjectConfigurationMatcher(expected_config_map), default_namespace=self.storage_namespace)
+        self.kube_api_ctl.create_object.assert_called_once_with(matchers.object_config(expected_config_map), default_namespace=self.storage_namespace)
         
-    def test_create_duplicate_raises_error(self):
-        self.kube_api_ctl.create_object.side_effect = ApiException(http_resp=MockHttpResponse(status=409, reason='Conflict', data=json_body({'reason': 'AlreadyExists'})))
-        #TODO
-        #self.persistence.create(group_record)
+    def test_create_raises_invalid_request_error_on_client_error(self):
+        group_record, _, _ = self.__build_group_with_two_objects()
+        self.kube_api_ctl.create_object.side_effect = ApiException(http_resp=testutils.KubeHttpResponse(status=409, reason='Conflict', data=json_body({'reason': 'AlreadyExists'})))
+        with self.assertRaises(InvalidUpdateError) as context:
+            self.persistence.create(group_record)
+        self.assertEqual(str(context.exception), 'Failed to create record for Group \'123\' as an error occurred: ApiError (409, Conflict) -> AlreadyExists')
+
+    def test_create_raises_persistence_error_on_server_error(self):
+        group_record, _, _ = self.__build_group_with_two_objects()
+        self.kube_api_ctl.create_object.side_effect = ApiException(http_resp=testutils.KubeHttpResponse(status=500, reason='Internal Server Error', data=json_body({'reason': 'Something is not right'})))
+        with self.assertRaises(PersistenceError) as context:
+            self.persistence.create(group_record)
+        self.assertEqual(str(context.exception), 'Failed to create record for Group \'123\' as an error occurred: ApiError (500, Internal Server Error) -> Something is not right')
 
     def test_get(self):
         group_record, cm_metadata, cm_data = self.__build_group_with_two_objects()
@@ -448,6 +435,24 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
         result_group_record = self.persistence.get('123')
         self.kube_api_ctl.read_object.assert_called_once_with('v1', 'SuperConfigMap', 'kdr-123', namespace=self.storage_namespace)
 
+    def test_get_raises_not_found_error_on_not_found(self):
+        self.kube_api_ctl.read_object.side_effect = ApiException(http_resp=testutils.KubeHttpResponse(status=404, reason='Not Found', data=json_body({'reason': 'NotFound'})))
+        with self.assertRaises(RecordNotFoundError) as context:
+            self.persistence.get('123')
+        self.assertEqual(str(context.exception), 'Failed to read record for Group \'123\' as an error occurred: ApiError (404, Not Found) -> NotFound')
+        
+    def test_get_raises_invalid_request_error_on_client_error(self):
+        self.kube_api_ctl.read_object.side_effect = ApiException(http_resp=testutils.KubeHttpResponse(status=409, reason='Conflict', data=json_body({'reason': 'AlreadyExists'})))
+        with self.assertRaises(InvalidUpdateError) as context:
+            self.persistence.get('123')
+        self.assertEqual(str(context.exception), 'Failed to read record for Group \'123\' as an error occurred: ApiError (409, Conflict) -> AlreadyExists')
+
+    def test_get_raises_persistence_error_on_server_error(self):
+        self.kube_api_ctl.read_object.side_effect = ApiException(http_resp=testutils.KubeHttpResponse(status=500, reason='Internal Server Error', data=json_body({'reason': 'Something is not right'})))
+        with self.assertRaises(PersistenceError) as context:
+            self.persistence.get('123')
+        self.assertEqual(str(context.exception), 'Failed to read record for Group \'123\' as an error occurred: ApiError (500, Internal Server Error) -> Something is not right')
+
     def test_delete(self):
         self.persistence.delete('123')
         self.kube_api_ctl.delete_object.assert_called_once_with('v1', 'ConfigMap', 'kdr-123', namespace=self.storage_namespace)
@@ -462,6 +467,24 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
         result_group_record = self.persistence.delete('123')
         self.kube_api_ctl.delete_object.assert_called_once_with('v1', 'SuperConfigMap', 'kdr-123', namespace=self.storage_namespace)
 
+    def test_delete_raises_not_found_error_on_not_found(self):
+        self.kube_api_ctl.delete_object.side_effect = ApiException(http_resp=testutils.KubeHttpResponse(status=404, reason='Not Found', data=json_body({'reason': 'NotFound'})))
+        with self.assertRaises(RecordNotFoundError) as context:
+            self.persistence.delete('123')
+        self.assertEqual(str(context.exception), 'Failed to delete record for Group \'123\' as an error occurred: ApiError (404, Not Found) -> NotFound')
+        
+    def test_delete_raises_invalid_request_error_on_client_error(self):
+        self.kube_api_ctl.delete_object.side_effect = ApiException(http_resp=testutils.KubeHttpResponse(status=409, reason='Conflict', data=json_body({'reason': 'AlreadyExists'})))
+        with self.assertRaises(InvalidUpdateError) as context:
+            self.persistence.delete('123')
+        self.assertEqual(str(context.exception), 'Failed to delete record for Group \'123\' as an error occurred: ApiError (409, Conflict) -> AlreadyExists')
+
+    def test_delete_raises_persistence_error_on_server_error(self):
+        self.kube_api_ctl.delete_object.side_effect = ApiException(http_resp=testutils.KubeHttpResponse(status=500, reason='Internal Server Error', data=json_body({'reason': 'Something is not right'})))
+        with self.assertRaises(PersistenceError) as context:
+            self.persistence.delete('123')
+        self.assertEqual(str(context.exception), 'Failed to delete record for Group \'123\' as an error occurred: ApiError (500, Internal Server Error) -> Something is not right')
+
     def test_update(self):
         group_record, expected_cm_metadata, expected_cm_data = self.__build_group_with_two_objects()
         expected_config_map = {
@@ -471,7 +494,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
             'data': expected_cm_data
         }
         self.persistence.update(group_record)
-        self.kube_api_ctl.update_object.assert_called_once_with(ObjectConfigurationMatcher(expected_config_map), default_namespace=self.storage_namespace)
+        self.kube_api_ctl.update_object.assert_called_once_with(matchers.object_config(expected_config_map), default_namespace=self.storage_namespace)
 
     def test_update_with_requests(self):
         group_record, expected_cm_metadata, expected_cm_data = self.__build_group_with_requests()
@@ -482,7 +505,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
             'data': expected_cm_data
         }
         self.persistence.update(group_record)
-        self.kube_api_ctl.update_object.assert_called_once_with(ObjectConfigurationMatcher(expected_config_map), default_namespace=self.storage_namespace)
+        self.kube_api_ctl.update_object.assert_called_once_with(matchers.object_config(expected_config_map), default_namespace=self.storage_namespace)
 
     def test_update_unsafe_uid(self):
         group_record, expected_cm_metadata, expected_cm_data = self.__build_group_with_unsafe_uid()
@@ -493,7 +516,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
             'data': expected_cm_data
         }
         self.persistence.update(group_record)
-        self.kube_api_ctl.update_object.assert_called_once_with(ObjectConfigurationMatcher(expected_config_map), default_namespace=self.storage_namespace)
+        self.kube_api_ctl.update_object.assert_called_once_with(matchers.object_config(expected_config_map), default_namespace=self.storage_namespace)
 
     def test_update_customise_cm_api_version(self):
         custom_cm_api_version = 'v2'
@@ -506,7 +529,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
             'data': expected_cm_data
         }
         self.persistence.update(group_record)
-        self.kube_api_ctl.update_object.assert_called_once_with(ObjectConfigurationMatcher(expected_config_map), default_namespace=self.storage_namespace)
+        self.kube_api_ctl.update_object.assert_called_once_with(matchers.object_config(expected_config_map), default_namespace=self.storage_namespace)
 
     def test_update_customise_cm_kind(self):
         custom_cm_kind = 'SuperConfigMap'
@@ -519,7 +542,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
             'data': expected_cm_data
         }
         self.persistence.update(group_record)
-        self.kube_api_ctl.update_object.assert_called_once_with(ObjectConfigurationMatcher(expected_config_map), default_namespace=self.storage_namespace)
+        self.kube_api_ctl.update_object.assert_called_once_with(matchers.object_config(expected_config_map), default_namespace=self.storage_namespace)
 
     def test_update_customise_cm_data_field(self):
         custom_cm_data_field = 'someData'
@@ -532,7 +555,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
             'someData': expected_cm_data
         }
         self.persistence.update(group_record)
-        self.kube_api_ctl.update_object.assert_called_once_with(ObjectConfigurationMatcher(expected_config_map), default_namespace=self.storage_namespace)
+        self.kube_api_ctl.update_object.assert_called_once_with(matchers.object_config(expected_config_map), default_namespace=self.storage_namespace)
 
     def test_update_non_namespaced(self):
         group_record, expected_cm_metadata, expected_cm_data = self.__build_group_with_non_namespaced_object()
@@ -543,5 +566,25 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
             'data': expected_cm_data
         }
         self.persistence.update(group_record)
-        self.kube_api_ctl.update_object.assert_called_once_with(ObjectConfigurationMatcher(expected_config_map), default_namespace=self.storage_namespace)
+        self.kube_api_ctl.update_object.assert_called_once_with(matchers.object_config(expected_config_map), default_namespace=self.storage_namespace)
+    
+    def test_update_raises_not_found_error_on_not_found(self):
+        group_record, _, _ = self.__build_group_with_two_objects()
+        self.kube_api_ctl.update_object.side_effect = ApiException(http_resp=testutils.KubeHttpResponse(status=404, reason='Not Found', data=json_body({'reason': 'NotFound'})))
+        with self.assertRaises(RecordNotFoundError) as context:
+            self.persistence.update(group_record)
+        self.assertEqual(str(context.exception), 'Failed to update record for Group \'123\' as an error occurred: ApiError (404, Not Found) -> NotFound')
         
+    def test_update_raises_invalid_request_error_on_client_error(self):
+        group_record, _, _ = self.__build_group_with_two_objects()
+        self.kube_api_ctl.update_object.side_effect = ApiException(http_resp=testutils.KubeHttpResponse(status=409, reason='Conflict', data=json_body({'reason': 'AlreadyExists'})))
+        with self.assertRaises(InvalidUpdateError) as context:
+            self.persistence.update(group_record)
+        self.assertEqual(str(context.exception), 'Failed to update record for Group \'123\' as an error occurred: ApiError (409, Conflict) -> AlreadyExists')
+
+    def test_update_raises_persistence_error_on_server_error(self):
+        group_record, _, _ = self.__build_group_with_two_objects()
+        self.kube_api_ctl.update_object.side_effect = ApiException(http_resp=testutils.KubeHttpResponse(status=500, reason='Internal Server Error', data=json_body({'reason': 'Something is not right'})))
+        with self.assertRaises(PersistenceError) as context:
+            self.persistence.update(group_record)
+        self.assertEqual(str(context.exception), 'Failed to update record for Group \'123\' as an error occurred: ApiError (500, Internal Server Error) -> Something is not right')

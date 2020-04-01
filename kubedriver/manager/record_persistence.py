@@ -5,7 +5,7 @@ from kubedriver.kubeclient import ErrorReader
 from kubedriver.kubeobjects.object_config import ObjectConfiguration
 from kubedriver.kubeobjects import namehelper
 from .records import GroupRecord, ObjectRecord, RequestRecord, HelmRecord
-from .exceptions import GroupRecordAlreadyExistsError, GroupRecordNotFoundError
+from .exceptions import PersistenceError, InvalidUpdateError, RecordNotFoundError
 
 class ConfigMapStorageFormat:
 
@@ -135,38 +135,35 @@ class ConfigMapRecordPersistence:
         self.format = ConfigMapStorageFormat()
         self.error_reader = error_reader if error_reader is not None else ErrorReader()
 
+    def __raise_error(self, operation, exception, record_uid):
+        message = f'Failed to {operation} record for Group \'{record_uid}\' as an error occurred: {self.error_reader.summarise_error(exception)}'
+        if self.error_reader.is_not_found_err(exception):
+            raise RecordNotFoundError(message) from exception
+        elif self.error_reader.is_client_error(exception):
+            raise InvalidUpdateError(message) from exception
+        else:
+            raise PersistenceError(message) from exception
+
     def create(self, group_record):
         cm_config = self.__build_config_map_for_record(group_record)
         try:
             self.kube_api_ctl.create_object(cm_config, default_namespace=self.storage_namespace)
         except ApiException as e:
-            error_prefix = f'Failed to persist record for Group \'{group_record.uid}\' as an error occurred:'
-            if self.error_reader.is_already_exists_err(e):
-                raise GroupRecordAlreadyExistsError(group_record.uid, prefix=error_prefix) from e
-            else:
-                raise PersistenceError(f'{error_prefix}: {e}') from e
+            self.__raise_error('create', e, group_record.uid)
 
     def update(self, group_record):
         cm_config = self.__build_config_map_for_record(group_record)
         try:
             self.kube_api_ctl.update_object(cm_config, default_namespace=self.storage_namespace)
         except ApiException as e:
-            error_prefix = f'Failed to update record for Group \'{group_record.uid}\' as an error occurred:'
-            if self.error_reader.is_not_found_err(e):
-                raise GroupRecordNotFoundError(group_record.uid, prefix=error_prefix) from e
-            else:
-                raise PersistenceError(f'{error_prefix}: {e}') from e
+            self.__raise_error('update', e, group_record.uid)
 
     def get(self, group_uid):
         cm_name = self.__determine_config_map_name(group_uid)
         try:
             record_cm = self.kube_api_ctl.read_object(self.cm_api_version, self.cm_kind, cm_name, namespace=self.storage_namespace)
         except ApiException as e:
-            error_prefix = f'Failed to read record for Group \'{group_record.uid}\' as an error occurred:'
-            if self.error_reader.is_not_found_err(e):
-                raise GroupRecordNotFoundError(group_record.uid, prefix=error_prefix) from e
-            else:
-                raise PersistenceError(f'{error_prefix}: {e}') from e
+            self.__raise_error('read', e, group_uid)
         else:
             return self.__read_config_map_to_record(record_cm)
 
@@ -175,15 +172,14 @@ class ConfigMapRecordPersistence:
         try:
             self.kube_api_ctl.delete_object(self.cm_api_version, self.cm_kind, cm_name, namespace=self.storage_namespace)
         except ApiException as e:
-            error_prefix = f'Failed to delete record for Group \'{group_record.uid}\' as an error occurred:'
-            if self.error_reader.is_not_found_err(e):
-                raise GroupRecordNotFoundError(group_record.uid, prefix=error_prefix) from e
-            else:
-                raise PersistenceError(f'{error_prefix}: {e}') from e
+            self.__raise_error('delete', e, group_uid)
 
     def __determine_config_map_name(self, group_uid):
-        potential_name = 'kdr-{0}'.format(group_uid)
-        return namehelper.safe_subdomain_name(potential_name)
+        try:
+            potential_name = 'kdr-{0}'.format(group_uid)
+            return namehelper.safe_subdomain_name(potential_name)
+        except ValueError as e:
+            raise PersistenceError(f'Could not generate valid ConfigMap name for Group \'{group_uid}\': {str(e)}') from e
 
     def __build_config_map_for_record(self, group_record):
         cm_name = self.__determine_config_map_name(group_record.uid)

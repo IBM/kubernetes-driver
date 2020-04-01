@@ -35,7 +35,6 @@ class HelmClient:
 
     def install(self, chart, name, namespace, values):
         cmd = self.__helm_cmd('install', chart, '--name', name, '--namespace', namespace, '-f', values)
-        print(cmd)
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         if process_result.returncode != 0:
             raise HelmError(f'Helm install failed: {process_result.stdout}')
@@ -43,6 +42,7 @@ class HelmClient:
 
     def get(self, name):
         cmd = self.__helm_cmd('get', name)
+        process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         if process_result.returncode != 0:
             raise HelmError(f'Helm get failed: {process_result.stdout}')
 

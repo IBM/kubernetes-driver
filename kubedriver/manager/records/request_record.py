@@ -14,14 +14,6 @@ class RequestRecord:
         self.state = state
         self.error = error
 
-    @staticmethod
-    def from_storage_data(self, data):
-        uid = data.get(RequestRecord.UID)
-        request_type = data.get(RequestRecord.REQUEST_TYPE)
-        state = data.get(RequestRecord.STATE, None)
-        error = data.get(RequestRecord.ERROR, None)
-        return RequestRecord(uid, request_type, state, error)
-
     def __str__(self):
         return f'{self.__class__.__name__}(uid: {self.uid}, operation: {self.operation}, state: {self.state}, error: {self.error})'
 

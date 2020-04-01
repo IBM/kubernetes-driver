@@ -17,27 +17,6 @@ class HelmRecord:
         self.state = state
         self.error = error
 
-    @staticmethod
-    def from_storage_data(self, data):
-        chart = data.get(HelmRecord.CHART)
-        name = data.get(HelmRecord.NAME)
-        namespace = data.get(HelmRecord.NAMESPACE)
-        values = data.get(HelmRecord.VALUES)
-        state = data.get(HelmRecord.STATE, ObjectStates.PENDING)
-        error = data.get(HelmRecord.ERROR, None)
-        return HelmRecord(chart, name, namespace, values, state=state, error=error)
-
-    def to_storage_data(self):
-        data = {
-            HelmRecord.CHART: self.chart,
-            HelmRecord.NAME: self.name,
-            HelmRecord.NAMESPACE: self.namespace, 
-            HelmRecord.VALUES: self.values,
-            ObjectRecord.STATE: self.state,
-            ObjectRecord.ERROR: self.error
-        }
-        return data
-
     def __str__(self):
         return f'{self.__class__.__name__}(chart: {self.chart}, name: {self.name}, namespace: {self.namespace}, values: {self.values}, state: {self.state}, error: {self.error})'
 
