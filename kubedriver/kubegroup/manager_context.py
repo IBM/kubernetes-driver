@@ -1,6 +1,6 @@
 from ignition.service.framework import Service, Capability, interface
 from kubedriver.kubeclient import KubeApiController, KubeClientDirector
-from kubedriver.manager import ConfigMapRecordPersistence
+from kubedriver.kubegroup import ConfigMapRecordPersistence
 from kubedriver.helmclient import HelmClient
 
 class ManagerContext:

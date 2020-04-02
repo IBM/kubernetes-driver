@@ -1,25 +1,28 @@
 import uuid
-import ignition.model.infrastructure as infrastructure_model
-import ignition.model.failure as failure_model
-from ignition.service.framework import Service
-from ignition.utils.propvaluemap import PropValueMap
-from ignition.service.infrastructure import InfrastructureDriverCapability
-from kubedriver.kubeobjects import ObjectConfigurationGroup, HelmReleaseConfiguration, namehelper
-from kubedriver.manager.records import RequestStates, RequestOperations
 import base64
 import tempfile
 import tarfile
 import yaml
 import os
 import datetime
+import ignition.model.infrastructure as infrastructure_model
+import ignition.model.failure as failure_model
+from ignition.service.framework import Service
+from ignition.utils.propvaluemap import PropValueMap
+from ignition.service.infrastructure import InfrastructureDriverCapability
+from kubedriver.helmobjects import HelmReleaseConfiguration
+from kubedriver.kubeobjects import ObjectConfigurationDocument, namehelper
+from kubedriver.kubegroup import EntityGroup
+from kubedriver.kubegroup.records import RequestStates, RequestOperations
+from kubedriver.templating import Template
+
 from kubedriver.helmclient import HelmClient
 
 class InfrastructureDriver(Service, InfrastructureDriverCapability):
 
-    def __init__(self, deployment_location_translator, object_manager, templating):
+    def __init__(self, deployment_location_translator, keg_manager):
         self.deployment_location_translator = deployment_location_translator
-        self.object_manager = object_manager
-        self.templating = templating
+        self.keg_manager = keg_manager
 
     def __translate_location(self, deployment_location_dict):
         kube_location = self.deployment_location_translator.translate(deployment_location_dict)
@@ -43,15 +46,15 @@ class InfrastructureDriver(Service, InfrastructureDriverCapability):
 
     def __process_template_to_objects(self, template, system_properties, properties):
         render_props = self.__build_render_properties(system_properties, properties)
-        obj_conf_doc = self.templating.render_template(template, render_props)
-        return obj_conf_doc.read()
+        rendered_template = Template(template).render(render_props)
+        return ObjectConfigurationDocument(rendered_template).read()
 
-    def __resource_unique_identifier(self, system_properties):
+    def __resource_unique_uid(self, system_properties):
         if 'resourceId' in system_properties and 'resourceName' in system_properties:
-            identifier = '{0}.{1}'.format(system_properties.get('resourceName'), system_properties.get('resourceId'))
+            uid = '{0}.{1}'.format(system_properties.get('resourceName'), system_properties.get('resourceId'))
         else:
-            identifier = str(uuid.uuid4())
-        return identifier
+            uid = str(uuid.uuid4())
+        return uid
 
     def __helm_release_name(self, system_properties):
         if 'resourceName' in system_properties:
@@ -81,38 +84,38 @@ class InfrastructureDriver(Service, InfrastructureDriverCapability):
         """
         kube_location = self.__translate_location(deployment_location)
         if template_type == 'Helm':
-            object_group = self.__build_helm_group(kube_location, template, system_properties, properties)
+            entity_group = self.__build_helm_group(kube_location, template, system_properties, properties)
         elif template_type == 'ObjectConfiguration' or template_type == 'Kubernetes':
-            object_group = self.__build_objects_group(kube_location, template, system_properties, properties)
+            entity_group = self.__build_objects_group(kube_location, template, system_properties, properties)
         else:
             raise ValueError(f'Template type must be \'ObjectConfiguration\' or \'Kubernetes\' or \'Helm\' but was \'{template_type}\'')
-        request_id = self.object_manager.create_group(kube_location, object_group)
-        return infrastructure_model.CreateInfrastructureResponse(object_group.identifier, request_id)
+        request_id = self.keg_manager.create_group(kube_location, entity_group)
+        return infrastructure_model.CreateInfrastructureResponse(entity_group.uid, request_id)
 
     def __build_objects_group(self, kube_location, template, system_properties, properties):
         kube_objects = self.__process_template_to_objects(template, system_properties, properties)
-        identifier = self.__resource_unique_identifier(system_properties)
-        return ObjectConfigurationGroup(identifier, objects=kube_objects)
+        uid = self.__resource_unique_uid(system_properties)
+        return EntityGroup(uid, objects=kube_objects)
 
     def __build_helm_group(self, kube_location, template, system_properties, properties):
-        chart_path, values_path = self.__write_template_to_disk(template)
+        chart_path, values_path = self.__write_helm_template_to_disk(template)
         self.__template_helm_values(values_path, system_properties, properties)
         release_name = namehelper.safe_subdomain_name(self.__helm_release_name(system_properties))
         namespace = kube_location.default_object_namespace
         if 'namespace' in properties:
             namespace = properties.get('namespace')
         helm_release_configuration = HelmReleaseConfiguration(chart_path, release_name, namespace, values_path)
-        identifier = self.__resource_unique_identifier(system_properties)
-        return ObjectConfigurationGroup(identifier, helm_releases=[helm_release_configuration])
+        uid = self.__resource_unique_uid(system_properties)
+        return EntityGroup(uid, helm_releases=[helm_release_configuration])
 
     def __template_helm_values(self, values_path, system_properties, properties):
         render_props = self.__build_render_properties(system_properties, properties)
         with open(values_path, 'r') as reader:
-            template_output = self.templating.render_template_as_str(reader.read(), render_props)
+            template_output = Template(reader.read()).render(render_props)
         with open(values_path, 'w') as writer:
             writer.write(template_output)
 
-    def __write_template_to_disk(self, template):
+    def __write_helm_template_to_disk(self, template):
         charts_def = yaml.safe_load(template)
         chart_string = charts_def.get('chart')
         tmp_dir = tempfile.mkdtemp()
@@ -142,14 +145,14 @@ class InfrastructureDriver(Service, InfrastructureDriverCapability):
             ignition.service.infrastructure.InfrastructureError: there was an error handling this request
         """
         kube_location = self.__translate_location(deployment_location)
-        request_record = self.object_manager.get_request_record(kube_location, infrastructure_id, request_id)
+        request_record = self.keg_manager.get_request_record(kube_location, infrastructure_id, request_id)
         task_status = infrastructure_model.STATUS_IN_PROGRESS
         failure_details = None
         if request_record.state == RequestStates.COMPLETE:
             task_status = infrastructure_model.STATUS_COMPLETE
             if request_record.operation == RequestOperations.DELETE:
                 # Purge record of this Group after the Delete completes so we don't create a build up of zombie persistence records
-                self.object_manager.purge_group(kube_location, infrastructure_id)
+                self.keg_manager.purge_group(kube_location, infrastructure_id)
         elif request_record.state == RequestStates.FAILED:
             task_status = infrastructure_model.STATUS_FAILED
             failure_details = failure_model.FailureDetails(failure_model.FAILURE_CODE_INTERNAL_ERROR, description=request_record.error)
@@ -172,7 +175,7 @@ class InfrastructureDriver(Service, InfrastructureDriverCapability):
             ignition.service.infrastructure.InfrastructureError: there was an error handling this request
         """
         kube_location = self.__translate_location(deployment_location)
-        request_id = self.object_manager.delete_group(kube_location, infrastructure_id)
+        request_id = self.keg_manager.delete_group(kube_location, infrastructure_id)
         return infrastructure_model.DeleteInfrastructureResponse(infrastructure_id, request_id)
 
     def find_infrastructure(self, template, template_type, instance_name, deployment_location):

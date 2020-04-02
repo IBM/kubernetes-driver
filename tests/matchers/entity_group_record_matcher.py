@@ -1,18 +1,18 @@
 from .object_record_matcher import ObjectRecordMatcher
 from .request_record_matcher import RequestRecordMatcher
-from .helm_record_matcher import HelmRecordMatcher
-from kubedriver.manager.records import GroupRecord
+from .helm_record_matcher import HelmReleaseRecordMatcher
+from kubedriver.kubegroup.records import EntityGroupRecord
 
-def group_record(expected_group_record):
-    return GroupRecordMatcher(expected_group_record)
+def entity_group_record(expected_group_record):
+    return EntityGroupRecordMatcher(expected_group_record)
 
-class GroupRecordMatcher:
+class EntityGroupRecordMatcher:
 
     def __init__(self, expected_group_record):
         self.expected_group_record = expected_group_record
 
     def __eq__(self, other):
-        if not isinstance(other, GroupRecord):
+        if not isinstance(other, EntityGroupRecord):
             return False
         if other.uid != self.expected_group_record.uid:
             return False
@@ -29,7 +29,7 @@ class GroupRecordMatcher:
         if len(other.helm_releases) != len(self.expected_group_record.helm_releases):
             return False
         for idx in range(len(other.helm_releases)):
-            if HelmRecordMatcher(other.helm_releases[idx]) != self.expected_group_record.helm_releases[idx]:
+            if HelmReleaseRecordMatcher(other.helm_releases[idx]) != self.expected_group_record.helm_releases[idx]:
                 return False
         return True
 

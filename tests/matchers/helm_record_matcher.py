@@ -1,15 +1,15 @@
-from kubedriver.manager.records import HelmRecord
+from kubedriver.kubegroup.records import HelmReleaseRecord
 
 def helm_record(expected_record):
-    return HelmRecordMatcher(expected_record)
+    return HelmReleaseRecordMatcher(expected_record)
 
-class HelmRecordMatcher:
+class HelmReleaseRecordMatcher:
 
     def __init__(self, expected_record):
         self.expected_record = expected_record
 
     def __eq__(self, other):
-        if not isinstance(other, HelmRecord):
+        if not isinstance(other, HelmReleaseRecord):
             return False
         if other.chart != self.expected_record.chart:
             return False

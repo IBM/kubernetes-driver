@@ -2,7 +2,7 @@ import uuid
 import logging
 from kubernetes.client.rest import ApiException
 from ignition.service.framework import Service, Capability
-from .records import ObjectRecord, GroupRecord, RequestRecord, HelmRecord, ObjectStates, RequestStates, RequestOperations
+from .records import ObjectRecord, EntityGroupRecord, RequestRecord, HelmReleaseRecord, ObjectStates, RequestStates, RequestOperations
 from .exceptions import RequestInvalidStateError, RecordNotFoundError, RecordNotFoundError
 from kubedriver.kubeclient import ErrorReader, DEFAULT_NAMESPACE
 from kubedriver.kubeobjects import ObjectConfiguration
@@ -10,10 +10,10 @@ from kubedriver.location import KubeDeploymentLocation
 
 logger = logging.getLogger(__name__)
 
-CREATE_JOB = 'kom.CreateObjectGroup'
-DELETE_JOB = 'kom.DeleteObjectGroup'
+CREATE_JOB = 'kom.CreateEntityGroup'
+DELETE_JOB = 'kom.DeleteEntityGroup'
 
-class KubeObjectManager(Service, Capability):
+class EntityGroupManager(Service, Capability):
 
     def __init__(self, context_loader, job_queue, error_reader=None):
         self.context_loader = context_loader
@@ -22,9 +22,9 @@ class KubeObjectManager(Service, Capability):
         self.job_queue.register_job_handler(CREATE_JOB, self.__handler_for_job)
         self.job_queue.register_job_handler(DELETE_JOB, self.__handler_for_job)
 
-    def create_group(self, kube_location, object_group):
+    def create_group(self, kube_location, entity_group):
         context = self.context_loader.load(kube_location)
-        group_record = self.__initiate_record(context, object_group)
+        group_record = self.__initiate_record(context, entity_group)
         request_id, job_data = self.__initiate_create_job(context.location, group_record)
         context.record_persistence.create(group_record)
         self.job_queue.queue_job(job_data)
@@ -51,14 +51,14 @@ class KubeObjectManager(Service, Capability):
         context = self.context_loader.load(kube_location)
         context.record_persistence.delete(group_uid)
 
-    def __initiate_record(self, context, object_group):
+    def __initiate_record(self, context, entity_group):
         object_records = []
-        for object_conf in object_group.objects:
+        for object_conf in entity_group.objects:
             object_records.append(ObjectRecord(object_conf.config, state=ObjectStates.PENDING))
-        helm_release_records = []
-        for helm_release in object_group.helm_releases:
-            helm_release_records.append(HelmRecord(helm_release.chart, helm_release.name, helm_release.namespace, helm_release.values))
-        group_record = GroupRecord(object_group.identifier, object_records, helm_releases=helm_release_records, requests=[])
+        helm_records = []
+        for helm_release in entity_group.helm_releases:
+            helm_records.append(HelmReleaseRecord(helm_release.chart, helm_release.name, helm_release.namespace, helm_release.values))
+        group_record = EntityGroupRecord(entity_group.uid, object_records, helm_releases=helm_records, requests=[])
         return group_record
 
     def __initiate_create_job(self, kube_location, group_record):
@@ -149,17 +149,17 @@ class KubeObjectManager(Service, Capability):
 
     def __create_helm_releases(self, context, group_record, request_record):
         request_errors = []
-        for helm_release_record in group_record.helm_releases:
+        for helm_record in group_record.helm_releases:
             try:
-                context.helm_client.install(helm_release_record.chart, helm_release_record.name, helm_release_record.namespace, helm_release_record.values)
-                helm_release_record.state = ObjectStates.CREATED
-                helm_release_record.error = None
+                context.helm_client.install(helm_record.chart, helm_record.name, helm_record.namespace, helm_record.values)
+                helm_record.state = ObjectStates.CREATED
+                helm_record.error = None
             except Exception as e:
-                logger.exception(f'Create attempt of Helm Release ({helm_release_record}) in Group \'{group_record.uid}\' failed')
+                logger.exception(f'Create attempt of Helm Release ({helm_record}) in Group \'{group_record.uid}\' failed')
                 error_msg = str(e)
                 request_errors.append(error_msg)
-                helm_release_record.state = ObjectStates.CREATE_FAILED
-                helm_release_record.error = error_msg
+                helm_record.state = ObjectStates.CREATE_FAILED
+                helm_record.error = error_msg
         return request_errors
 
     def __process_delete(self, context, group_record, request_record):
@@ -200,19 +200,19 @@ class KubeObjectManager(Service, Capability):
 
     def __delete_helm_releases(self, context, group_record, request_record):
         request_errors = []
-        for helm_release_record in group_record.helm_releases:
+        for helm_record in group_record.helm_releases:
             try:
-                if helm_release_record.state != ObjectStates.CREATE_FAILED and helm_release_record.state != ObjectStates.DELETED:
-                    context.helm_client.purge(helm_release_record.name)
+                if helm_record.state != ObjectStates.CREATE_FAILED and helm_record.state != ObjectStates.DELETED:
+                    context.helm_client.purge(helm_record.name)
                     #TODO handle "Not found"
-                    helm_release_record.state = ObjectStates.DELETED
-                    helm_release_record.error = None
+                    helm_record.state = ObjectStates.DELETED
+                    helm_record.error = None
             except Exception as e:
-                logger.exception(f'Delete attempt of Helm Release ({helm_release_record}) in Group \'{group_record.uid}\' failed')
+                logger.exception(f'Delete attempt of Helm Release ({helm_record}) in Group \'{group_record.uid}\' failed')
                 error_msg = str(e)
                 request_errors.append(error_msg)
-                helm_release_record.state = ObjectStates.DELETE_FAILED
-                helm_release_record.error = error_msg
+                helm_record.state = ObjectStates.DELETE_FAILED
+                helm_record.error = error_msg
         return request_errors
 
     def __update_request_with_results(self, request_record, request_errors):

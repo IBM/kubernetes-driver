@@ -1,4 +1,4 @@
-from kubedriver.manager.records import RequestRecord
+from kubedriver.kubegroup.records import RequestRecord
 
 def request_record(expected_record):
     return RequestRecordMatcher(expected_record)

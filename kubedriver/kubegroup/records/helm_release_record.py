@@ -1,6 +1,6 @@
 from .object_states import ObjectStates
 
-class HelmRecord:
+class HelmReleaseRecord:
 
     CHART = 'chart'
     NAME = 'name'

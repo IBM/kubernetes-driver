@@ -1,6 +1,5 @@
 import yaml
 from .object_config import ObjectConfiguration
-from .object_group import ObjectConfigurationGroup
 
 class ObjectConfigurationDocument:
 

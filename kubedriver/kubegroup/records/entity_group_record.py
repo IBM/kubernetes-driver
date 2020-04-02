@@ -2,7 +2,7 @@ from .object_states import ObjectStates
 from .object_record import ObjectRecord
 from .request_record import RequestRecord
 
-class GroupRecord:
+class EntityGroupRecord:
 
     UID = 'uid'
     OBJECTS = 'objects'

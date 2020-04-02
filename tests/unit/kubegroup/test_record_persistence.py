@@ -7,9 +7,9 @@ from unittest.mock import MagicMock
 from kubernetes.client import V1ConfigMap
 from kubernetes.client.rest import ApiException
 from kubedriver.kubeobjects.object_config import ObjectConfiguration
-from kubedriver.manager.exceptions import PersistenceError, InvalidUpdateError, RecordNotFoundError
-from kubedriver.manager.record_persistence import ConfigMapRecordPersistence, ConfigMapStorageFormat
-from kubedriver.manager.records import GroupRecord, ObjectRecord, RequestRecord, ObjectStates, RequestStates, RequestOperations
+from kubedriver.kubegroup.exceptions import PersistenceError, InvalidUpdateError, RecordNotFoundError
+from kubedriver.kubegroup.record_persistence import ConfigMapRecordPersistence, ConfigMapStorageFormat
+from kubedriver.kubegroup.records import EntityGroupRecord, ObjectRecord, RequestRecord, ObjectStates, RequestStates, RequestOperations
 
 def json_body(body):
     return json.dumps(body)
@@ -33,11 +33,11 @@ class TestConfigMapStorageFormat(unittest.TestCase):
                     '  namespace: NamespaceA\n' + \
                     '  name: ConfigB'
         objects.append(ObjectRecord(second_object_config, state=ObjectStates.DELETE_FAILED, error='An error'))
-        group = GroupRecord('123', objects, requests=requests)
+        group = EntityGroupRecord('123', objects, requests=requests)
         dump = ConfigMapStorageFormat().dump_group_record(group)
         self.assertEqual(dump, {
-            GroupRecord.UID: '123',
-            GroupRecord.OBJECTS: yaml.safe_dump([
+            EntityGroupRecord.UID: '123',
+            EntityGroupRecord.OBJECTS: yaml.safe_dump([
                 {
                     ObjectRecord.CONFIG: first_object_config,
                     ObjectRecord.STATE: ObjectStates.CREATED,
@@ -49,7 +49,7 @@ class TestConfigMapStorageFormat(unittest.TestCase):
                     ObjectRecord.ERROR: 'An error'
                 }
             ]),
-            GroupRecord.REQUESTS: yaml.safe_dump([
+            EntityGroupRecord.REQUESTS: yaml.safe_dump([
                 {
                     RequestRecord.UID: '1',
                     RequestRecord.OPERATION: RequestOperations.CREATE,
@@ -77,8 +77,8 @@ class TestConfigMapStorageFormat(unittest.TestCase):
                     '  namespace: NamespaceA\n' + \
                     '  name: ConfigB'
         dump = {
-            GroupRecord.UID: '123',
-            GroupRecord.OBJECTS: yaml.safe_dump([
+            EntityGroupRecord.UID: '123',
+            EntityGroupRecord.OBJECTS: yaml.safe_dump([
                 {
                     ObjectRecord.CONFIG: first_object_config,
                     ObjectRecord.STATE: ObjectStates.CREATED,
@@ -90,7 +90,7 @@ class TestConfigMapStorageFormat(unittest.TestCase):
                     ObjectRecord.ERROR: 'An error'
                 }
             ]),
-            GroupRecord.REQUESTS: yaml.safe_dump([
+            EntityGroupRecord.REQUESTS: yaml.safe_dump([
                 {
                     RequestRecord.UID: '1',
                     RequestRecord.OPERATION: RequestOperations.CREATE,
@@ -106,7 +106,7 @@ class TestConfigMapStorageFormat(unittest.TestCase):
             ])
         }
         loaded = ConfigMapStorageFormat().load_group_record(dump)
-        self.assertIsInstance(loaded, GroupRecord)
+        self.assertIsInstance(loaded, EntityGroupRecord)
         self.assertEqual(loaded.uid, '123')
         self.assertEqual(len(loaded.objects), 2)
         self.assertEqual(loaded.objects[0].config, first_object_config)
@@ -147,7 +147,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
                     '  name: MyCustomA'
         object_records.append(ObjectRecord(first_object_config))
         object_records.append(ObjectRecord(second_object_config))
-        group_record = GroupRecord(uid, object_records)
+        group_record = EntityGroupRecord(uid, object_records)
         expected_object_records = [
             {
                 ObjectRecord.CONFIG: first_object_config,
@@ -165,9 +165,9 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
             ObjectConfiguration.NAMESPACE: self.storage_namespace
         }
         expected_cm_data = {
-            GroupRecord.UID: uid,
-            GroupRecord.OBJECTS: yaml.safe_dump(expected_object_records),
-            GroupRecord.REQUESTS: yaml.safe_dump([])
+            EntityGroupRecord.UID: uid,
+            EntityGroupRecord.OBJECTS: yaml.safe_dump(expected_object_records),
+            EntityGroupRecord.REQUESTS: yaml.safe_dump([])
         }
         return group_record, expected_cm_metadata, expected_cm_data
 
@@ -178,7 +178,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
                     'metadata: \n' + \
                     '  name: MyNamespace'
         object_records.append(ObjectRecord(object_config))
-        group_record = GroupRecord(uid, object_records)
+        group_record = EntityGroupRecord(uid, object_records)
         expected_object_records = [
             {
                 ObjectRecord.CONFIG: object_config,
@@ -191,9 +191,9 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
             ObjectConfiguration.NAMESPACE: self.storage_namespace
         }
         expected_cm_data = {
-            GroupRecord.UID: uid,
-            GroupRecord.OBJECTS: yaml.safe_dump(expected_object_records),
-            GroupRecord.REQUESTS: yaml.safe_dump([])
+            EntityGroupRecord.UID: uid,
+            EntityGroupRecord.OBJECTS: yaml.safe_dump(expected_object_records),
+            EntityGroupRecord.REQUESTS: yaml.safe_dump([])
         }
         return group_record, expected_cm_metadata, expected_cm_data
 
@@ -206,7 +206,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
                     '  namespace: NamespaceA\n' + \
                     '  name: ConfigA'
         object_records.append(ObjectRecord(object_config))
-        group_record = GroupRecord(uid, object_records)
+        group_record = EntityGroupRecord(uid, object_records)
         expected_object_records = [
             {
                 ObjectRecord.CONFIG: object_config,
@@ -219,9 +219,9 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
             ObjectConfiguration.NAMESPACE: self.storage_namespace
         }
         expected_cm_data = {
-            GroupRecord.UID: 'Capital-letters-and_underscore-removed',
-            GroupRecord.OBJECTS: yaml.safe_dump(expected_object_records),
-            GroupRecord.REQUESTS: yaml.safe_dump([])
+            EntityGroupRecord.UID: 'Capital-letters-and_underscore-removed',
+            EntityGroupRecord.OBJECTS: yaml.safe_dump(expected_object_records),
+            EntityGroupRecord.REQUESTS: yaml.safe_dump([])
         }
         return group_record, expected_cm_metadata, expected_cm_data
 
@@ -236,7 +236,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
         request_records = []
         request_records.append(RequestRecord('1', RequestOperations.CREATE, state=RequestStates.COMPLETE))
         request_records.append(RequestRecord('2', RequestOperations.DELETE, state=RequestStates.FAILED, error='An error'))
-        group_record = GroupRecord('123', object_records, requests=request_records)
+        group_record = EntityGroupRecord('123', object_records, requests=request_records)
         expected_object_records = [
             {
                 ObjectRecord.CONFIG: first_object_config,
@@ -263,9 +263,9 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
             ObjectConfiguration.NAMESPACE: self.storage_namespace
         }
         expected_cm_data = {
-            GroupRecord.UID: '123',
-            GroupRecord.OBJECTS: yaml.safe_dump(expected_object_records),
-            GroupRecord.REQUESTS: yaml.safe_dump(expected_request_records)
+            EntityGroupRecord.UID: '123',
+            EntityGroupRecord.OBJECTS: yaml.safe_dump(expected_object_records),
+            EntityGroupRecord.REQUESTS: yaml.safe_dump(expected_request_records)
         }
         return group_record, expected_cm_metadata, expected_cm_data
 

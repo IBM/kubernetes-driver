@@ -3,7 +3,8 @@ import yaml
 from unittest.mock import MagicMock
 from kubedriver.infrastructure import InfrastructureDriver
 from kubedriver.location import KubeDeploymentLocation
-from kubedriver.kubeobjects import ObjectConfigurationDocument, ObjectConfigurationGroup
+from kubedriver.kubeobjects import ObjectConfigurationDocument
+from kubedriver.kubegroup import EntityGroup
 from ignition.utils.propvaluemap import PropValueMap
 
 single_obj_template = '''
@@ -44,8 +45,8 @@ class TestInfrastructureDriver():#unittest.TestCase):
     def setUp(self):
         self.deployment_location_translator = MagicMock()
         self.location_based_management = MagicMock()
-        self.object_manager = MagicMock()
-        self.location_based_management.build_manager.return_value = self.object_manager
+        self.group_manager = MagicMock()
+        self.location_based_management.build_manager.return_value = self.group_manager
         self.templating = MagicMock()
         self.driver = InfrastructureDriver(self.deployment_location_translator, self.location_based_management, self.templating)
 
@@ -84,12 +85,12 @@ class TestInfrastructureDriver():#unittest.TestCase):
         result = self.driver.create_infrastructure(template, template_type, system_properties, properties, deployment_location)
         self.assertEqual(result.infrastructure_id, '{0}.{1}'.format(system_properties['resourceName'], system_properties['resourceId']))
         self.assertIsNotNone(result.request_id)
-        self.object_manager.create_object_group.assert_called_once()
-        args, kwargs = self.object_manager.create_object_group.call_args
+        self.group_manager.create_group.assert_called_once()
+        args, kwargs = self.group_manager.create_group.call_args
         self.assertEqual(len(args), 1)
-        self.assertIsInstance(args[0], ObjectConfigurationGroup)
+        self.assertIsInstance(args[0], EntityGroup)
         group = args[0]
-        self.assertEqual(group.identifier, '{0}.{1}'.format(system_properties['resourceName'], system_properties['resourceId']))
+        self.assertEqual(group.uid, '{0}.{1}'.format(system_properties['resourceName'], system_properties['resourceId']))
         self.assertEqual(len(group.objects), 1)
         obj = group.objects[0]
         self.assertEqual(obj.conf, yaml.safe_load(expected_doc_content))

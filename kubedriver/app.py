@@ -4,11 +4,10 @@ import pathlib
 import os
 import kubedriver.config as driverconfig
 from ignition.service.queue import JobQueueCapability
-from kubedriver.kubeclient import KubeClientDirector
 from kubedriver.infrastructure import InfrastructureDriver
-from kubedriver.manager import KubeObjectManager, ManagerContextLoader
+from kubedriver.kubeclient import KubeClientDirector
+from kubedriver.kubegroup import EntityGroupManager, ManagerContextLoader
 from kubedriver.location import KubeDeploymentLocationTranslator
-from kubedriver.kubeobjects import Templating
 
 default_config_dir_path = str(pathlib.Path(driverconfig.__file__).parent.resolve())
 default_config_path = os.path.join(default_config_dir_path, 'default_config.yml')
@@ -21,11 +20,9 @@ def create_app():
     app_builder.include_file_config_properties('/var/kubedriver/kubedriver_config.yml', required=False)
     app_builder.include_environment_config_properties('KUBEDRIVER_CONFIG', required=False)
     app_builder.add_service(KubeDeploymentLocationTranslator)
-    app_builder.add_service(Templating)
     app_builder.add_service(ManagerContextLoader, KubeClientDirector())
-    app_builder.add_service(KubeObjectManager, context_loader=ManagerContextLoader, job_queue=JobQueueCapability)
-    app_builder.add_service(InfrastructureDriver, deployment_location_translator=KubeDeploymentLocationTranslator, object_manager=KubeObjectManager, \
-                                                    templating=Templating)
+    app_builder.add_service(EntityGroupManager, context_loader=ManagerContextLoader, job_queue=JobQueueCapability)
+    app_builder.add_service(InfrastructureDriver, deployment_location_translator=KubeDeploymentLocationTranslator, keg_manager=EntityGroupManager)
     return app_builder.configure()
 
 

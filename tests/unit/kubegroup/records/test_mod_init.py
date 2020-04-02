@@ -1,10 +1,10 @@
 import unittest
-import kubedriver.manager.records as records
+import kubedriver.kubegroup.records as records
 
 class TestImports(unittest.TestCase):
 
     def test_group_record(self):
-        imported = records.GroupRecord
+        imported = records.EntityGroupRecord
 
     def test_object_record(self):
         imported = records.ObjectRecord
