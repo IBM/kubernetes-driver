@@ -9,8 +9,8 @@ class TestImports(unittest.TestCase):
     def test_object_record(self):
         imported = records.ObjectRecord
 
-    def test_object_states(self):
-        imported = records.ObjectStates
+    def test_entity_states(self):
+        imported = records.EntityStates
 
     def test_request_record(self):
         imported = records.RequestRecord

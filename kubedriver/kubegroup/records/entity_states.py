@@ -1,4 +1,4 @@
-class ObjectStates:
+class EntityStates:
 
     PENDING = 'Pending'
     CREATED = 'Created'

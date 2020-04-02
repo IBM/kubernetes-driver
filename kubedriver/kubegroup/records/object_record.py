@@ -1,4 +1,4 @@
-from .object_states import ObjectStates
+from .entity_states import EntityStates
 
 class ObjectRecord:
 
@@ -6,7 +6,7 @@ class ObjectRecord:
     STATE = 'state'
     ERROR = 'error'
 
-    def __init__(self, config, state=ObjectStates.PENDING, error=None):
+    def __init__(self, config, state=EntityStates.PENDING, error=None):
         self.config = config
         self.state = state
         self.error = error

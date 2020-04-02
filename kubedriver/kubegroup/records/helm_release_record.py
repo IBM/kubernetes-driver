@@ -1,4 +1,4 @@
-from .object_states import ObjectStates
+from .entity_states import EntityStates
 
 class HelmReleaseRecord:
 
@@ -9,7 +9,7 @@ class HelmReleaseRecord:
     STATE = 'state'
     ERROR = 'error'
 
-    def __init__(self, chart, name, namespace, values, state=ObjectStates.PENDING, error=None):
+    def __init__(self, chart, name, namespace, values, state=EntityStates.PENDING, error=None):
         self.chart = chart
         self.name = name
         self.namespace = namespace

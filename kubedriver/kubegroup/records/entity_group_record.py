@@ -1,4 +1,4 @@
-from .object_states import ObjectStates
+from .entity_states import EntityStates
 from .object_record import ObjectRecord
 from .request_record import RequestRecord
 

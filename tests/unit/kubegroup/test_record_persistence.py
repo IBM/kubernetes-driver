@@ -9,7 +9,7 @@ from kubernetes.client.rest import ApiException
 from kubedriver.kubeobjects.object_config import ObjectConfiguration
 from kubedriver.kubegroup.exceptions import PersistenceError, InvalidUpdateError, RecordNotFoundError
 from kubedriver.kubegroup.record_persistence import ConfigMapRecordPersistence, ConfigMapStorageFormat
-from kubedriver.kubegroup.records import EntityGroupRecord, ObjectRecord, RequestRecord, ObjectStates, RequestStates, RequestOperations
+from kubedriver.kubegroup.records import EntityGroupRecord, ObjectRecord, RequestRecord, EntityStates, RequestStates, RequestOperations
 
 def json_body(body):
     return json.dumps(body)
@@ -26,13 +26,13 @@ class TestConfigMapStorageFormat(unittest.TestCase):
                     'metadata: \n' + \
                     '  namespace: NamespaceA\n' + \
                     '  name: ConfigA'
-        objects.append(ObjectRecord(first_object_config, state=ObjectStates.CREATED))
+        objects.append(ObjectRecord(first_object_config, state=EntityStates.CREATED))
         second_object_config = 'apiVersion: v1\n' + \
                     'kind: ConfigMap\n' + \
                     'metadata: \n' + \
                     '  namespace: NamespaceA\n' + \
                     '  name: ConfigB'
-        objects.append(ObjectRecord(second_object_config, state=ObjectStates.DELETE_FAILED, error='An error'))
+        objects.append(ObjectRecord(second_object_config, state=EntityStates.DELETE_FAILED, error='An error'))
         group = EntityGroupRecord('123', objects, requests=requests)
         dump = ConfigMapStorageFormat().dump_group_record(group)
         self.assertEqual(dump, {
@@ -40,12 +40,12 @@ class TestConfigMapStorageFormat(unittest.TestCase):
             EntityGroupRecord.OBJECTS: yaml.safe_dump([
                 {
                     ObjectRecord.CONFIG: first_object_config,
-                    ObjectRecord.STATE: ObjectStates.CREATED,
+                    ObjectRecord.STATE: EntityStates.CREATED,
                     ObjectRecord.ERROR: None
                 },
                 {
                     ObjectRecord.CONFIG: second_object_config,
-                    ObjectRecord.STATE: ObjectStates.DELETE_FAILED,
+                    ObjectRecord.STATE: EntityStates.DELETE_FAILED,
                     ObjectRecord.ERROR: 'An error'
                 }
             ]),
@@ -81,12 +81,12 @@ class TestConfigMapStorageFormat(unittest.TestCase):
             EntityGroupRecord.OBJECTS: yaml.safe_dump([
                 {
                     ObjectRecord.CONFIG: first_object_config,
-                    ObjectRecord.STATE: ObjectStates.CREATED,
+                    ObjectRecord.STATE: EntityStates.CREATED,
                     ObjectRecord.ERROR: None
                 },
                 {
                     ObjectRecord.CONFIG: second_object_config,
-                    ObjectRecord.STATE: ObjectStates.DELETE_FAILED,
+                    ObjectRecord.STATE: EntityStates.DELETE_FAILED,
                     ObjectRecord.ERROR: 'An error'
                 }
             ]),
@@ -110,10 +110,10 @@ class TestConfigMapStorageFormat(unittest.TestCase):
         self.assertEqual(loaded.uid, '123')
         self.assertEqual(len(loaded.objects), 2)
         self.assertEqual(loaded.objects[0].config, first_object_config)
-        self.assertEqual(loaded.objects[0].state, ObjectStates.CREATED)
+        self.assertEqual(loaded.objects[0].state, EntityStates.CREATED)
         self.assertEqual(loaded.objects[0].error, None)
         self.assertEqual(loaded.objects[1].config, second_object_config)
-        self.assertEqual(loaded.objects[1].state, ObjectStates.DELETE_FAILED)
+        self.assertEqual(loaded.objects[1].state, EntityStates.DELETE_FAILED)
         self.assertEqual(loaded.objects[1].error, 'An error')
         self.assertEqual(len(loaded.requests), 2)
         self.assertEqual(loaded.requests[0].uid, '1')

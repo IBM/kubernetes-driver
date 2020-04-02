@@ -2,7 +2,7 @@ import uuid
 import logging
 from kubernetes.client.rest import ApiException
 from ignition.service.framework import Service, Capability
-from .records import ObjectRecord, EntityGroupRecord, RequestRecord, HelmReleaseRecord, ObjectStates, RequestStates, RequestOperations
+from .records import ObjectRecord, EntityGroupRecord, RequestRecord, HelmReleaseRecord, EntityStates, RequestStates, RequestOperations
 from .exceptions import RequestInvalidStateError, RecordNotFoundError, RecordNotFoundError
 from kubedriver.kubeclient import ErrorReader, DEFAULT_NAMESPACE
 from kubedriver.kubeobjects import ObjectConfiguration
@@ -54,7 +54,7 @@ class EntityGroupManager(Service, Capability):
     def __initiate_record(self, context, entity_group):
         object_records = []
         for object_conf in entity_group.objects:
-            object_records.append(ObjectRecord(object_conf.config, state=ObjectStates.PENDING))
+            object_records.append(ObjectRecord(object_conf.config, state=EntityStates.PENDING))
         helm_records = []
         for helm_release in entity_group.helm_releases:
             helm_records.append(HelmReleaseRecord(helm_release.chart, helm_release.name, helm_release.namespace, helm_release.values))
@@ -137,13 +137,13 @@ class EntityGroupManager(Service, Capability):
         for object_record in group_record.objects:
             try:
                 context.api_ctl.create_object(ObjectConfiguration(object_record.config), default_namespace=context.location.default_object_namespace)
-                object_record.state = ObjectStates.CREATED
+                object_record.state = EntityStates.CREATED
                 object_record.error = None
             except Exception as e:
                 logger.exception(f'Create attempt of Object ({object_record}) in Group \'{group_record.uid}\' failed')
                 error_msg = str(e)
                 request_errors.append(error_msg)
-                object_record.state = ObjectStates.CREATE_FAILED
+                object_record.state = EntityStates.CREATE_FAILED
                 object_record.error = error_msg
         return request_errors
 
@@ -152,13 +152,13 @@ class EntityGroupManager(Service, Capability):
         for helm_record in group_record.helm_releases:
             try:
                 context.helm_client.install(helm_record.chart, helm_record.name, helm_record.namespace, helm_record.values)
-                helm_record.state = ObjectStates.CREATED
+                helm_record.state = EntityStates.CREATED
                 helm_record.error = None
             except Exception as e:
                 logger.exception(f'Create attempt of Helm Release ({helm_record}) in Group \'{group_record.uid}\' failed')
                 error_msg = str(e)
                 request_errors.append(error_msg)
-                helm_record.state = ObjectStates.CREATE_FAILED
+                helm_record.state = EntityStates.CREATE_FAILED
                 helm_record.error = error_msg
         return request_errors
 
@@ -174,7 +174,7 @@ class EntityGroupManager(Service, Capability):
         request_errors = []
         for object_record in group_record.objects:
             try:
-                if object_record.state != ObjectStates.CREATE_FAILED and object_record.state != ObjectStates.DELETED:
+                if object_record.state != EntityStates.CREATE_FAILED and object_record.state != EntityStates.DELETED:
                     object_config = ObjectConfiguration(object_record.config)
                     namespace = object_config.namespace
                     if namespace is None:
@@ -189,12 +189,12 @@ class EntityGroupManager(Service, Capability):
                         else:
                             # Raise original error and trackeback
                             raise
-                    object_record.state = ObjectStates.DELETED
+                    object_record.state = EntityStates.DELETED
                     object_record.error = None
             except Exception as e:
                 error_msg = str(e)
                 request_errors.append(error_msg)
-                object_record.state = ObjectStates.DELETE_FAILED
+                object_record.state = EntityStates.DELETE_FAILED
                 object_record.error = error_msg
         return request_errors
 
@@ -202,16 +202,16 @@ class EntityGroupManager(Service, Capability):
         request_errors = []
         for helm_record in group_record.helm_releases:
             try:
-                if helm_record.state != ObjectStates.CREATE_FAILED and helm_record.state != ObjectStates.DELETED:
+                if helm_record.state != EntityStates.CREATE_FAILED and helm_record.state != EntityStates.DELETED:
                     context.helm_client.purge(helm_record.name)
                     #TODO handle "Not found"
-                    helm_record.state = ObjectStates.DELETED
+                    helm_record.state = EntityStates.DELETED
                     helm_record.error = None
             except Exception as e:
                 logger.exception(f'Delete attempt of Helm Release ({helm_record}) in Group \'{group_record.uid}\' failed')
                 error_msg = str(e)
                 request_errors.append(error_msg)
-                helm_record.state = ObjectStates.DELETE_FAILED
+                helm_record.state = EntityStates.DELETE_FAILED
                 helm_record.error = error_msg
         return request_errors
 
