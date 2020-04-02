@@ -54,7 +54,7 @@ class KubeApiController:
 
     def __build_builtin_create_arguments(self, object_config, is_namespaced, default_namespace):
         args = {
-            'body': object_config.config
+            'body': object_config.data
         }
         if is_namespaced:
             args['namespace'] = self.__determine_namespace(object_config, default_namespace)
@@ -67,7 +67,7 @@ class KubeApiController:
             'group': group,
             'version': version,
             'plural': plural,
-            'body': object_config.config
+            'body': object_config.data
         }
         if is_namespaced:
             args['namespace'] = self.__determine_namespace(object_config, default_namespace)
@@ -81,7 +81,7 @@ class KubeApiController:
 
     def __build_builtin_update_arguments(self, object_config, is_namespaced, default_namespace):
         args = {
-            'body': object_config.config,
+            'body': object_config.data,
             'name': object_config.name
         }
         if is_namespaced:
@@ -95,7 +95,7 @@ class KubeApiController:
             'group': group,
             'version': version,
             'plural': plural,
-            'body': object_config.config,
+            'body': object_config.data,
             'name': object_config.name
         }
         if is_namespaced:

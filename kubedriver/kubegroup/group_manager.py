@@ -54,7 +54,7 @@ class EntityGroupManager(Service, Capability):
     def __initiate_record(self, context, entity_group):
         object_records = []
         for object_conf in entity_group.objects:
-            object_records.append(ObjectRecord(object_conf.config, state=EntityStates.PENDING))
+            object_records.append(ObjectRecord(object_conf.data, state=EntityStates.PENDING))
         helm_records = []
         for helm_release in entity_group.helm_releases:
             helm_records.append(HelmReleaseRecord(helm_release.chart, helm_release.name, helm_release.namespace, helm_release.values))

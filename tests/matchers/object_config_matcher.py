@@ -10,7 +10,7 @@ class ObjectConfigurationMatcher:
         self.expected_config = ObjectConfiguration(expected_raw_conf)
 
     def __eq__(self, other):
-        return other.config == self.expected_config.config
+        return other.data == self.expected_config.data
 
     def __str__(self):
         return str(self.expected_config)

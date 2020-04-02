@@ -45,8 +45,8 @@ class TestEntityGroupManager(unittest.TestCase):
         group = self.__build_group_with_two_objects()
         group_record = EntityGroupRecord(group.uid,
             objects=[
-                ObjectRecord(group.objects[0].config, state=EntityStates.CREATED, error=None),
-                ObjectRecord(group.objects[1].config, state=EntityStates.CREATED, error=None)
+                ObjectRecord(group.objects[0].data, state=EntityStates.CREATED, error=None),
+                ObjectRecord(group.objects[1].data, state=EntityStates.CREATED, error=None)
             ],
             requests=[
                 RequestRecord('create123', RequestOperations.CREATE, state=RequestStates.COMPLETE, error=None)
@@ -58,7 +58,7 @@ class TestEntityGroupManager(unittest.TestCase):
         group = self.__build_group_with_object_and_helm_release()
         group_record = EntityGroupRecord(group.uid,
             objects=[
-                ObjectRecord(group.objects[0].config, state=EntityStates.CREATED, error=None)
+                ObjectRecord(group.objects[0].data, state=EntityStates.CREATED, error=None)
             ],
             helm_releases=[
                 HelmReleaseRecord(group.helm_releases[0].chart, group.helm_releases[0].name, group.helm_releases[0].namespace, group.helm_releases[0].values, state=EntityStates.CREATED, error=None)
@@ -93,8 +93,8 @@ class TestEntityGroupManager(unittest.TestCase):
         group = self.__build_group_with_namespaced_object()
         group_record = EntityGroupRecord(group.uid,
             objects=[
-                ObjectRecord(group.objects[0].config, state=EntityStates.CREATED, error=None),
-                ObjectRecord(group.objects[1].config, state=EntityStates.CREATED, error=None)
+                ObjectRecord(group.objects[0].data, state=EntityStates.CREATED, error=None),
+                ObjectRecord(group.objects[1].data, state=EntityStates.CREATED, error=None)
             ],
             requests=[
                 RequestRecord('create123', RequestOperations.CREATE, state=RequestStates.COMPLETE, error=None)
@@ -106,8 +106,8 @@ class TestEntityGroupManager(unittest.TestCase):
         group = self.__build_group_with_two_objects()
         group_record = EntityGroupRecord(group.uid,
             objects=[
-                ObjectRecord(group.objects[0].config, state=EntityStates.CREATE_FAILED, error=None),
-                ObjectRecord(group.objects[1].config, state=EntityStates.CREATED, error=None)
+                ObjectRecord(group.objects[0].data, state=EntityStates.CREATE_FAILED, error=None),
+                ObjectRecord(group.objects[1].data, state=EntityStates.CREATED, error=None)
             ],
             requests=[
                 RequestRecord('create123', RequestOperations.CREATE, state=RequestStates.FAILED, error=None)
@@ -164,7 +164,7 @@ class TestEntityGroupManager(unittest.TestCase):
 
     def __configure_mock_create_object_failure(self, on_matching_config):
         def side_effect(config, *args, **kwargs):
-            if on_matching_config == config.config:
+            if on_matching_config == config.data:
                 raise testutils.MockedError('A mock create error')
         self.kube_api_ctl.create_object.side_effect = side_effect
 
@@ -199,8 +199,8 @@ class TestEntityGroupManager(unittest.TestCase):
         self.context_management.load.assert_called_once_with(self.kube_location)
         expected_group_record = EntityGroupRecord('123',
             objects=[
-                ObjectRecord(group.objects[0].config, state=EntityStates.PENDING, error=None),
-                ObjectRecord(group.objects[1].config, state=EntityStates.PENDING, error=None)
+                ObjectRecord(group.objects[0].data, state=EntityStates.PENDING, error=None),
+                ObjectRecord(group.objects[1].data, state=EntityStates.PENDING, error=None)
             ],
             requests=[
                 RequestRecord(request_id, RequestOperations.CREATE, state=RequestStates.PENDING, error=None)
@@ -221,7 +221,7 @@ class TestEntityGroupManager(unittest.TestCase):
         self.context.record_persistence.get.assert_called_once_with('123')
         expected_in_progress_record = EntityGroupRecord('123',
             objects=[
-                ObjectRecord(group.objects[0].config, state=EntityStates.PENDING, error=None),
+                ObjectRecord(group.objects[0].data, state=EntityStates.PENDING, error=None),
             ],
             helm_releases=[
                 HelmReleaseRecord(group.helm_releases[0].chart, group.helm_releases[0].name, group.helm_releases[0].namespace, group.helm_releases[0].values, state=EntityStates.PENDING),
@@ -232,7 +232,7 @@ class TestEntityGroupManager(unittest.TestCase):
         )
         expected_complete_record = EntityGroupRecord('123',
             objects=[
-                ObjectRecord(group.objects[0].config, state=EntityStates.CREATED, error=None)
+                ObjectRecord(group.objects[0].data, state=EntityStates.CREATED, error=None)
             ],
             helm_releases=[
                 HelmReleaseRecord(group.helm_releases[0].chart, group.helm_releases[0].name, group.helm_releases[0].namespace, group.helm_releases[0].values, state=EntityStates.CREATED),
@@ -252,8 +252,8 @@ class TestEntityGroupManager(unittest.TestCase):
         request_id = self.group_manager.create_group(self.kube_location, group)
         self.job_queue.process_next_job()
         self.context.api_ctl.create_object.assert_has_calls([
-            call(matchers.object_config(group.objects[0].config), default_namespace='default'),
-            call(matchers.object_config(group.objects[1].config), default_namespace='default')
+            call(matchers.object_config(group.objects[0].data), default_namespace='default'),
+            call(matchers.object_config(group.objects[1].data), default_namespace='default')
         ])
         self.assertEqual(len(self.context.api_ctl.create_object.call_args_list), 2)
 
@@ -263,20 +263,20 @@ class TestEntityGroupManager(unittest.TestCase):
         request_id = self.group_manager.create_group(self.kube_location, group)
         self.job_queue.process_next_job()
         self.context.api_ctl.create_object.assert_has_calls([
-            call(matchers.object_config(group.objects[0].config), default_namespace='AltDefault'),
-            call(matchers.object_config(group.objects[1].config), default_namespace='AltDefault')
+            call(matchers.object_config(group.objects[0].data), default_namespace='AltDefault'),
+            call(matchers.object_config(group.objects[1].data), default_namespace='AltDefault')
         ])
         self.assertEqual(len(self.context.api_ctl.create_object.call_args_list), 2)
 
     def test_process_create_job_updates_record_with_object_failure(self):
         group = self.__build_group_with_two_objects()
-        self.__configure_mock_create_object_failure(group.objects[0].config)
+        self.__configure_mock_create_object_failure(group.objects[0].data)
         request_id = self.group_manager.create_group(self.kube_location, group)
         self.job_queue.process_next_job()
         expected_complete_record = EntityGroupRecord('123',
             objects=[
-                ObjectRecord(group.objects[0].config, state=EntityStates.CREATE_FAILED, error='A mock create error'),
-                ObjectRecord(group.objects[1].config, state=EntityStates.CREATED, error=None)
+                ObjectRecord(group.objects[0].data, state=EntityStates.CREATE_FAILED, error='A mock create error'),
+                ObjectRecord(group.objects[1].data, state=EntityStates.CREATED, error=None)
             ],
             requests=[
                 RequestRecord(request_id, RequestOperations.CREATE, state=RequestStates.FAILED, error='Request encountered 1 error(s):\n\t1 - A mock create error')

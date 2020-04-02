@@ -40,7 +40,7 @@ class TestKubeClientGateway(unittest.TestCase):
         })
         self.api_ctl.create_object(object_config)
         self.client_director.determine_api_method_for_create_object.assert_called_once_with(self.base_kube_client, 'v1', 'ConfigMap')
-        self.create_method.assert_called_once_with(body=object_config.config, namespace='default')
+        self.create_method.assert_called_once_with(body=object_config.data, namespace='default')
     
     def test_create_object_with_namespaced_object_supply_default_namespace_in_call(self):
         self.__mock_create_namespaced_object()
@@ -57,7 +57,7 @@ class TestKubeClientGateway(unittest.TestCase):
         })
         self.api_ctl.create_object(object_config, default_namespace='AltDefault')
         self.client_director.determine_api_method_for_create_object.assert_called_once_with(self.base_kube_client, 'v1', 'ConfigMap')
-        self.create_method.assert_called_once_with(body=object_config.config, namespace='AltDefault')
+        self.create_method.assert_called_once_with(body=object_config.data, namespace='AltDefault')
     
     def test_create_object_with_namespaced_object_supply_default_namespace_in_init(self):
         self.__reconfigure_with_namespace('AltInitDefault')
@@ -75,7 +75,7 @@ class TestKubeClientGateway(unittest.TestCase):
         })
         self.api_ctl.create_object(object_config)
         self.client_director.determine_api_method_for_create_object.assert_called_once_with(self.base_kube_client, 'v1', 'ConfigMap')
-        self.create_method.assert_called_once_with(body=object_config.config, namespace='AltInitDefault')
+        self.create_method.assert_called_once_with(body=object_config.data, namespace='AltInitDefault')
 
     def test_create_object_with_namespaced_object_including_namespace_metadata(self):
         self.__mock_create_namespaced_object()
@@ -93,7 +93,7 @@ class TestKubeClientGateway(unittest.TestCase):
         })
         self.api_ctl.create_object(object_config, default_namespace='AltDefault')
         self.client_director.determine_api_method_for_create_object.assert_called_once_with(self.base_kube_client, 'v1', 'ConfigMap')
-        self.create_method.assert_called_once_with(body=object_config.config, namespace='NamespaceFromMetadata')
+        self.create_method.assert_called_once_with(body=object_config.data, namespace='NamespaceFromMetadata')
     
     def __mock_create_non_namespaced_object(self):
         self.create_method, self.create_is_namespaced, self.create_is_custom_object = (MagicMock(), False, False)
@@ -110,7 +110,7 @@ class TestKubeClientGateway(unittest.TestCase):
         })
         self.api_ctl.create_object(object_config)
         self.client_director.determine_api_method_for_create_object.assert_called_once_with(self.base_kube_client, 'v1', 'Namespace')
-        self.create_method.assert_called_once_with(body=object_config.config)
+        self.create_method.assert_called_once_with(body=object_config.data)
        
     def __mock_create_namespaced_custom_object(self, mock_group='customstuff', mock_version='v1alpha1', mock_plural='mycustoms'):
         self.create_method, self.create_is_namespaced, self.create_is_custom_object = (MagicMock(), True, True)
@@ -132,7 +132,7 @@ class TestKubeClientGateway(unittest.TestCase):
         self.api_ctl.create_object(object_config)
         self.client_director.determine_api_method_for_create_object.assert_called_once_with(self.base_kube_client, 'customstuff/v1alpha1', 'MyCustom')
         self.list_method.assert_called_once_with(field_selector='spec.group=customstuff,spec.names.kind=MyCustom')
-        self.create_method.assert_called_once_with(group='customstuff', version='v1alpha1', plural='mycustoms', body=object_config.config, namespace='default')
+        self.create_method.assert_called_once_with(group='customstuff', version='v1alpha1', plural='mycustoms', body=object_config.data, namespace='default')
     
     def test_create_object_with_namespaced_custom_object_supply_default_namespace_in_call(self):
         self.__mock_create_namespaced_custom_object()
@@ -145,7 +145,7 @@ class TestKubeClientGateway(unittest.TestCase):
         })
         self.api_ctl.create_object(object_config, default_namespace='AltDefault')
         self.client_director.determine_api_method_for_create_object.assert_called_once_with(self.base_kube_client, 'customstuff/v1alpha1', 'MyCustom')
-        self.create_method.assert_called_once_with(group='customstuff', version='v1alpha1', plural='mycustoms', body=object_config.config, namespace='AltDefault')
+        self.create_method.assert_called_once_with(group='customstuff', version='v1alpha1', plural='mycustoms', body=object_config.data, namespace='AltDefault')
     
     def test_create_object_with_namespaced_custom_object_supply_default_namespace_in_init(self):
         self.__reconfigure_with_namespace('AltInitDefault')
@@ -159,7 +159,7 @@ class TestKubeClientGateway(unittest.TestCase):
         })
         self.api_ctl.create_object(object_config)
         self.client_director.determine_api_method_for_create_object.assert_called_once_with(self.base_kube_client, 'customstuff/v1alpha1', 'MyCustom')
-        self.create_method.assert_called_once_with(group='customstuff', version='v1alpha1', plural='mycustoms', body=object_config.config, namespace='AltInitDefault')
+        self.create_method.assert_called_once_with(group='customstuff', version='v1alpha1', plural='mycustoms', body=object_config.data, namespace='AltInitDefault')
 
     def test_create_object_with_namespaced_custom_object_including_namespace_metadata(self):
         self.__mock_create_namespaced_custom_object()
@@ -173,7 +173,7 @@ class TestKubeClientGateway(unittest.TestCase):
         })
         self.api_ctl.create_object(object_config, default_namespace='AltDefault')
         self.client_director.determine_api_method_for_create_object.assert_called_once_with(self.base_kube_client, 'customstuff/v1alpha1', 'MyCustom')
-        self.create_method.assert_called_once_with(group='customstuff', version='v1alpha1', plural='mycustoms', body=object_config.config, namespace='NamespaceFromMetadata')
+        self.create_method.assert_called_once_with(group='customstuff', version='v1alpha1', plural='mycustoms', body=object_config.data, namespace='NamespaceFromMetadata')
 
     def test_create_object_with_namespaced_custom_object_plural_not_found(self):
         self.__mock_create_namespaced_custom_object()
@@ -203,7 +203,7 @@ class TestKubeClientGateway(unittest.TestCase):
         })
         self.api_ctl.create_object(object_config)
         self.client_director.determine_api_method_for_create_object.assert_called_once_with(self.base_kube_client, 'customstuff/v1alpha1', 'MyCustom')
-        self.create_method.assert_called_once_with(group='customstuff', version='v1alpha1', plural='mycustoms', body=object_config.config, namespace='default')
+        self.create_method.assert_called_once_with(group='customstuff', version='v1alpha1', plural='mycustoms', body=object_config.data, namespace='default')
 
     #Read
     def __mock_read_namespaced_object(self):
@@ -397,7 +397,7 @@ class TestKubeClientGateway(unittest.TestCase):
         })
         self.api_ctl.update_object(object_config)
         self.client_director.determine_api_method_for_update_object.assert_called_once_with(self.base_kube_client, 'v1', 'ConfigMap')
-        self.update_method.assert_called_once_with(name='Testing', body=object_config.config, namespace='default')
+        self.update_method.assert_called_once_with(name='Testing', body=object_config.data, namespace='default')
     
     def test_update_object_with_namespaced_object_supply_default_namespace_in_call(self):
         self.__mock_update_namespaced_object()
@@ -414,7 +414,7 @@ class TestKubeClientGateway(unittest.TestCase):
         })
         self.api_ctl.update_object(object_config, default_namespace='AltDefault')
         self.client_director.determine_api_method_for_update_object.assert_called_once_with(self.base_kube_client, 'v1', 'ConfigMap')
-        self.update_method.assert_called_once_with(name='Testing', body=object_config.config, namespace='AltDefault')
+        self.update_method.assert_called_once_with(name='Testing', body=object_config.data, namespace='AltDefault')
     
     def test_update_object_with_namespaced_object_supply_default_namespace_in_init(self):
         self.__reconfigure_with_namespace('AltInitDefault')
@@ -432,7 +432,7 @@ class TestKubeClientGateway(unittest.TestCase):
         })
         self.api_ctl.update_object(object_config)
         self.client_director.determine_api_method_for_update_object.assert_called_once_with(self.base_kube_client, 'v1', 'ConfigMap')
-        self.update_method.assert_called_once_with(name='Testing', body=object_config.config, namespace='AltInitDefault')
+        self.update_method.assert_called_once_with(name='Testing', body=object_config.data, namespace='AltInitDefault')
 
     def test_update_object_with_namespaced_object_including_namespace_metadata(self):
         self.__mock_update_namespaced_object()
@@ -450,7 +450,7 @@ class TestKubeClientGateway(unittest.TestCase):
         })
         self.api_ctl.update_object(object_config, default_namespace='AltDefault')
         self.client_director.determine_api_method_for_update_object.assert_called_once_with(self.base_kube_client, 'v1', 'ConfigMap')
-        self.update_method.assert_called_once_with(name='Testing', body=object_config.config, namespace='NamespaceFromMetadata')
+        self.update_method.assert_called_once_with(name='Testing', body=object_config.data, namespace='NamespaceFromMetadata')
     
     def __mock_update_non_namespaced_object(self):
         self.update_method, self.update_is_namespaced, self.update_is_custom_object = (MagicMock(), False, False)
@@ -467,7 +467,7 @@ class TestKubeClientGateway(unittest.TestCase):
         })
         self.api_ctl.update_object(object_config)
         self.client_director.determine_api_method_for_update_object.assert_called_once_with(self.base_kube_client, 'v1', 'Namespace')
-        self.update_method.assert_called_once_with(name='Testing', body=object_config.config)
+        self.update_method.assert_called_once_with(name='Testing', body=object_config.data)
        
     def __mock_update_namespaced_custom_object(self, mock_group='customstuff', mock_version='v1alpha1', mock_plural='mycustoms'):
         self.update_method, self.update_is_namespaced, self.update_is_custom_object = (MagicMock(), True, True)
@@ -489,7 +489,7 @@ class TestKubeClientGateway(unittest.TestCase):
         self.api_ctl.update_object(object_config)
         self.client_director.determine_api_method_for_update_object.assert_called_once_with(self.base_kube_client, 'customstuff/v1alpha1', 'MyCustom')
         self.list_method.assert_called_once_with(field_selector='spec.group=customstuff,spec.names.kind=MyCustom')
-        self.update_method.assert_called_once_with(name='Testing', group='customstuff', version='v1alpha1', plural='mycustoms', body=object_config.config, namespace='default')
+        self.update_method.assert_called_once_with(name='Testing', group='customstuff', version='v1alpha1', plural='mycustoms', body=object_config.data, namespace='default')
     
     def test_update_object_with_namespaced_custom_object_supply_default_namespace_in_call(self):
         self.__mock_update_namespaced_custom_object()
@@ -502,7 +502,7 @@ class TestKubeClientGateway(unittest.TestCase):
         })
         self.api_ctl.update_object(object_config, default_namespace='AltDefault')
         self.client_director.determine_api_method_for_update_object.assert_called_once_with(self.base_kube_client, 'customstuff/v1alpha1', 'MyCustom')
-        self.update_method.assert_called_once_with(name='Testing', group='customstuff', version='v1alpha1', plural='mycustoms', body=object_config.config, namespace='AltDefault')
+        self.update_method.assert_called_once_with(name='Testing', group='customstuff', version='v1alpha1', plural='mycustoms', body=object_config.data, namespace='AltDefault')
     
     def test_update_object_with_namespaced_custom_object_supply_default_namespace_in_init(self):
         self.__reconfigure_with_namespace('AltInitDefault')
@@ -516,7 +516,7 @@ class TestKubeClientGateway(unittest.TestCase):
         })
         self.api_ctl.update_object(object_config)
         self.client_director.determine_api_method_for_update_object.assert_called_once_with(self.base_kube_client, 'customstuff/v1alpha1', 'MyCustom')
-        self.update_method.assert_called_once_with(name='Testing', group='customstuff', version='v1alpha1', plural='mycustoms', body=object_config.config, namespace='AltInitDefault')
+        self.update_method.assert_called_once_with(name='Testing', group='customstuff', version='v1alpha1', plural='mycustoms', body=object_config.data, namespace='AltInitDefault')
 
     def test_update_object_with_namespaced_custom_object_including_namespace_metadata(self):
         self.__mock_update_namespaced_custom_object()
@@ -530,7 +530,7 @@ class TestKubeClientGateway(unittest.TestCase):
         })
         self.api_ctl.update_object(object_config, default_namespace='AltDefault')
         self.client_director.determine_api_method_for_update_object.assert_called_once_with(self.base_kube_client, 'customstuff/v1alpha1', 'MyCustom')
-        self.update_method.assert_called_once_with(name='Testing', group='customstuff', version='v1alpha1', plural='mycustoms', body=object_config.config, namespace='NamespaceFromMetadata')
+        self.update_method.assert_called_once_with(name='Testing', group='customstuff', version='v1alpha1', plural='mycustoms', body=object_config.data, namespace='NamespaceFromMetadata')
 
     def test_update_object_with_namespaced_custom_object_plural_not_found(self):
         self.__mock_update_namespaced_custom_object()
@@ -560,7 +560,7 @@ class TestKubeClientGateway(unittest.TestCase):
         })
         self.api_ctl.update_object(object_config)
         self.client_director.determine_api_method_for_update_object.assert_called_once_with(self.base_kube_client, 'customstuff/v1alpha1', 'MyCustom')
-        self.update_method.assert_called_once_with(name='Testing', group='customstuff', version='v1alpha1', plural='mycustoms', body=object_config.config, namespace='default')
+        self.update_method.assert_called_once_with(name='Testing', group='customstuff', version='v1alpha1', plural='mycustoms', body=object_config.data, namespace='default')
 
 class MockCrdResponse:
 
