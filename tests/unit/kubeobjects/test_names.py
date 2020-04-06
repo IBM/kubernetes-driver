@@ -6,51 +6,116 @@ class TestNameHelper(unittest.TestCase):
     def setUp(self):
         self.helper = NameHelper()
 
-    def test_safe_subdomain_name_removes_uppercase(self):
-        self.assertEqual(self.helper.safe_subdomain_name('TestingUppercase'), 'testinguppercase')
+    def test_is_valid_subdomain_name_allows_lowercase(self):
+        valid, reason = self.helper.is_valid_subdomain_name('testing')
+        self.assertIsNone(reason)
+        self.assertTrue(valid)
 
-    def test_safe_subdomain_name_replaces_underscore(self):
-        self.assertEqual(self.helper.safe_subdomain_name('testing_underscore'), 'testing-underscore')
+    def test_is_valid_subdomain_name_false_on_uppercase(self):
+        valid, reason = self.helper.is_valid_subdomain_name('tESting')
+        self.assertEqual(reason, 'Subdomain names must start and end with an alphanumeric character and consist of only lower case alphanumeric characters, \'-\' or \'.\' -> [\'Invalid at index 1\']')
+        self.assertFalse(valid)
 
-    def test_safe_subdomain_name_replaces_spaces(self):
-        self.assertEqual(self.helper.safe_subdomain_name('testing spaces'), 'testing-spaces')
+    def test_is_valid_subdomain_name_allows_dots(self):
+        valid, reason = self.helper.is_valid_subdomain_name('testing.dots')
+        self.assertIsNone(reason)
+        self.assertTrue(valid)
 
-    def test_safe_subdomain_name_allows_dots(self):
-        self.assertEqual(self.helper.safe_subdomain_name('testing.dots'), 'testing.dots')
+    def test_is_valid_subdomain_name_allows_dash(self):
+        valid, reason = self.helper.is_valid_subdomain_name('testing-dashes')
+        self.assertIsNone(reason)
+        self.assertTrue(valid)
 
-    def test_safe_subdomain_name_allows_dashes(self):
-        self.assertEqual(self.helper.safe_subdomain_name('testing-dashes'), 'testing-dashes')
+    def test_is_valid_subdomain_name_false_on_non_alphanumeric_start(self):
+        valid, reason = self.helper.is_valid_subdomain_name('-non-alphanum-start')
+        self.assertEqual(reason, 'Subdomain names must start and end with an alphanumeric character and consist of only lower case alphanumeric characters, \'-\' or \'.\' -> [\'Invalid start\']')
+        self.assertFalse(valid)
 
-    def test_safe_subdomain_name_removes_special_chars(self):
-        self.assertEqual(self.helper.safe_subdomain_name('testing$@:;!?()-*&^%£"#specials'), 'testing-specials')
+    def test_is_valid_subdomain_name_false_on_non_alphanumeric_end(self):
+        valid, reason = self.helper.is_valid_subdomain_name('non-alphanum-end-')
+        self.assertEqual(reason, 'Subdomain names must start and end with an alphanumeric character and consist of only lower case alphanumeric characters, \'-\' or \'.\' -> [\'Invalid at index 16\']')
+        self.assertFalse(valid)
 
-    def test_safe_subdomain_name_removes_repeated_dashes(self):
-        self.assertEqual(self.helper.safe_subdomain_name('testing--duplicate--dashes'), 'testing-duplicate-dashes')
-        self.assertEqual(self.helper.safe_subdomain_name('testing-duplicate--dashes'), 'testing-duplicate-dashes')
+    def test_is_valid_subdomain_name_false_on_special_character(self):
+        valid, reason = self.helper.is_valid_subdomain_name('testing@specialchars')
+        self.assertEqual(reason, 'Subdomain names must start and end with an alphanumeric character and consist of only lower case alphanumeric characters, \'-\' or \'.\' -> [\'Invalid at index 7\']')
+        self.assertFalse(valid)
 
-    def test_safe_subdomain_name_removes_repeated_dots(self):
-        self.assertEqual(self.helper.safe_subdomain_name('testing..duplicate..dots'), 'testing.duplicate.dots')
-        self.assertEqual(self.helper.safe_subdomain_name('testing..duplicate.dots'), 'testing.duplicate.dots')
+    def test_is_valid_subdomain_name_false_on_exceed_max_length(self):
+        test_str = 'a' * 254
+        valid, reason = self.helper.is_valid_subdomain_name(test_str)
+        self.assertEqual(reason, 'Subdomain names must contain no more than 253 characters -> Contained 254')
+        self.assertFalse(valid)
 
-    def test_safe_subdomain_name_raises_error_if_replacements_cause_empty_string(self):
-        with self.assertRaises(ValueError) as context:
-            self.helper.safe_subdomain_name('$@!')
-        self.assertEqual(str(context.exception), 'Converting name \'$@!\' to a Kubernetes safe name results in an empty string')
+    def test_is_valid_subdomain_name_allows_string_at_max_length(self):
+        test_str = 'a' * 253
+        valid, reason = self.helper.is_valid_subdomain_name(test_str)
+        self.assertIsNone(reason)
+        self.assertTrue(valid)
 
-    def test_safe_subdomain_name_ensures_alphanumeric_at_start(self):
-        self.assertEqual(self.helper.safe_subdomain_name('-testing-nonalpha'), 'testing-nonalpha')
-    
-    def test_safe_subdomain_name_ensures_alphanumeric_at_end(self):
-        self.assertEqual(self.helper.safe_subdomain_name('testing-nonalpha-'), 'testing-nonalpha')
+    def test_is_valid_subdomain_name_false_on_none(self):
+        valid, reason = self.helper.is_valid_subdomain_name(None)
+        self.assertEqual(reason, 'Subdomains cannot be empty')
+        self.assertFalse(valid)
 
-    def test_safe_subdomain_name_raises_error_if_search_for_alphanumeric_start_causes_empty_string(self):
-        with self.assertRaises(ValueError) as context:
-            self.helper.safe_subdomain_name('--.--')
-        self.assertEqual(str(context.exception), 'Converting name \'--.--\' to a Kubernetes safe name results in a string containing only non-alphanumeric characters (must start with alphanumeric). Current potential name when error raised: \'-\'')
+    def test_is_valid_subdomain_name_false_on_empty_string(self):
+        valid, reason = self.helper.is_valid_subdomain_name('')
+        self.assertEqual(reason, 'Subdomains cannot be empty')
+        self.assertFalse(valid)
 
-    def test_safe_subdomain_name_reduces_length(self):
-        self.assertEqual(self.helper.safe_subdomain_name(254*'a'), 253*'a')
+    def test_is_valid_label_name_allows_lowercase(self):
+        valid, reason = self.helper.is_valid_label_name('testing')
+        self.assertIsNone(reason)
+        self.assertTrue(valid)
 
-    def test_safe_subdomain_name_ensures_alphanumeric_at_end_after_reducing_length(self):
-        self.assertEqual(self.helper.safe_subdomain_name(253*'a' + '-'), 253*'a')
-        self.assertEqual(self.helper.safe_subdomain_name(252*'a' + '-a'), 252*'a')
+    def test_is_valid_label_name_false_on_uppercase(self):
+        valid, reason = self.helper.is_valid_label_name('tESting')
+        self.assertEqual(reason, 'Label names must start and end with an alphanumeric character and consist of only lower case alphanumeric characters or \'-\' -> [\'Invalid at index 1\']')
+        self.assertFalse(valid)
+
+    def test_is_valid_label_name_false_on_dots(self):
+        valid, reason = self.helper.is_valid_label_name('testing.dots')
+        self.assertEqual(reason, 'Label names must start and end with an alphanumeric character and consist of only lower case alphanumeric characters or \'-\' -> [\'Invalid at index 7\']')
+        self.assertFalse(valid)
+
+    def test_is_valid_label_name_allows_dash(self):
+        valid, reason = self.helper.is_valid_label_name('testing-dashes')
+        self.assertIsNone(reason)
+        self.assertTrue(valid)
+
+    def test_is_valid_label_name_false_on_non_alphanumeric_start(self):
+        valid, reason = self.helper.is_valid_label_name('-non-alphanum-start')
+        self.assertEqual(reason, 'Label names must start and end with an alphanumeric character and consist of only lower case alphanumeric characters or \'-\' -> [\'Invalid start\']')
+        self.assertFalse(valid)
+
+    def test_is_valid_label_name_false_on_non_alphanumeric_end(self):
+        valid, reason = self.helper.is_valid_label_name('non-alphanum-end-')
+        self.assertEqual(reason, 'Label names must start and end with an alphanumeric character and consist of only lower case alphanumeric characters or \'-\' -> [\'Invalid at index 16\']')
+        self.assertFalse(valid)
+
+    def test_is_valid_label_name_false_on_special_character(self):
+        valid, reason = self.helper.is_valid_label_name('testing@specialchars')
+        self.assertEqual(reason, 'Label names must start and end with an alphanumeric character and consist of only lower case alphanumeric characters or \'-\' -> [\'Invalid at index 7\']')
+        self.assertFalse(valid)
+
+    def test_is_valid_label_name_false_on_exceed_max_length(self):
+        test_str = 'a' * 64
+        valid, reason = self.helper.is_valid_label_name(test_str)
+        self.assertEqual(reason, 'Label names must contain no more than 63 characters -> Contained 64')
+        self.assertFalse(valid)
+
+    def test_is_valid_label_name_allows_string_at_max_length(self):
+        test_str = 'a' * 63
+        valid, reason = self.helper.is_valid_label_name(test_str)
+        self.assertIsNone(reason)
+        self.assertTrue(valid)
+
+    def test_is_valid_label_name_false_on_none(self):
+        valid, reason = self.helper.is_valid_label_name(None)
+        self.assertEqual(reason, 'Label names cannot be empty')
+        self.assertFalse(valid)
+
+    def test_is_valid_label_name_false_on_empty_string(self):
+        valid, reason = self.helper.is_valid_label_name('')
+        self.assertEqual(reason, 'Label names cannot be empty')
+        self.assertFalse(valid)

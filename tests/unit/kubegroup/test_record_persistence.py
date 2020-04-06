@@ -161,7 +161,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
             }
         ]
         expected_cm_metadata = {
-            ObjectConfiguration.NAME: 'kdr-{0}'.format(uid),
+            ObjectConfiguration.NAME: 'keg-{0}'.format(uid),
             ObjectConfiguration.NAMESPACE: self.storage_namespace
         }
         expected_cm_data = {
@@ -187,7 +187,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
             }
         ]
         expected_cm_metadata = {
-            ObjectConfiguration.NAME: 'kdr-{0}'.format(uid),
+            ObjectConfiguration.NAME: 'keg-{0}'.format(uid),
             ObjectConfiguration.NAMESPACE: self.storage_namespace
         }
         expected_cm_data = {
@@ -198,7 +198,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
         return group_record, expected_cm_metadata, expected_cm_data
 
     def __build_group_with_unsafe_uid(self):
-        uid = 'Capital-letters-and_underscore-removed'
+        uid = 'Capital-letters'
         object_records = []
         object_config = 'apiVersion: v1\n' + \
                     'kind: ConfigMap\n' + \
@@ -215,11 +215,11 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
             }
         ]
         expected_cm_metadata = {
-            ObjectConfiguration.NAME: 'kdr-capital-letters-and-underscore-removed',
+            ObjectConfiguration.NAME: 'keg-capital-letters',
             ObjectConfiguration.NAMESPACE: self.storage_namespace
         }
         expected_cm_data = {
-            EntityGroupRecord.UID: 'Capital-letters-and_underscore-removed',
+            EntityGroupRecord.UID: 'Capital-letters',
             EntityGroupRecord.OBJECTS: yaml.safe_dump(expected_object_records),
             EntityGroupRecord.REQUESTS: yaml.safe_dump([])
         }
@@ -259,7 +259,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
             }
         ]
         expected_cm_metadata = {
-            ObjectConfiguration.NAME: 'kdr-123',
+            ObjectConfiguration.NAME: 'keg-123',
             ObjectConfiguration.NAMESPACE: self.storage_namespace
         }
         expected_cm_data = {
@@ -308,8 +308,9 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
             ObjectConfiguration.METADATA: expected_cm_metadata,
             'data': expected_cm_data
         }
-        self.persistence.create(group_record)
-        self.kube_api_ctl.create_object.assert_called_once_with(matchers.object_config(expected_config_map), default_namespace=self.storage_namespace)
+        with self.assertRaises(PersistenceError) as context:
+            self.persistence.create(group_record)
+        self.assertEqual(str(context.exception), 'Could not generate valid ConfigMap name for Group \'keg-Capital-letters\': Subdomain names must start and end with an alphanumeric character and consist of only lower case alphanumeric characters, \'-\' or \'.\' -> [\'Invalid at index 3\']')
 
     def test_create_customise_cm_api_version(self):
         custom_cm_api_version = 'v2'
@@ -380,7 +381,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
         mock_config_map_result = V1ConfigMap(api_version='v1', binary_data=None, data=cm_data, kind='ConfigMap', metadata=cm_metadata)
         self.kube_api_ctl.read_object.return_value = mock_config_map_result
         result_group_record = self.persistence.get('123')
-        self.kube_api_ctl.read_object.assert_called_once_with('v1', 'ConfigMap', 'kdr-123', namespace=self.storage_namespace)
+        self.kube_api_ctl.read_object.assert_called_once_with('v1', 'ConfigMap', 'keg-123', namespace=self.storage_namespace)
         self.assertEqual(result_group_record.uid, '123')
         self.assertEqual(len(result_group_record.objects), 2)
         self.assertEqual(result_group_record.objects[0].config, group_record.objects[0].config)
@@ -395,7 +396,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
         mock_config_map_result = V1ConfigMap(api_version='v1', binary_data=None, data=cm_data, kind='ConfigMap', metadata=cm_metadata)
         self.kube_api_ctl.read_object.return_value = mock_config_map_result
         result_group_record = self.persistence.get('123')
-        self.kube_api_ctl.read_object.assert_called_once_with('v1', 'ConfigMap', 'kdr-123', namespace=self.storage_namespace)
+        self.kube_api_ctl.read_object.assert_called_once_with('v1', 'ConfigMap', 'keg-123', namespace=self.storage_namespace)
         self.assertEqual(result_group_record.uid, '123')
         self.assertEqual(len(result_group_record.requests), 2)
         self.assertEqual(result_group_record.requests[0].uid, group_record.requests[0].uid)
@@ -412,7 +413,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
         mock_config_map_result = V1ConfigMap(api_version='v1', binary_data=None, data=cm_data, kind='ConfigMap', metadata=cm_metadata)
         self.kube_api_ctl.read_object.return_value = mock_config_map_result
         result_group_record = self.persistence.get('123')
-        self.kube_api_ctl.read_object.assert_called_once_with('v1', 'ConfigMap', 'kdr-123', namespace=self.storage_namespace)
+        self.kube_api_ctl.read_object.assert_called_once_with('v1', 'ConfigMap', 'keg-123', namespace=self.storage_namespace)
         self.assertEqual(result_group_record.uid, '123')
         self.assertEqual(len(result_group_record.objects), 1)
         self.assertEqual(result_group_record.objects[0].config, group_record.objects[0].config)
@@ -425,7 +426,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
         mock_config_map_result = V1ConfigMap(api_version='v2', binary_data=None, data=cm_data, kind='ConfigMap', metadata=cm_metadata)
         self.kube_api_ctl.read_object.return_value = mock_config_map_result
         result_group_record = self.persistence.get('123')
-        self.kube_api_ctl.read_object.assert_called_once_with('v2', 'ConfigMap', 'kdr-123', namespace=self.storage_namespace)
+        self.kube_api_ctl.read_object.assert_called_once_with('v2', 'ConfigMap', 'keg-123', namespace=self.storage_namespace)
     
     def test_get_customise_cm_kind(self):
         self.__rebuild_persistence_with_cm_kind('SuperConfigMap')
@@ -433,7 +434,7 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
         mock_config_map_result = V1ConfigMap(api_version='v1', binary_data=None, data=cm_data, kind='SuperConfigMap', metadata=cm_metadata)
         self.kube_api_ctl.read_object.return_value = mock_config_map_result
         result_group_record = self.persistence.get('123')
-        self.kube_api_ctl.read_object.assert_called_once_with('v1', 'SuperConfigMap', 'kdr-123', namespace=self.storage_namespace)
+        self.kube_api_ctl.read_object.assert_called_once_with('v1', 'SuperConfigMap', 'keg-123', namespace=self.storage_namespace)
 
     def test_get_raises_not_found_error_on_not_found(self):
         self.kube_api_ctl.read_object.side_effect = ApiException(http_resp=testutils.KubeHttpResponse(status=404, reason='Not Found', data=json_body({'reason': 'NotFound'})))
@@ -455,17 +456,17 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
 
     def test_delete(self):
         self.persistence.delete('123')
-        self.kube_api_ctl.delete_object.assert_called_once_with('v1', 'ConfigMap', 'kdr-123', namespace=self.storage_namespace)
+        self.kube_api_ctl.delete_object.assert_called_once_with('v1', 'ConfigMap', 'keg-123', namespace=self.storage_namespace)
 
     def test_delete_customise_cm_api_version(self):
         self.__rebuild_persistence_with_cm_api_version('v2')
         result_group_record = self.persistence.delete('123')
-        self.kube_api_ctl.delete_object.assert_called_once_with('v2', 'ConfigMap', 'kdr-123', namespace=self.storage_namespace)
+        self.kube_api_ctl.delete_object.assert_called_once_with('v2', 'ConfigMap', 'keg-123', namespace=self.storage_namespace)
     
     def test_delete_customise_cm_kind(self):
         self.__rebuild_persistence_with_cm_kind('SuperConfigMap')
         result_group_record = self.persistence.delete('123')
-        self.kube_api_ctl.delete_object.assert_called_once_with('v1', 'SuperConfigMap', 'kdr-123', namespace=self.storage_namespace)
+        self.kube_api_ctl.delete_object.assert_called_once_with('v1', 'SuperConfigMap', 'keg-123', namespace=self.storage_namespace)
 
     def test_delete_raises_not_found_error_on_not_found(self):
         self.kube_api_ctl.delete_object.side_effect = ApiException(http_resp=testutils.KubeHttpResponse(status=404, reason='Not Found', data=json_body({'reason': 'NotFound'})))
@@ -515,8 +516,9 @@ class TestConfigMapRecordPersistence(unittest.TestCase):
             ObjectConfiguration.METADATA: expected_cm_metadata,
             'data': expected_cm_data
         }
-        self.persistence.update(group_record)
-        self.kube_api_ctl.update_object.assert_called_once_with(matchers.object_config(expected_config_map), default_namespace=self.storage_namespace)
+        with self.assertRaises(PersistenceError) as context:
+            self.persistence.update(group_record)
+        self.assertEqual(str(context.exception), 'Could not generate valid ConfigMap name for Group \'keg-Capital-letters\': Subdomain names must start and end with an alphanumeric character and consist of only lower case alphanumeric characters, \'-\' or \'.\' -> [\'Invalid at index 3\']')
 
     def test_update_customise_cm_api_version(self):
         custom_cm_api_version = 'v2'

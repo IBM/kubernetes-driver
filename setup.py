@@ -16,7 +16,7 @@ setup(
     packages=find_namespace_packages(include=['kubedriver*']),
     include_package_data=True,
     install_requires=[
-        'ignition-framework==1.0.0',
+        'ignition-framework==1.2.0.dev0',
         'Jinja2>=2.7',
         'kubernetes>=10.0.0,<11.0',
         'uwsgi>=2.0.18,<3.0',

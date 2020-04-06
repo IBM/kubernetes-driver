@@ -175,11 +175,11 @@ class ConfigMapRecordPersistence:
             self.__raise_error('delete', e, group_uid)
 
     def __determine_config_map_name(self, group_uid):
-        try:
-            potential_name = 'kdr-{0}'.format(group_uid)
-            return namehelper.safe_subdomain_name(potential_name)
-        except ValueError as e:
-            raise PersistenceError(f'Could not generate valid ConfigMap name for Group \'{group_uid}\': {str(e)}') from e
+        potential_name = 'keg-{0}'.format(group_uid)
+        valid, reason = namehelper.is_valid_subdomain_name(potential_name)
+        if not valid: 
+            raise PersistenceError(f'Could not generate valid ConfigMap name for Group \'{potential_name}\': {str(reason)}')
+        return potential_name
 
     def __build_config_map_for_record(self, group_record):
         cm_name = self.__determine_config_map_name(group_record.uid)

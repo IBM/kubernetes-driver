@@ -11,57 +11,22 @@ from ignition.service.framework import Service
 from ignition.utils.propvaluemap import PropValueMap
 from ignition.service.infrastructure import InfrastructureDriverCapability
 from kubedriver.helmobjects import HelmReleaseConfiguration
-from kubedriver.kubeobjects import ObjectConfigurationDocument, namehelper
+from kubedriver.kubeobjects import ObjectConfigurationDocument
 from kubedriver.kubegroup import EntityGroup
 from kubedriver.kubegroup.records import RequestStates, RequestOperations
 from kubedriver.templating import Template
-
 from kubedriver.helmclient import HelmClient
 
 class InfrastructureDriver(Service, InfrastructureDriverCapability):
 
-    def __init__(self, deployment_location_translator, keg_manager):
+    def __init__(self, deployment_location_translator, infrastructure_converter, keg_manager):
         self.deployment_location_translator = deployment_location_translator
+        self.infrastructure_converter = infrastructure_converter
         self.keg_manager = keg_manager
 
     def __translate_location(self, deployment_location_dict):
         kube_location = self.deployment_location_translator.translate(deployment_location_dict)
         return kube_location
-
-    def __build_render_properties(self, system_properties, properties):
-        render_props = {k:v for k,v in properties.items()}
-        sys_props = {k:v for k,v in system_properties.items()}
-        render_props['systemProperties'] = sys_props
-        self.__add_additional_render_properties(render_props)
-        return render_props
-
-    def __add_additional_render_properties(self, render_props):
-        system_properties = render_props['systemProperties']
-        if 'resourceId' in system_properties:
-            system_properties['resourceIdSd'] = namehelper.safe_subdomain_name(system_properties.get('resourceId'))
-            system_properties['resourceIdSubdomain'] = namehelper.safe_subdomain_name(system_properties.get('resourceId'))
-        if 'resourceName' in system_properties:
-            system_properties['resourceNameSd'] = namehelper.safe_subdomain_name(system_properties.get('resourceName'))
-            system_properties['resourceNameSubdomain'] = namehelper.safe_subdomain_name(system_properties.get('resourceName'))
-
-    def __process_template_to_objects(self, template, system_properties, properties):
-        render_props = self.__build_render_properties(system_properties, properties)
-        rendered_template = Template(template).render(render_props)
-        return ObjectConfigurationDocument(rendered_template).read()
-
-    def __resource_unique_uid(self, system_properties):
-        if 'resourceId' in system_properties and 'resourceName' in system_properties:
-            uid = '{0}.{1}'.format(system_properties.get('resourceName'), system_properties.get('resourceId'))
-        else:
-            uid = str(uuid.uuid4())
-        return uid
-
-    def __helm_release_name(self, system_properties):
-        if 'resourceName' in system_properties:
-            release_name = '{0}-{1}'.format(system_properties.get('resourceName'), datetime.datetime.now().timestamp()).replace('.', '-')
-        else:
-            release_name = str(uuid.uuid4())
-        return release_name
 
     def create_infrastructure(self, template, template_type, system_properties, properties, deployment_location):
         """
@@ -83,50 +48,9 @@ class InfrastructureDriver(Service, InfrastructureDriverCapability):
             ignition.service.infrastructure.InfrastructureError: there was an error handling this request
         """
         kube_location = self.__translate_location(deployment_location)
-        if template_type == 'Helm':
-            entity_group = self.__build_helm_group(kube_location, template, system_properties, properties)
-        elif template_type == 'ObjectConfiguration' or template_type == 'Kubernetes':
-            entity_group = self.__build_objects_group(kube_location, template, system_properties, properties)
-        else:
-            raise ValueError(f'Template type must be \'ObjectConfiguration\' or \'Kubernetes\' or \'Helm\' but was \'{template_type}\'')
+        entity_group = self.infrastructure_converter.convert_to_entity_group(template, template_type, system_properties, properties, kube_location)
         request_id = self.keg_manager.create_group(kube_location, entity_group)
         return infrastructure_model.CreateInfrastructureResponse(entity_group.uid, request_id)
-
-    def __build_objects_group(self, kube_location, template, system_properties, properties):
-        kube_objects = self.__process_template_to_objects(template, system_properties, properties)
-        uid = self.__resource_unique_uid(system_properties)
-        return EntityGroup(uid, objects=kube_objects)
-
-    def __build_helm_group(self, kube_location, template, system_properties, properties):
-        chart_path, values_path = self.__write_helm_template_to_disk(template)
-        self.__template_helm_values(values_path, system_properties, properties)
-        release_name = namehelper.safe_subdomain_name(self.__helm_release_name(system_properties))
-        namespace = kube_location.default_object_namespace
-        if 'namespace' in properties:
-            namespace = properties.get('namespace')
-        helm_release_configuration = HelmReleaseConfiguration(chart_path, release_name, namespace, values_path)
-        uid = self.__resource_unique_uid(system_properties)
-        return EntityGroup(uid, helm_releases=[helm_release_configuration])
-
-    def __template_helm_values(self, values_path, system_properties, properties):
-        render_props = self.__build_render_properties(system_properties, properties)
-        with open(values_path, 'r') as reader:
-            template_output = Template(reader.read()).render(render_props)
-        with open(values_path, 'w') as writer:
-            writer.write(template_output)
-
-    def __write_helm_template_to_disk(self, template):
-        charts_def = yaml.safe_load(template)
-        chart_string = charts_def.get('chart')
-        tmp_dir = tempfile.mkdtemp()
-        chart_path = os.path.join(tmp_dir, 'chart.tgz')
-        with open(chart_path, 'wb') as writer:
-            writer.write(base64.b64decode(chart_string))
-        values = charts_def.get('values', '')
-        values_path = os.path.join(tmp_dir, 'values.yaml')
-        with open(values_path, 'w') as writer:
-            writer.write(values)
-        return chart_path, values_path
 
     def get_infrastructure_task(self, infrastructure_id, request_id, deployment_location):
         """

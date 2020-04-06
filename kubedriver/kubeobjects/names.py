@@ -1,39 +1,57 @@
 import re
 
-SUBDOMAIN_REGEX = re.compile('[^a-z0-9.-]+')
-REPEATED_SEPARATOR_REGEX = re.compile('(?P<sep>['+re.escape('-.')+'])(?P=sep)')
 MAX_SUBDOMAIN_NAME_LENGTH = 253
+SUBDOMAIN_REGEX = re.compile('[a-z0-9]([-.a-z0-9]*[a-z0-9])?')
+MAX_LABEL_NAME_LENGTH = 63
+LABEL_REGEX = re.compile('[a-z0-9]([-a-z0-9]*[a-z0-9])?')
+SUBDOMAIN_INVALID_REASON_BASIC = 'Subdomain names must start and end with an alphanumeric character and consist of only lower case alphanumeric characters, \'-\' or \'.\''
+LABEL_INVALID_REASON_BASIC = 'Label names must start and end with an alphanumeric character and consist of only lower case alphanumeric characters or \'-\''
 
 class NameHelper:
 
-    def safe_subdomain_name(self, input_name):
-        if input_name is None:
-            raise ValueError('input_name cannot be None')
-        ## Names must be lowercase
-        potential_name = input_name.lower()
-        ## Replace spaces and underscores (a common separator char) with valid separator char dash ('-')
-        potential_name = potential_name.replace(' ', '-')
-        potential_name = potential_name.replace('_', '-')
-        ## Remove any remaining non valid characters (anything that is not a lowercase letter, number, dot or dash)
-        potential_name = SUBDOMAIN_REGEX.sub('', potential_name)
-        if len(potential_name) == 0:
-            raise ValueError('Converting name \'{0}\' to a Kubernetes safe name results in an empty string'.format(input_name))
-        ## If we have duplicate dots or dashes, reduce them to a single character
-        potential_name = REPEATED_SEPARATOR_REGEX.sub(r'\1', potential_name)
-        ## Ensure the name starts with an alphanumeric value
-        ## Remove each non-alphanumeric char from the start until we hit one
-        while not potential_name[0].isalnum():
-            if len(potential_name) == 1:
-                raise ValueError('Converting name \'{0}\' to a Kubernetes safe name results in a string containing only non-alphanumeric characters (must start with alphanumeric). Current potential name when error raised: \'{1}\''.format(input_name, potential_name))
-            potential_name = potential_name[1:]
-        ## Trim the name until it fits under the max length
-        if len(potential_name) > MAX_SUBDOMAIN_NAME_LENGTH: 
-            potential_name = potential_name[0:MAX_SUBDOMAIN_NAME_LENGTH]
-        ## Ensure name ends with an alphanumeric value
-        ## Remove each non-alphanumeric char from the end until we hit one
-        ## (this shouldn't be possible as we've stripped alpha numeric from the front so we'll have at least one character)
-        while not potential_name[-1].isalnum():
-            if len(potential_name) == 1:
-                raise ValueError('Converting name \'{0}\' to a Kubernetes safe name results in a string containing only non-alphanumeric characters (must end with alphanumeric). Current potential name when error raised: \'{1}\''.format(input_name, potential_name))
-            potential_name = potential_name[:-1]
-        return potential_name
+
+    def is_valid_subdomain_name(self, name):
+        if name is None:
+            return False, 'Subdomains cannot be empty'
+        if len(name) == 0: 
+            return False, 'Subdomains cannot be empty'
+        match = SUBDOMAIN_REGEX.match(name)
+        offences = []
+        if match is None:
+            offences.append('Invalid start')
+        else:
+            if match.start() != 0:
+                offences.append('Invalid start')
+            if match.end() != len(name):
+                offences.append(f'Invalid at index {match.end()}')
+        if len(offences) > 0:
+            reason = SUBDOMAIN_INVALID_REASON_BASIC
+            reason += f' -> {offences}'
+            return False, reason
+        if len(name) > MAX_SUBDOMAIN_NAME_LENGTH:
+            return False, f'Subdomain names must contain no more than {MAX_SUBDOMAIN_NAME_LENGTH} characters -> Contained {len(name)}'
+        return True, None
+
+    def is_valid_label_name(self, name):
+        if name is None:
+            return False, 'Label names cannot be empty'
+        if len(name) == 0: 
+            return False, 'Label names cannot be empty'
+        match = LABEL_REGEX.match(name)
+        offences = []
+        if match is None:
+            offences.append('Invalid start')
+        else:
+            if match.start() != 0:
+                offences.append('Invalid start')
+            if match.end() != len(name):
+                offences.append(f'Invalid at index {match.end()}')
+        if len(offences) > 0:
+            reason = LABEL_INVALID_REASON_BASIC
+            reason += f' -> {offences}'
+            return False, reason
+        if len(name) > MAX_LABEL_NAME_LENGTH:
+            return False, f'Label names must contain no more than {MAX_LABEL_NAME_LENGTH} characters -> Contained {len(name)}'
+        return True, None
+
+helper = NameHelper()

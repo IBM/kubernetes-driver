@@ -4,7 +4,7 @@ import pathlib
 import os
 import kubedriver.config as driverconfig
 from ignition.service.queue import JobQueueCapability
-from kubedriver.infrastructure import InfrastructureDriver
+from kubedriver.infrastructure import InfrastructureDriver, InfrastructureConverter
 from kubedriver.kubeclient import KubeClientDirector
 from kubedriver.kubegroup import EntityGroupManager, ManagerContextLoader
 from kubedriver.location import KubeDeploymentLocationTranslator
@@ -22,7 +22,8 @@ def create_app():
     app_builder.add_service(KubeDeploymentLocationTranslator)
     app_builder.add_service(ManagerContextLoader, KubeClientDirector())
     app_builder.add_service(EntityGroupManager, context_loader=ManagerContextLoader, job_queue=JobQueueCapability)
-    app_builder.add_service(InfrastructureDriver, deployment_location_translator=KubeDeploymentLocationTranslator, keg_manager=EntityGroupManager)
+    app_builder.add_service(InfrastructureConverter)
+    app_builder.add_service(InfrastructureDriver, deployment_location_translator=KubeDeploymentLocationTranslator, infrastructure_converter=InfrastructureConverter, keg_manager=EntityGroupManager)
     return app_builder.configure()
 
 
