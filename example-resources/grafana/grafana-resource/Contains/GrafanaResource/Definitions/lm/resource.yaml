@@ -11,3 +11,10 @@ default-driver:
 lifecycle:
   Create: {}
   Delete: {}
+properties:
+  adminUser:
+    type: string
+    default: root
+  adminPassword:
+    type: string
+    default: secret

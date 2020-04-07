@@ -5,6 +5,12 @@ properties:
   resourceManager:
     type: string
     default: brent
+  adminUser:
+    type: string
+    default: root
+  adminPassword:
+    type: string
+    default: secret
 designerLayout:
   description: >-
     The following information is solely used to determine the presentation of
@@ -31,4 +37,8 @@ composition:
         value: ${deploymentLocation}
       resourceManager:
         value: ${resourceManager}
+      adminUser:
+        value: ${adminUser}
+      adminPassword:
+        value: ${adminPassword}
     type: $lmctl:/contains:/GrafanaResource:/descriptor_name
