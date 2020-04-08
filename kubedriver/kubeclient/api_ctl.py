@@ -159,19 +159,21 @@ class KubeApiController:
 
     def __determine_custom_object_plural(self, group, version, kind):
         list_method, _, _ = self.client_director.determine_api_method_for_list_object(self.base_kube_client, self.crd_api_version, 'CustomResourceDefinition')
-        crds = list_method(field_selector='spec.group={0},spec.names.kind={1}'.format(group, kind))
+        crds = list_method()
         plural = None
-        for crd in crds:
-            is_version_match = crd.version == version
-            if not is_version_match:
-                crd_versions = crd.versions
-                for crd_version in crd_versions:
-                    if crd_version.name == version:
-                        is_version_match = True
-                        break
-            if is_version_match:
-                plural = crd.spec.names.plural
-                break
+        items = crds if type(crds) == list else crds.items
+        for crd in items:
+            if crd.spec.group == group and crd.spec.names.kind == kind:
+                is_version_match = crd.spec.version == version
+                if not is_version_match:
+                    crd_versions = crd.spec.versions
+                    for crd_version in crd_versions:
+                        if crd_version.name == version:
+                            is_version_match = True
+                            break
+                if is_version_match:
+                    plural = crd.spec.names.plural
+                    break
         if plural is None:
             raise UnrecognisedObjectKindError('Could not find a CRD for custom Resource with group \'{0}\', version \'{1}\', kind \'{2}\' - CRD required to determine the Resource plural'.format(group, version, kind))
         return plural

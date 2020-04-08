@@ -112,12 +112,12 @@ class TestKubeClientGateway(unittest.TestCase):
         self.client_director.determine_api_method_for_create_object.assert_called_once_with(self.base_kube_client, 'v1', 'Namespace')
         self.create_method.assert_called_once_with(body=object_config.data)
        
-    def __mock_create_namespaced_custom_object(self, mock_group='customstuff', mock_version='v1alpha1', mock_plural='mycustoms'):
+    def __mock_create_namespaced_custom_object(self, mock_group='customstuff', mock_kind='MyCustom', mock_version='v1alpha1', mock_plural='mycustoms'):
         self.create_method, self.create_is_namespaced, self.create_is_custom_object = (MagicMock(), True, True)
         self.client_director.determine_api_method_for_create_object.return_value = (self.create_method, self.create_is_namespaced, self.create_is_custom_object)
         self.list_method, self.list_is_namespaced, self.list_is_custom_object = (MagicMock(), False, False)
         self.client_director.determine_api_method_for_list_object.return_value = (self.list_method, self.list_is_namespaced, self.list_is_custom_object)
-        self.list_method.return_value = [MockCrdResponse(mock_group, mock_version, mock_plural)]
+        self.list_method.return_value = [MockCrdResponse(mock_group, mock_kind, mock_version, mock_plural)]
         self.client_director.parse_api_version.return_value = (mock_group, mock_version)
 
     def test_create_object_with_namespaced_custom_object(self):
@@ -131,7 +131,7 @@ class TestKubeClientGateway(unittest.TestCase):
         })
         self.api_ctl.create_object(object_config)
         self.client_director.determine_api_method_for_create_object.assert_called_once_with(self.base_kube_client, 'customstuff/v1alpha1', 'MyCustom')
-        self.list_method.assert_called_once_with(field_selector='spec.group=customstuff,spec.names.kind=MyCustom')
+        self.list_method.assert_called_once()
         self.create_method.assert_called_once_with(group='customstuff', version='v1alpha1', plural='mycustoms', body=object_config.data, namespace='default')
     
     def test_create_object_with_namespaced_custom_object_supply_default_namespace_in_call(self):
@@ -177,7 +177,7 @@ class TestKubeClientGateway(unittest.TestCase):
 
     def test_create_object_with_namespaced_custom_object_plural_not_found(self):
         self.__mock_create_namespaced_custom_object()
-        self.list_method.return_value = [MockCrdResponse('customstuff', 'someotherversion', 'mycustoms')]
+        self.list_method.return_value = [MockCrdResponse('customstuff', 'MyCustom', 'someotherversion', 'mycustoms')]
         object_config = ObjectConfiguration({
             'apiVersion': 'customstuff/v1alpha1',
             'kind': 'MyCustom',
@@ -193,7 +193,7 @@ class TestKubeClientGateway(unittest.TestCase):
 
     def test_create_object_with_namespaced_custom_object_plural_found_on_version_list_match(self):
         self.__mock_create_namespaced_custom_object()
-        self.list_method.return_value = [MockCrdResponse('customstuff', 'someotherversion', 'mycustoms', versions=[MockVersionEntry('v1alpha1')])]
+        self.list_method.return_value = [MockCrdResponse('customstuff', 'MyCustom', 'someotherversion', 'mycustoms', versions=[MockVersionEntry('v1alpha1')])]
         object_config = ObjectConfiguration({
             'apiVersion': 'customstuff/v1alpha1',
             'kind': 'MyCustom',
@@ -245,19 +245,19 @@ class TestKubeClientGateway(unittest.TestCase):
         self.client_director.determine_api_method_for_read_object.assert_called_once_with(self.base_kube_client, 'v1', 'Namespace')
         self.read_method.assert_called_once_with(name='Testing')
        
-    def __mock_read_namespaced_custom_object(self, mock_group='customstuff', mock_version='v1alpha1', mock_plural='mycustoms'):
+    def __mock_read_namespaced_custom_object(self, mock_group='customstuff', mock_kind='MyCustom', mock_version='v1alpha1', mock_plural='mycustoms'):
         self.read_method, self.read_is_namespaced, self.read_is_custom_object = (MagicMock(), True, True)
         self.client_director.determine_api_method_for_read_object.return_value = (self.read_method, self.read_is_namespaced, self.read_is_custom_object)
         self.list_method, self.list_is_namespaced, self.list_is_custom_object = (MagicMock(), False, False)
         self.client_director.determine_api_method_for_list_object.return_value = (self.list_method, self.list_is_namespaced, self.list_is_custom_object)
-        self.list_method.return_value = [MockCrdResponse(mock_group, mock_version, mock_plural)]
+        self.list_method.return_value = [MockCrdResponse(mock_group, mock_kind, mock_version, mock_plural)]
         self.client_director.parse_api_version.return_value = (mock_group, mock_version)
 
     def test_read_object_with_namespaced_custom_object(self):
         self.__mock_read_namespaced_custom_object()
         self.api_ctl.read_object('customstuff/v1alpha1', 'MyCustom', 'Testing')
         self.client_director.determine_api_method_for_read_object.assert_called_once_with(self.base_kube_client, 'customstuff/v1alpha1', 'MyCustom')
-        self.list_method.assert_called_once_with(field_selector='spec.group=customstuff,spec.names.kind=MyCustom')
+        self.list_method.assert_called_once()
         self.read_method.assert_called_once_with(group='customstuff', version='v1alpha1', plural='mycustoms', name='Testing', namespace='default')
     
     def test_read_object_with_namespaced_custom_object_supply_default_namespace_in_call(self):
@@ -275,7 +275,7 @@ class TestKubeClientGateway(unittest.TestCase):
 
     def test_read_object_with_namespaced_custom_object_plural_not_found(self):
         self.__mock_read_namespaced_custom_object()
-        self.list_method.return_value = [MockCrdResponse('customstuff', 'someotherversion', 'mycustoms')]
+        self.list_method.return_value = [MockCrdResponse('customstuff', 'MyCustom', 'someotherversion', 'mycustoms')]
         with self.assertRaises(UnrecognisedObjectKindError) as context:
             self.api_ctl.read_object('customstuff/v1alpha1', 'MyCustom', 'Testing')
         self.client_director.determine_api_method_for_read_object.assert_called_once_with(self.base_kube_client, 'customstuff/v1alpha1', 'MyCustom')
@@ -284,7 +284,7 @@ class TestKubeClientGateway(unittest.TestCase):
 
     def test_read_object_with_namespaced_custom_object_plural_found_on_version_list_match(self):
         self.__mock_read_namespaced_custom_object()
-        self.list_method.return_value = [MockCrdResponse('customstuff', 'someotherversion', 'mycustoms', versions=[MockVersionEntry('v1alpha1')])]
+        self.list_method.return_value = [MockCrdResponse('customstuff', 'MyCustom', 'someotherversion', 'mycustoms', versions=[MockVersionEntry('v1alpha1')])]
         self.api_ctl.read_object('customstuff/v1alpha1', 'MyCustom', 'Testing')
         self.client_director.determine_api_method_for_read_object.assert_called_once_with(self.base_kube_client, 'customstuff/v1alpha1', 'MyCustom')
         self.read_method.assert_called_once_with(group='customstuff', version='v1alpha1', plural='mycustoms', name='Testing', namespace='default')
@@ -323,19 +323,19 @@ class TestKubeClientGateway(unittest.TestCase):
         self.client_director.determine_api_method_for_delete_object.assert_called_once_with(self.base_kube_client, 'v1', 'Namespace')
         self.delete_method.assert_called_once_with(name='Testing')
        
-    def __mock_delete_namespaced_custom_object(self, mock_group='customstuff', mock_version='v1alpha1', mock_plural='mycustoms'):
+    def __mock_delete_namespaced_custom_object(self, mock_group='customstuff', mock_kind='MyCustom', mock_version='v1alpha1', mock_plural='mycustoms'):
         self.delete_method, self.delete_is_namespaced, self.delete_is_custom_object = (MagicMock(), True, True)
         self.client_director.determine_api_method_for_delete_object.return_value = (self.delete_method, self.delete_is_namespaced, self.delete_is_custom_object)
         self.list_method, self.list_is_namespaced, self.list_is_custom_object = (MagicMock(), False, False)
         self.client_director.determine_api_method_for_list_object.return_value = (self.list_method, self.list_is_namespaced, self.list_is_custom_object)
-        self.list_method.return_value = [MockCrdResponse(mock_group, mock_version, mock_plural)]
+        self.list_method.return_value = [MockCrdResponse(mock_group, mock_kind, mock_version, mock_plural)]
         self.client_director.parse_api_version.return_value = (mock_group, mock_version)
 
     def test_delete_object_with_namespaced_custom_object(self):
         self.__mock_delete_namespaced_custom_object()
         self.api_ctl.delete_object('customstuff/v1alpha1', 'MyCustom', 'Testing')
         self.client_director.determine_api_method_for_delete_object.assert_called_once_with(self.base_kube_client, 'customstuff/v1alpha1', 'MyCustom')
-        self.list_method.assert_called_once_with(field_selector='spec.group=customstuff,spec.names.kind=MyCustom')
+        self.list_method.assert_called_once()
         self.delete_method.assert_called_once_with(group='customstuff', version='v1alpha1', plural='mycustoms', name='Testing', namespace='default', body=DeleteOptionsMatcher())
     
     def test_delete_object_with_namespaced_custom_object_supply_default_namespace_in_call(self):
@@ -353,7 +353,7 @@ class TestKubeClientGateway(unittest.TestCase):
 
     def test_delete_object_with_namespaced_custom_object_plural_not_found(self):
         self.__mock_delete_namespaced_custom_object()
-        self.list_method.return_value = [MockCrdResponse('customstuff', 'someotherversion', 'mycustoms')]
+        self.list_method.return_value = [MockCrdResponse('customstuff', 'MyCustom', 'someotherversion', 'mycustoms')]
         with self.assertRaises(UnrecognisedObjectKindError) as context:
             self.api_ctl.delete_object('customstuff/v1alpha1', 'MyCustom', 'Testing')
         self.client_director.determine_api_method_for_delete_object.assert_called_once_with(self.base_kube_client, 'customstuff/v1alpha1', 'MyCustom')
@@ -362,7 +362,7 @@ class TestKubeClientGateway(unittest.TestCase):
 
     def test_delete_object_with_namespaced_custom_object_plural_found_on_version_list_match(self):
         self.__mock_delete_namespaced_custom_object()
-        self.list_method.return_value = [MockCrdResponse('customstuff', 'someotherversion', 'mycustoms', versions=[MockVersionEntry('v1alpha1')])]
+        self.list_method.return_value = [MockCrdResponse('customstuff', 'MyCustom', 'someotherversion', 'mycustoms', versions=[MockVersionEntry('v1alpha1')])]
         self.api_ctl.delete_object('customstuff/v1alpha1', 'MyCustom', 'Testing')
         self.client_director.determine_api_method_for_delete_object.assert_called_once_with(self.base_kube_client, 'customstuff/v1alpha1', 'MyCustom')
         self.delete_method.assert_called_once_with(group='customstuff', version='v1alpha1', plural='mycustoms', name='Testing', namespace='default', body=DeleteOptionsMatcher())
@@ -469,12 +469,12 @@ class TestKubeClientGateway(unittest.TestCase):
         self.client_director.determine_api_method_for_update_object.assert_called_once_with(self.base_kube_client, 'v1', 'Namespace')
         self.update_method.assert_called_once_with(name='Testing', body=object_config.data)
        
-    def __mock_update_namespaced_custom_object(self, mock_group='customstuff', mock_version='v1alpha1', mock_plural='mycustoms'):
+    def __mock_update_namespaced_custom_object(self, mock_group='customstuff', mock_kind='MyCustom', mock_version='v1alpha1', mock_plural='mycustoms'):
         self.update_method, self.update_is_namespaced, self.update_is_custom_object = (MagicMock(), True, True)
         self.client_director.determine_api_method_for_update_object.return_value = (self.update_method, self.update_is_namespaced, self.update_is_custom_object)
         self.list_method, self.list_is_namespaced, self.list_is_custom_object = (MagicMock(), False, False)
         self.client_director.determine_api_method_for_list_object.return_value = (self.list_method, self.list_is_namespaced, self.list_is_custom_object)
-        self.list_method.return_value = [MockCrdResponse(mock_group, mock_version, mock_plural)]
+        self.list_method.return_value = [MockCrdResponse(mock_group, mock_kind, mock_version, mock_plural)]
         self.client_director.parse_api_version.return_value = (mock_group, mock_version)
 
     def test_update_object_with_namespaced_custom_object(self):
@@ -488,7 +488,7 @@ class TestKubeClientGateway(unittest.TestCase):
         })
         self.api_ctl.update_object(object_config)
         self.client_director.determine_api_method_for_update_object.assert_called_once_with(self.base_kube_client, 'customstuff/v1alpha1', 'MyCustom')
-        self.list_method.assert_called_once_with(field_selector='spec.group=customstuff,spec.names.kind=MyCustom')
+        self.list_method.assert_called_once()
         self.update_method.assert_called_once_with(name='Testing', group='customstuff', version='v1alpha1', plural='mycustoms', body=object_config.data, namespace='default')
     
     def test_update_object_with_namespaced_custom_object_supply_default_namespace_in_call(self):
@@ -534,7 +534,7 @@ class TestKubeClientGateway(unittest.TestCase):
 
     def test_update_object_with_namespaced_custom_object_plural_not_found(self):
         self.__mock_update_namespaced_custom_object()
-        self.list_method.return_value = [MockCrdResponse('customstuff', 'someotherversion', 'mycustoms')]
+        self.list_method.return_value = [MockCrdResponse('customstuff', 'MyCustom', 'someotherversion', 'mycustoms')]
         object_config = ObjectConfiguration({
             'apiVersion': 'customstuff/v1alpha1',
             'kind': 'MyCustom',
@@ -550,7 +550,7 @@ class TestKubeClientGateway(unittest.TestCase):
 
     def test_update_object_with_namespaced_custom_object_plural_found_on_version_list_match(self):
         self.__mock_update_namespaced_custom_object()
-        self.list_method.return_value = [MockCrdResponse('customstuff', 'someotherversion', 'mycustoms', versions=[MockVersionEntry('v1alpha1')])]
+        self.list_method.return_value = [MockCrdResponse('customstuff', 'MyCustom', 'someotherversion', 'mycustoms', versions=[MockVersionEntry('v1alpha1')])]
         object_config = ObjectConfiguration({
             'apiVersion': 'customstuff/v1alpha1',
             'kind': 'MyCustom',
@@ -564,11 +564,17 @@ class TestKubeClientGateway(unittest.TestCase):
 
 class MockCrdResponse:
 
-    def __init__(self, group, version, plural, versions=[]):
+    def __init__(self, group, kind, version, plural, versions=[]):
+        self.spec = MockSpec(group, kind, version, plural, versions=versions)
+
+class MockSpec:
+
+    def __init__(self, group, kind, version, plural, versions=[]):
         self.group = group
         self.version = version
-        self.spec = MagicMock(names=MagicMock(plural=plural))
+        self.names = MagicMock(plural=plural, kind=kind)
         self.versions = versions
+
 
 class MockVersionEntry:
 

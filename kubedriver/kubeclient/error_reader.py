@@ -17,6 +17,9 @@ class ErrorReader:
         summary = f'ApiError ({error.status}, {error.reason})'
         body_valid, body = self.__load_body(error)
         if body_valid is True:
+            body_msg = body.get('message', None)
+            if body_msg is not None:
+                summary += f' -> {body_msg}'
             body_reason = body.get('reason', None)
             if body_reason is not None:
                 summary += f' -> {body_reason}'

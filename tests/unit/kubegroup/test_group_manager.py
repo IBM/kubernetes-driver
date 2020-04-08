@@ -38,7 +38,7 @@ class TestEntityGroupManager(unittest.TestCase):
                 'name': 'TestCM-B'
             }
         }))
-        group = EntityGroup('123', object_confs)
+        group = EntityGroup('test-123', object_confs)
         return group
 
     def __build_created_group_record_with_two_objects(self):
@@ -86,7 +86,7 @@ class TestEntityGroupManager(unittest.TestCase):
                 'namespace': 'SomeNamespace'
             }
         }))
-        group = EntityGroup('123', object_confs)
+        group = EntityGroup('test-123', object_confs)
         return group
 
     def __build_created_group_record_with_namespaced_object(self):
@@ -139,14 +139,14 @@ class TestEntityGroupManager(unittest.TestCase):
         }))
         helm_releases = []
         helm_releases.append(HelmReleaseConfiguration('mychart-a.tgz', 'release-a', 'namespace-a', 'someValue: 123'))
-        group = EntityGroup('123', objects=object_confs, helm_releases=helm_releases)
+        group = EntityGroup('test-123', objects=object_confs, helm_releases=helm_releases)
         return group
 
     def __build_group_with_two_helm_releases(self):
         helm_releases = []
         helm_releases.append(HelmReleaseConfiguration('mychart-a.tgz', 'release-a', 'namespace-a', 'someValue: 123'))
         helm_releases.append(HelmReleaseConfiguration('mychart-b.tgz', 'release-b', 'namespace-b', 'someValue: 456'))
-        group = EntityGroup('123', helm_releases=helm_releases)
+        group = EntityGroup('test-123', helm_releases=helm_releases)
         return group
 
     def __build_created_group_record_with_two_helm_releases(self):
@@ -197,7 +197,7 @@ class TestEntityGroupManager(unittest.TestCase):
         group = self.__build_group_with_two_objects()
         request_id = self.group_manager.create_group(self.kube_location, group)
         self.context_management.load.assert_called_once_with(self.kube_location)
-        expected_group_record = EntityGroupRecord('123',
+        expected_group_record = EntityGroupRecord('test-123',
             objects=[
                 ObjectRecord(group.objects[0].data, state=EntityStates.PENDING, error=None),
                 ObjectRecord(group.objects[1].data, state=EntityStates.PENDING, error=None)
@@ -209,7 +209,7 @@ class TestEntityGroupManager(unittest.TestCase):
         self.context.record_persistence.create.assert_called_once_with(matchers.entity_group_record(expected_group_record))
         self.job_queue.queue_job.assert_called_once_with({
             'job_type': CREATE_JOB,
-            'group_uid': '123',
+            'group_uid': 'test-123',
             'request_uid': request_id,
             'kube_location': self.kube_location.to_dict()
         })
@@ -218,8 +218,8 @@ class TestEntityGroupManager(unittest.TestCase):
         group = self.__build_group_with_object_and_helm_release()
         request_id = self.group_manager.create_group(self.kube_location, group)
         self.job_queue.process_next_job()
-        self.context.record_persistence.get.assert_called_once_with('123')
-        expected_in_progress_record = EntityGroupRecord('123',
+        self.context.record_persistence.get.assert_called_once_with('test-123')
+        expected_in_progress_record = EntityGroupRecord('test-123',
             objects=[
                 ObjectRecord(group.objects[0].data, state=EntityStates.PENDING, error=None),
             ],
@@ -230,7 +230,7 @@ class TestEntityGroupManager(unittest.TestCase):
                 RequestRecord(request_id, RequestOperations.CREATE, state=RequestStates.IN_PROGRESS, error=None)
             ]
         )
-        expected_complete_record = EntityGroupRecord('123',
+        expected_complete_record = EntityGroupRecord('test-123',
             objects=[
                 ObjectRecord(group.objects[0].data, state=EntityStates.CREATED, error=None)
             ],
@@ -273,7 +273,7 @@ class TestEntityGroupManager(unittest.TestCase):
         self.__configure_mock_create_object_failure(group.objects[0].data)
         request_id = self.group_manager.create_group(self.kube_location, group)
         self.job_queue.process_next_job()
-        expected_complete_record = EntityGroupRecord('123',
+        expected_complete_record = EntityGroupRecord('test-123',
             objects=[
                 ObjectRecord(group.objects[0].data, state=EntityStates.CREATE_FAILED, error='A mock create error'),
                 ObjectRecord(group.objects[1].data, state=EntityStates.CREATED, error=None)
@@ -301,7 +301,7 @@ class TestEntityGroupManager(unittest.TestCase):
         self.__configure_mock_helm_install_failure(group.helm_releases[0].name)
         request_id = self.group_manager.create_group(self.kube_location, group)
         self.job_queue.process_next_job()
-        expected_complete_record = EntityGroupRecord('123',
+        expected_complete_record = EntityGroupRecord('test-123',
             helm_releases=[
                 HelmReleaseRecord(group.helm_releases[0].chart, group.helm_releases[0].name, group.helm_releases[0].namespace, group.helm_releases[0].values, state=EntityStates.CREATE_FAILED, error='A mock install error'),
                 HelmReleaseRecord(group.helm_releases[1].chart, group.helm_releases[1].name, group.helm_releases[1].namespace, group.helm_releases[1].values, state=EntityStates.CREATED, error=None)
@@ -317,7 +317,7 @@ class TestEntityGroupManager(unittest.TestCase):
     def test_delete_group_queues_job(self):
         existing_group_record = self.__build_created_group_record_with_two_objects()
         self.record_persistence.create(existing_group_record)
-        request_id = self.group_manager.delete_group(self.kube_location, '123')
+        request_id = self.group_manager.delete_group(self.kube_location, 'test-123')
         self.context_management.load.assert_called_once_with(self.kube_location)
         expected_group_record = EntityGroupRecord(existing_group_record.uid,
             objects=[
@@ -332,7 +332,7 @@ class TestEntityGroupManager(unittest.TestCase):
         self.context.record_persistence.update.assert_called_once_with(matchers.entity_group_record(expected_group_record))
         self.job_queue.queue_job.assert_called_once_with({
             'job_type': DELETE_JOB,
-            'group_uid': '123',
+            'group_uid': 'test-123',
             'request_uid': request_id,
             'kube_location': self.kube_location.to_dict()
         })
@@ -340,9 +340,9 @@ class TestEntityGroupManager(unittest.TestCase):
     def test_process_delete_job_updates_records(self):
         existing_group_record = self.__build_created_group_record_with_object_and_helm_release()
         self.record_persistence.create(existing_group_record)
-        request_id = self.group_manager.delete_group(self.kube_location, '123')
+        request_id = self.group_manager.delete_group(self.kube_location, 'test-123')
         self.job_queue.process_next_job()
-        expected_pending_record = EntityGroupRecord('123',
+        expected_pending_record = EntityGroupRecord('test-123',
             objects=[
                 ObjectRecord(existing_group_record.objects[0].config, state=EntityStates.CREATED, error=None)
             ],
@@ -354,7 +354,7 @@ class TestEntityGroupManager(unittest.TestCase):
                 RequestRecord(request_id, RequestOperations.DELETE, state=RequestStates.PENDING, error=None)
             ]
         )
-        expected_in_progress_record = EntityGroupRecord('123',
+        expected_in_progress_record = EntityGroupRecord('test-123',
             objects=[
                 ObjectRecord(existing_group_record.objects[0].config, state=EntityStates.CREATED, error=None)
             ],
@@ -366,7 +366,7 @@ class TestEntityGroupManager(unittest.TestCase):
                 RequestRecord(request_id, RequestOperations.DELETE, state=RequestStates.IN_PROGRESS, error=None)
             ]
         )
-        expected_complete_record = EntityGroupRecord('123',
+        expected_complete_record = EntityGroupRecord('test-123',
             objects=[
                 ObjectRecord(existing_group_record.objects[0].config, state=EntityStates.DELETED, error=None)
             ],
@@ -388,7 +388,7 @@ class TestEntityGroupManager(unittest.TestCase):
     def test_process_delete_job_deletes_objects(self):
         existing_group_record = self.__build_created_group_record_with_two_objects()
         self.record_persistence.create(existing_group_record)
-        request_id = self.group_manager.delete_group(self.kube_location, '123')
+        request_id = self.group_manager.delete_group(self.kube_location, 'test-123')
         self.job_queue.process_next_job()
         first_object_configuration = ObjectConfiguration(existing_group_record.objects[0].config)
         second_object_configuration = ObjectConfiguration(existing_group_record.objects[1].config)
@@ -401,7 +401,7 @@ class TestEntityGroupManager(unittest.TestCase):
     def test_process_delete_job_purges_helm_releases(self):
         existing_group_record = self.__build_created_group_record_with_two_helm_releases()
         self.record_persistence.create(existing_group_record)
-        request_id = self.group_manager.delete_group(self.kube_location, '123')
+        request_id = self.group_manager.delete_group(self.kube_location, 'test-123')
         self.job_queue.process_next_job()
         self.context.helm_client.purge.assert_has_calls([
             call(existing_group_record.helm_releases[0].name),
@@ -411,7 +411,7 @@ class TestEntityGroupManager(unittest.TestCase):
     def test_process_delete_job_namespaced_object(self):
         existing_group_record = self.__build_created_group_record_with_namespaced_object()
         self.record_persistence.create(existing_group_record)
-        request_id = self.group_manager.delete_group(self.kube_location, '123')
+        request_id = self.group_manager.delete_group(self.kube_location, 'test-123')
         self.job_queue.process_next_job()
         first_object_configuration = ObjectConfiguration(existing_group_record.objects[0].config)
         second_object_configuration = ObjectConfiguration(existing_group_record.objects[1].config)
@@ -425,9 +425,9 @@ class TestEntityGroupManager(unittest.TestCase):
         existing_group_record = self.__build_created_group_record_with_two_objects()
         self.record_persistence.create(existing_group_record)
         self.__configure_mock_delete_object_failure(existing_group_record.objects[0].config)
-        request_id = self.group_manager.delete_group(self.kube_location, '123')
+        request_id = self.group_manager.delete_group(self.kube_location, 'test-123')
         self.job_queue.process_next_job()
-        expected_complete_record = EntityGroupRecord('123',
+        expected_complete_record = EntityGroupRecord('test-123',
             objects=[
                 ObjectRecord(existing_group_record.objects[0].config, state=EntityStates.DELETE_FAILED, error='A mock delete error'),
                 ObjectRecord(existing_group_record.objects[1].config, state=EntityStates.DELETED, error=None)
@@ -445,9 +445,9 @@ class TestEntityGroupManager(unittest.TestCase):
         existing_group_record = self.__build_created_group_record_with_two_helm_releases()
         self.record_persistence.create(existing_group_record)
         self.__configure_mock_helm_purge_failure(existing_group_record.helm_releases[0].name)
-        request_id = self.group_manager.delete_group(self.kube_location, '123')
+        request_id = self.group_manager.delete_group(self.kube_location, 'test-123')
         self.job_queue.process_next_job()
-        expected_complete_record = EntityGroupRecord('123',
+        expected_complete_record = EntityGroupRecord('test-123',
             helm_releases=[
                 HelmReleaseRecord(existing_group_record.helm_releases[0].chart, existing_group_record.helm_releases[0].name, existing_group_record.helm_releases[0].namespace, existing_group_record.helm_releases[0].values, state=EntityStates.DELETE_FAILED, error='A mock purge error'),
                 HelmReleaseRecord(existing_group_record.helm_releases[1].chart, existing_group_record.helm_releases[1].name, existing_group_record.helm_releases[1].namespace, existing_group_record.helm_releases[1].values, state=EntityStates.DELETED, error=None)
@@ -464,7 +464,7 @@ class TestEntityGroupManager(unittest.TestCase):
     def test_process_delete_job_ignores_objects_not_created(self):
         existing_group_record = self.__build_create_failed_group_record_with_objects()
         self.record_persistence.create(existing_group_record)
-        request_id = self.group_manager.delete_group(self.kube_location, '123')
+        request_id = self.group_manager.delete_group(self.kube_location, 'test-123')
         self.job_queue.process_next_job()
         first_object_configuration = ObjectConfiguration(existing_group_record.objects[0].config)
         second_object_configuration = ObjectConfiguration(existing_group_record.objects[1].config)
@@ -474,7 +474,7 @@ class TestEntityGroupManager(unittest.TestCase):
     def test_process_delete_job_ignores_helm_releases_not_created(self):
         existing_group_record = self.__build_create_failed_group_record_with_helm_releases()
         self.record_persistence.create(existing_group_record)
-        request_id = self.group_manager.delete_group(self.kube_location, '123')
+        request_id = self.group_manager.delete_group(self.kube_location, 'test-123')
         self.job_queue.process_next_job()
         # First helm release failed to create so we don't delete
         self.context.helm_client.purge.assert_called_once_with(existing_group_record.helm_releases[1].name)
@@ -498,7 +498,7 @@ class TestEntityGroupManager(unittest.TestCase):
                 raise ValueError('Mock error thrown by logger')
         patch_logger.exception.side_effect = side_effect
         self.job_queue.process_next_job()
-        expected_complete_record = EntityGroupRecord('123',
+        expected_complete_record = EntityGroupRecord('test-123',
             helm_releases=[
                 HelmReleaseRecord(group.helm_releases[0].chart, group.helm_releases[0].name, group.helm_releases[0].namespace, group.helm_releases[0].values, state=EntityStates.PENDING, error=None),
                 HelmReleaseRecord(group.helm_releases[1].chart, group.helm_releases[1].name, group.helm_releases[1].namespace, group.helm_releases[1].values, state=EntityStates.PENDING, error=None)

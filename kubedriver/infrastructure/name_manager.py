@@ -9,52 +9,75 @@ REMOVE_VOWEL_REGEX = re.compile('[aeiouAEIOU]')
 
 class NameManager:
 
-    def safe_label_name_for_resource(self, resource_id, resource_name):
-        attempts = [self.__simple_join_attempt, self.__short_resource_name_attempt, self.__short_resource_name_without_vowels_attempt]
+    def __execute_attempts(self, attempts, validator, error_title):
         attempt_errors = []
         valid = False
-        label = None
+        result = None
+        previous_attempts = []
         for attempt in attempts:
-            input_name = attempt(resource_id, resource_name)
-            label = self.__make_safe_label(input_name)
-            valid, invalid_reason = namehelper.is_valid_label_name(label)
-            if not valid:
-                attempt_errors.append(f'Attempt {input_name} was invalid: {invalid_reason}')
+            if callable(attempt):
+                result = attempt()
+            elif type(attempt) == str:
+                result = attempt
             else:
-                break
+                raise ValueError(f'Attempt must be callable or a str but was {type(attempt)}')
+            if result is not None and result not in previous_attempts:
+                previous_attempts.append(result)
+                valid, invalid_reason = validator(result)
+                if not valid:
+                    attempt_errors.append(f'Attempt \'{result}\' was invalid: {invalid_reason}')
+                else:
+                    break
         if not valid:
-            raise ValueError(f'Failed to generate safe label name for Resource {str(resource_name)}-{str(resource_id)}: {attempt_errors}')
+            raise ValueError(f'Failed to generate {error_title}: {attempt_errors}')
         else:
-            return label
+            return result
+
+    def safe_label_name_from_resource_id(self, resource_id):
+        attempts = [
+            lambda: self.__make_safe_label(resource_id)
+        ]
+        return self.__execute_attempts(attempts, namehelper.is_valid_label_name, 'safe label name from Resource ID')
+
+    def safe_label_name_from_resource_name(self, resource_name):
+        attempts = [
+            lambda: self.__make_safe_label(resource_name),
+            lambda: self.__make_safe_label(self.__short_resource_name(resource_name)),
+            lambda: self.__make_safe_label(self.__short_resource_name_reduced(resource_name))
+        ]
+        return self.__execute_attempts(attempts, namehelper.is_valid_label_name, 'safe label name from Resource name')
+
+    def safe_label_name_for_resource(self, resource_id, resource_name):
+        attempts = [
+            lambda: self.__make_safe_label(f'{resource_name}-{resource_id}'),
+            lambda: self.__make_safe_label(f'{self.__short_resource_name(resource_name)}-{resource_id}'),
+            lambda: self.__make_safe_label(f'{self.__short_resource_name_reduced(resource_name)}-{resource_id}')
+        ]
+        return self.__execute_attempts(attempts, namehelper.is_valid_label_name, 'safe label name for Resource')
+
+    def safe_subdomain_name_from_resource_id(self, resource_id):
+        attempts = [
+            lambda: self.__make_safe_subdomain(resource_id)
+        ]
+        return self.__execute_attempts(attempts, namehelper.is_valid_subdomain_name, 'safe subdomain name from Resource ID')
+
+    def safe_subdomain_name_from_resource_name(self, resource_name):
+        attempts = [
+            lambda: self.__make_safe_subdomain(resource_name),
+            lambda: self.__make_safe_subdomain(self.__short_resource_name(resource_name)),
+            lambda: self.__make_safe_subdomain(self.__short_resource_name_reduced(resource_name))
+        ]
+        return self.__execute_attempts(attempts, namehelper.is_valid_subdomain_name, 'safe subdomain name from Resource name')
 
     def safe_subdomain_name_for_resource(self, resource_id, resource_name):
-        attempts = [self.__simple_join_attempt, self.__short_resource_name_attempt, self.__short_resource_name_without_vowels_attempt]
-        attempt_errors = []
-        valid = False
-        sdname = None
-        for attempt in attempts:
-            input_name = attempt(resource_id, resource_name)
-            sdname = self.__make_safe_subdomain(input_name)
-            valid, invalid_reason = namehelper.is_valid_subdomain_name(sdname)
-            if not valid:
-                attempt_errors.append(f'Attempt {input_name} was invalid: {invalid_reason}')
-            else:
-                break
-        if not valid:
-            raise ValueError(f'Failed to generate safe subdomain name for Resource {str(resource_name)}-{str(resource_id)}: {attempt_errors}')
-        else:
-            return sdname
+        attempts = [
+            lambda: self.__make_safe_subdomain(f'{resource_name}-{resource_id}'),
+            lambda: self.__make_safe_subdomain(f'{self.__short_resource_name(resource_name)}-{resource_id}'),
+            lambda: self.__make_safe_subdomain(f'{self.__short_resource_name_reduced(resource_name)}-{resource_id}')
+        ]
+        return self.__execute_attempts(attempts, namehelper.is_valid_subdomain_name, 'safe subdomain name for Resource')
 
-    def __simple_join_attempt(self, resource_id, resource_name):
-        return f'{resource_name}-{resource_id}'
 
-    def __short_resource_name_attempt(self, resource_id, resource_name):
-        short_resource_name = self.__short_resource_name(resource_name)
-        return f'{short_resource_name}-{resource_id}'
-
-    def __short_resource_name_without_vowels_attempt(self, resource_id, resource_name):
-        short_resource_name = self.__short_resource_name_without_vowels(resource_name)
-        return f'{short_resource_name}-{resource_id}'
 
     def __short_resource_name(self, resource_name):
         ##Build name with first and last parts
@@ -64,13 +87,41 @@ class NameManager:
             short_resource_name += f'-{split_parts[-1]}'
         return short_resource_name
 
-    def __short_resource_name_without_vowels(self, resource_name):
+    def __short_resource_name_reduced(self, resource_name):
         ##Build name with first and last parts
-        short_resource_name = self.__short_resource_name(resource_name)
-        ##Then remove vowels
-        return REMOVE_VOWEL_REGEX.sub('', short_resource_name)
+        split_parts = resource_name.split('__')
+        first_part = split_parts[0]
+        last_part = None
+        if len(split_parts) > 1:
+            last_part = split_parts[-1]
+        ##Reduce
+        first_part_reduced = self.__remove_vowels_or_reduce(first_part)
+        if last_part is not None:
+            last_part_reduced = self.__remove_vowels_or_reduce(last_part)
+            return f'{first_part_reduced}-{last_part_reduced}'
+        else:
+            return first_part_reduced
+
+    def __remove_vowels_or_reduce(self, input_str):
+        reduced_input = REMOVE_VOWEL_REGEX.sub('', input_str)
+        if len(reduced_input) == 0 or len(reduced_input) == len(input_str):
+            #Only contained vowels or we didn't reduce the string at all - either way lets try picking 3 characters instead
+            if len(input_str) > 3:
+                first_char = input_str[0]
+                #Exact for odd length strings, rough middle for even length
+                middle_char = input_str[int(len(input_str)/2)]
+                last_char = input_str[-1]
+                reduced_input = first_char + middle_char + last_char
+                return reduced_input
+            else:
+                #Return the original
+                return input_str
+        else:
+            return reduced_input
 
     def __make_safe_subdomain(self, input_name):
+        if input_name is None:
+            return None
         ## Subdomain names must be lowercase
         sdname = input_name.lower()
         ## Replace spaces and underscores (common separator chars) with valid separator char dash ('-')
@@ -83,6 +134,8 @@ class NameManager:
         return sdname
 
     def __make_safe_label(self, input_name):
+        if input_name is None:
+            return None
         ## Labels names must be lowercase
         label = input_name.lower()
         ## Replace spaces, underscores and dots (common separator chars) with valid separator char dash ('-')

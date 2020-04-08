@@ -1,0 +1,18 @@
+properties:
+  propertyA:
+    type: string
+  propertyB:
+    type: string
+infrastructure:
+  Kubernetes:
+    template:
+      file: kube.yaml
+      template-type: ObjectConfiguration
+description: descriptor for SinglePropConfigMap
+default-driver:
+  ansible:
+    infrastructure-type:
+    - '*'
+lifecycle:
+  Create: {}
+  Delete: {}

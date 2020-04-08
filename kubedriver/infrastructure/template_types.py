@@ -9,15 +9,15 @@ class TemplateTypes:
     @staticmethod
     def is_object_configuration(template_type):
         lowercase_template_type = template_type.lower()
-        return lowercase_template_type == self.OBJECT_CONFIG.lower() or lowercase_template_type == self.KUBERNETES.lower()
+        return lowercase_template_type == TemplateTypes.OBJECT_CONFIG.lower() or lowercase_template_type == TemplateTypes.KUBERNETES.lower()
 
     @staticmethod
     def is_helm(template_type):
         lowercase_template_type = template_type.lower()
-        return lowercase_template_type == self.HELM.lower()
+        return lowercase_template_type == TemplateTypes.HELM.lower()
 
     @staticmethod
     def describe_possible_values():
-        description = f'[{self.OBJECT_CONFIG} (alternative {self.KUBERNETES})'
-        description += f', {self.HELM}] (ignoring case)'
+        description = f'[{TemplateTypes.OBJECT_CONFIG} (alternative {TemplateTypes.KUBERNETES})'
+        description += f', {TemplateTypes.HELM}] (ignoring case)'
         return description

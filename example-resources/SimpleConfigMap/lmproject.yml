@@ -1,0 +1,9 @@
+type: Assembly
+contains:
+- type: Resource
+  directory: SinglePropConfigMap
+  name: SinglePropConfigMap
+  resource-manager: lm
+schema: '2.0'
+name: SimpleConfigMap
+version: '1.0'
