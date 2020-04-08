@@ -85,15 +85,19 @@ In addition, the driver generates additional "Kubernetes safe" versions of the r
 
 | Property Name  | Description |
 | ------------------------- | -------------- |
+| resourceSd (or resourceSubdomain)                | LM resource instance name and ID joined and converted to a [Kubernetes safe subdomain name](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names) |
+| resourceLabel | The LM resource instance name and ID joined and converted to a [Kubernetes safe label name](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
 | resourceIdSd (or resourceIdSubdomain)                | LM resource instance ID converted to a [Kubernetes safe subdomain name](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names) |
+| resourceIdLabel                | LM resource instance ID converted to a [Kubernetes safe label name](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
 | resourceNameSd (or resourceNameSubdomain) | The LM resource instance name converted to a [Kubernetes safe subdomain name](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names) |
+| resourceNameLabel | The LM resource instance name converted to a [Kubernetes safe label name](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
 
-If intending to use the resourceId or resourceName value as the `metadata.name` value on an object then you must use the subdomain copy:
+If intending to use the name or identifier of the Resource to name a Kubernetes object (the `metadata.name` value on an object) then you should use `resourceSd` or `resourceLabel` as this combines the ID and name, therefore it is unique but maintains some human readability:
 
 ```
 ## Object configuration file template
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ systemProperties.resourceNameSd }}.{{ systemProperties.resourceIdSd }}
+  name: {{ systemProperties.resourceSd }}
 ```
