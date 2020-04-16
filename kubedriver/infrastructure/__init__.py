@@ -1,2 +1,3 @@
 from .driver import InfrastructureDriver
 from .converter import InfrastructureConverter
+from .render_context import ExtendedResourceTemplateContext

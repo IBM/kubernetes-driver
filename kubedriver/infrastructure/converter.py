@@ -5,9 +5,7 @@ import os
 from ignition.service.framework import Service, Capability
 from ignition.service.infrastructure import InvalidInfrastructureTemplateError, InvalidInfrastructureRequestError
 from .template_types import TemplateTypes
-from .render_props import RenderPropsBuilder
 from .name_manager import NameManager
-from kubedriver.templating import Template
 from kubedriver.helmobjects import HelmReleaseConfiguration
 from kubedriver.kubeobjects import ObjectConfigurationDocument
 from kubedriver.kubegroup import EntityGroup
@@ -15,6 +13,10 @@ from kubedriver.kubegroup import EntityGroup
 name_manager = NameManager()
 
 class InfrastructureConverter(Service, Capability):
+
+    def __init__(self, templating, template_context_builder):
+        self.templating = templating
+        self.template_context_builder = template_context_builder
     
     def convert_to_entity_group(self, template, template_type, system_properties, properties, kube_location):
         objects = []
@@ -22,7 +24,7 @@ class InfrastructureConverter(Service, Capability):
         if TemplateTypes.is_helm(template_type):
             helm_releases.append(self.__render_template_to_helm_release(template, system_properties, properties, kube_location))
         elif TemplateTypes.is_object_configuration(template_type):
-            objects = self.__render_template_to_object_configurations(template, system_properties, properties)
+            objects = self.__render_template_to_object_configurations(template, system_properties, properties, kube_location)
         else:
             raise InvalidInfrastructureTemplateError(f'Template type must be one of {TemplateTypes.describe_possible_values()} but was \'{template_type}\'')
         uid = self.__generate_group_uid(system_properties)
@@ -37,14 +39,14 @@ class InfrastructureConverter(Service, Capability):
             raise InvalidInfrastructureRequestError('system properties missing \'resourceName\' value')
         return name_manager.safe_subdomain_name_for_resource(resource_id, resource_name)
 
-    def __render_template_to_object_configurations(self, template, system_properties, properties):
-        render_props = RenderPropsBuilder.build(system_properties, properties)
-        rendered_template = Template(template).render(render_props)
+    def __render_template_to_object_configurations(self, template, system_properties, properties, kube_location):
+        render_context = self.template_context_builder.build(system_properties, properties, kube_location.to_dict())
+        rendered_template = self.templating.render(template, render_context)
         return ObjectConfigurationDocument(rendered_template).read()
 
     def __render_template_to_helm_release(self, template, system_properties, properties, kube_location):
         chart_path, values_path = self.__write_helm_template_to_disk(template)
-        self.__render_helm_values_template(values_path, system_properties, properties)
+        self.__render_helm_values_template(values_path, system_properties, properties, kube_location)
         release_name = self.__generate_helm_release_name(system_properties)
         install_namespace = properties.get('namespace', None)
         if install_namespace == None:
@@ -64,10 +66,10 @@ class InfrastructureConverter(Service, Capability):
             writer.write(values)
         return chart_path, values_path
 
-    def __render_helm_values_template(self, values_path, system_properties, properties):
-        render_props = RenderPropsBuilder.build(system_properties, properties)
+    def __render_helm_values_template(self, values_path, system_properties, properties, kube_location):
+        render_context = self.template_context_builder.build(system_properties, properties, kube_location.to_dict())
         with open(values_path, 'r') as reader:
-            template_output = Template(reader.read()).render(render_props)
+            template_output = self.templating.render(reader.read(), render_context)
         with open(values_path, 'w') as writer:
             writer.write(template_output)
 

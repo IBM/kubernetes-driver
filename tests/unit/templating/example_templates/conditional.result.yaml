@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  annotations:
-    complex_network/network_name: mynetwork
-  name: ConditionalTest

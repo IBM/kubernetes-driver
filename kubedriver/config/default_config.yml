@@ -4,3 +4,8 @@ application:
 
 messaging:
   connection_address: kafka:9092
+
+bootstrap:
+  templating:
+    # Providing our own
+    resource_context_service_enabled: False
