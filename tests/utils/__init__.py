@@ -7,3 +7,4 @@ from . import copy_args_mock
 from . import mem_persistence_mock
 from .kube_http_response_sub import KubeHttpResponse
 from .mocked_error import MockedError
+from .example_kube_config import example_kube_config

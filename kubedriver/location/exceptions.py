@@ -1,2 +1,0 @@
-class InvalidDeploymentLocationError(Exception):
-    pass

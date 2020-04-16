@@ -9,6 +9,7 @@ from kubedriver.kubegroup.records import EntityGroupRecord, ObjectRecord, HelmRe
 from kubedriver.kubeobjects.object_config import ObjectConfiguration
 from kubedriver.helmobjects.helm_release_config import HelmReleaseConfiguration
 
+
 class TestEntityGroupManager(unittest.TestCase):
     
     def setUp(self):
@@ -17,7 +18,7 @@ class TestEntityGroupManager(unittest.TestCase):
         self.record_persistence = testutils.mem_persistence_mock.create()
         self.job_queue = testutils.controlled_job_queue_mock.create()
         self.context_management = MagicMock(api_ctl=self.kube_api_ctl, record_persistence=self.record_persistence)
-        self.kube_location = KubeDeploymentLocation('Test', 'config')
+        self.kube_location = KubeDeploymentLocation('Test', testutils.example_kube_config)
         self.context = MagicMock(location=self.kube_location, record_persistence=self.record_persistence, api_ctl=self.kube_api_ctl, helm_client=self.helm_client)
         self.context_management.load.return_value = self.context
         self.group_manager = EntityGroupManager(self.context_management, self.job_queue)
