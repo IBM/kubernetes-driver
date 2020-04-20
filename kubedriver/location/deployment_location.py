@@ -27,10 +27,10 @@ class KubeDeploymentLocation(KubeDeploymentLocationBase):
 
     @staticmethod
     def from_dict(dl_data):
-        name = dl_data.get(KubeDeploymentLocationBase.NAME, None)
+        name = dl_data.get(KubeDeploymentLocationBase.NAME)
         if name is None:
             raise InvalidDeploymentLocationError('Deployment location missing \'{0}\' value'.format(KubeDeploymentLocationBase.NAME))
-        properties = dl_data.get(KubeDeploymentLocationBase.PROPERTIES, None)
+        properties = dl_data.get(KubeDeploymentLocationBase.PROPERTIES)
         if properties is None:
             raise InvalidDeploymentLocationError('Deployment location missing \'{0}\' value'.format(KubeDeploymentLocationBase.PROPERTIES))
         client_config = get_property_or_default(properties, KubeDeploymentLocationBase.CONFIG_PROP, KubeDeploymentLocationBase.CONFIG_ALT2_PROP, error_if_not_found=True)

@@ -22,11 +22,11 @@ class ConfigMapStorageFormat:
 
     def load_group_record(self, data):
         uid = data.get(EntityGroupRecord.UID)
-        raw_objects = data.get(EntityGroupRecord.OBJECTS, None)
+        raw_objects = data.get(EntityGroupRecord.OBJECTS)
         objects = self.load_object_records(raw_objects)
-        raw_requests = data.get(EntityGroupRecord.REQUESTS, None)
+        raw_requests = data.get(EntityGroupRecord.REQUESTS)
         requests = self.load_request_records(raw_requests)
-        raw_helm_releases = data.get(EntityGroupRecord.HELM_RELEASES, None)
+        raw_helm_releases = data.get(EntityGroupRecord.HELM_RELEASES)
         helm_releases = self.load_helm_records(raw_helm_releases)
         return EntityGroupRecord(uid, objects, helm_releases=helm_releases, requests=requests)
 
@@ -43,7 +43,7 @@ class ConfigMapStorageFormat:
         uid = data.get(RequestRecord.UID)
         operation = data.get(RequestRecord.OPERATION)
         state = data.get(RequestRecord.STATE)
-        error = data.get(RequestRecord.ERROR, None)
+        error = data.get(RequestRecord.ERROR)
         return RequestRecord(uid, operation, state=state, error=error)
 
     def dump_request_records(self, request_records):
@@ -105,7 +105,7 @@ class ConfigMapStorageFormat:
     def load_object_record(self, data):
         config = data.get(ObjectRecord.CONFIG)
         state = data.get(ObjectRecord.STATE)
-        error = data.get(ObjectRecord.ERROR, None)
+        error = data.get(ObjectRecord.ERROR)
         return ObjectRecord(config, state=state, error=error)
 
     def dump_object_records(self, object_records):

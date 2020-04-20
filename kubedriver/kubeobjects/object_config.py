@@ -30,7 +30,7 @@ class ObjectConfiguration:
         self.kind = self.data.get(self.KIND)
         self.metadata = self.data.get(self.METADATA)
         self.name = self.metadata.get(self.NAME)
-        self.namespace = self.metadata.get(self.NAMESPACE, None)
+        self.namespace = self.metadata.get(self.NAMESPACE)
 
     def __str__(self):
         return f'{self.__class__.__name__}({self.data})'

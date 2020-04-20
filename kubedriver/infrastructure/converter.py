@@ -31,10 +31,10 @@ class InfrastructureConverter(Service, Capability):
         return EntityGroup(uid, objects=objects, helm_releases=helm_releases)
             
     def __generate_group_uid(self, system_properties):
-        resource_id = system_properties.get('resourceId', None)
+        resource_id = system_properties.get('resourceId')
         if resource_id == None:
             raise InvalidInfrastructureRequestError('system properties missing \'resourceId\' value')
-        resource_name = system_properties.get('resourceName', None)
+        resource_name = system_properties.get('resourceName')
         if resource_name == None:
             raise InvalidInfrastructureRequestError('system properties missing \'resourceName\' value')
         return name_manager.safe_subdomain_name_for_resource(resource_id, resource_name)
@@ -48,7 +48,7 @@ class InfrastructureConverter(Service, Capability):
         chart_path, values_path = self.__write_helm_template_to_disk(template)
         self.__render_helm_values_template(values_path, system_properties, properties, kube_location)
         release_name = self.__generate_helm_release_name(system_properties)
-        install_namespace = properties.get('namespace', None)
+        install_namespace = properties.get('namespace')
         if install_namespace == None:
             namespace = kube_location.default_object_namespace
         return HelmReleaseConfiguration(chart_path, release_name, install_namespace, values_path)
@@ -74,10 +74,10 @@ class InfrastructureConverter(Service, Capability):
             writer.write(template_output)
 
     def __generate_helm_release_name(self, system_properties):
-        resource_id = system_properties.get('resourceId', None)
+        resource_id = system_properties.get('resourceId')
         if resource_id == None:
             raise InvalidInfrastructureRequestError('system properties missing \'resourceId\' value')
-        resource_name = system_properties.get('resourceName', None)
+        resource_name = system_properties.get('resourceName')
         if resource_name == None:
             raise InvalidInfrastructureRequestError('system properties missing \'resourceName\' value')
         return name_manager.safe_label_name_for_resource(resource_id, resource_name)

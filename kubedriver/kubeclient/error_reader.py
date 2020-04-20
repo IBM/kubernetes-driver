@@ -17,22 +17,22 @@ class ErrorReader:
         summary = f'ApiError ({error.status}, {error.reason})'
         body_valid, body = self.__load_body(error)
         if body_valid is True:
-            body_msg = body.get('message', None)
+            body_msg = body.get('message')
             if body_msg is not None:
                 summary += f' -> {body_msg}'
-            body_reason = body.get('reason', None)
+            body_reason = body.get('reason')
             if body_reason is not None:
                 summary += f' -> {body_reason}'
         return summary
 
     def is_already_exists_err(self, error):
         body_valid, body = self.__load_body(error)
-        return (body_valid and body.get('reason', None) == 'AlreadyExists' 
+        return (body_valid and body.get('reason') == 'AlreadyExists' 
                 and error.status == 409 
                 and error.reason == 'Conflict')
 
     def is_not_found_err(self, error):
         body_valid, body = self.__load_body(error)
-        return (body_valid and body.get('reason', None) == 'NotFound' 
+        return (body_valid and body.get('reason') == 'NotFound' 
                 and error.status == 404 
                 and error.reason == 'Not Found')
