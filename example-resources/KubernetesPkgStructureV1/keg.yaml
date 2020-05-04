@@ -1,0 +1,40 @@
+## Sets out the Objects and Helm charts to be used
+## Includes the transition they should be created and deleted in
+## Will be templated, so use of system properties and resource properties is allowed
+
+## Kubernetes Objects included as follows:
+# objects: name of the file in the objects directory
+
+## Helm charts included as follows:
+# helm: 
+#   chart: name of chart file in helm directory
+#   values: name of values file in the helm directory to use on installation 
+#   name: name given to the release in Helm 
+
+## Common 
+# on: transition to create these objects/charts in 
+# off: transition to remove these objects/charts in. For Create/Install/Start this can be left blank and we will default this to their opposite transition.
+composition:
+  - objects: config.yaml
+    on: Create
+    #off defaults to Delete
+
+  - objects: deployment.yaml
+    on: Install
+    #off defaults to Uninstall
+
+  - objects: add-entry-job.yaml
+    on: AddToDispatchList
+    off: Delete #if we didn't include this, the Job would never be deleted (should it?)
+
+  - objects: remove-entry-job.yaml
+    on: RemoveFromDispatchList
+    off: Delete
+
+  - helm: 
+      chart: traffic-test-1.0.0.tgz
+      values: traffic-test-values.yaml
+      name: {{ systemProperties.resourceSubdomain }}-traffic-test
+    on: StartTrafficTest
+    off: StopTrafficTest
+
