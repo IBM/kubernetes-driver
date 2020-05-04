@@ -4,12 +4,15 @@
 -# Object manager catch persistence errors
 -# Object manager handle create/delete errors (e.g. if not exists on Delete, don't fail)
 -// Object manager error tests
-- Check variable names in objects vs records
+-// Check variable names in objects vs records
 - Driver error tests
 - Driver tests
 - Validate class arguments (across the project)
 - Documentation 
 - Python Docs for classes
-- Allow deployment location properties to be used on templates
+-// Allow deployment location properties to be used on templates
 - SSL support
-- Helm functionality tests
+- Undocument Helm support
+-// Move Kube location to Ignition (validate context, cluster and username)
+-// Move props rendering to Ignition
+- test_api_ctl to mock real CRD objects

@@ -26,6 +26,7 @@ parser.add_argument('--skip-tests', default=False, action='store_true')
 parser.add_argument('--skip-build', default=False, action='store_true')
 parser.add_argument('--skip-docker', default=False, action='store_true')
 parser.add_argument('--skip-helm', default=False, action='store_true')
+parser.add_argument('--ignition-whl')
 
 args = parser.parse_args()
 
@@ -179,6 +180,12 @@ class Builder:
             else:
                 dest_whl = os.path.join(docker_whls_path, WHL_FORMAT.format(version=self.py_normalized_version))
                 shutil.copyfile(src_whl_path, dest_whl)
+            if args.ignition_whl is not None:
+                if not os.path.exists(args.ignition_whl):
+                    return s.exit_with_error(1, 'Could not find Ignition whl at: {0}'.format(args.ignition_whl))
+                dest_ign_whl = os.path.join(docker_whls_path, os.path.basename(args.ignition_whl))
+                print('Copying Ignition whl at {0} to {1}'.format(args.ignition_whl, dest_ign_whl))
+                shutil.copyfile(args.ignition_whl, dest_ign_whl)
             img_tag = '{0}:{1}'.format(docker_img_name, self.project_version)
             s.run_cmd('docker', 'build', '-t', img_tag, '{0}'.format(docker_context_path))
 
