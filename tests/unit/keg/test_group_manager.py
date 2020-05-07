@@ -3,9 +3,9 @@ from unittest.mock import MagicMock, call, patch
 import tests.matchers as matchers
 import tests.utils as testutils
 from kubedriver.location import KubeDeploymentLocation
-from kubedriver.kubegroup.group_manager import EntityGroupManager, CREATE_JOB, DELETE_JOB
-from kubedriver.kubegroup.entity_group import EntityGroup
-from kubedriver.kubegroup.records import EntityGroupRecord, ObjectRecord, HelmReleaseRecord, RequestRecord, EntityStates, RequestStates, RequestOperations
+from kubedriver.keg.group_manager import EntityGroupManager, CREATE_JOB, DELETE_JOB
+from kubedriver.keg.entity_group import EntityGroup
+from kubedriver.keg.records import EntityGroupRecord, ObjectRecord, HelmReleaseRecord, RequestRecord, EntityStates, RequestStates, RequestOperations
 from kubedriver.kubeobjects.object_config import ObjectConfiguration
 from kubedriver.helmobjects.helm_release_config import HelmReleaseConfiguration
 
@@ -480,7 +480,7 @@ class TestEntityGroupManager(unittest.TestCase):
         # First helm release failed to create so we don't delete
         self.context.helm_client.purge.assert_called_once_with(existing_group_record.helm_releases[1].name)
 
-    @patch('kubedriver.kubegroup.group_manager.logger')
+    @patch('kubedriver.keg.group_manager.logger')
     def test_process_request_captures_internal_errors_during_processing(self, patch_logger):
         """
         Here we are testing a specific try/catch in EntityGroupManager.__process_request, which will catch errors during __process_create or __process_delete

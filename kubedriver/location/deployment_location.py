@@ -71,15 +71,18 @@ class KubeDeploymentLocation(KubeDeploymentLocationBase):
         if self.driver_namespace is None:
             self.driver_namespace = self.default_object_namespace
         self.helm_version = helm_version
+        self._client = None
 
-    def build_client(self):
-        config_file_path = super().write_config_file()
-        try:
-            client = kubeconfig.new_client_from_config(config_file_path, persist_config=False)            
-            return client
-        finally:
-            if os.path.exists(config_file_path):
-                os.remove(config_file_path)
+    @property
+    def client(self):
+        if self._client is None:
+            config_file_path = super().write_config_file()
+            try:
+                self._client = kubeconfig.new_client_from_config(config_file_path, persist_config=False)            
+            finally:
+                if os.path.exists(config_file_path):
+                    os.remove(config_file_path)
+        return self._client
 
     def to_dict(self):
         data = super().to_dict()

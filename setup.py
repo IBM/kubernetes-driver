@@ -17,8 +17,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'ignition-framework==1.2.0.dev0',
-        'kubernetes>=10.0.0,<11.0',
-        'uwsgi>=2.0.18,<3.0',
+        'kubernetes==11.0.0',
         'gunicorn>=19.9.0,<20.0'
     ],
     entry_points='''

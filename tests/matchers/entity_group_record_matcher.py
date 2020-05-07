@@ -1,7 +1,7 @@
 from .object_record_matcher import ObjectRecordMatcher
 from .request_record_matcher import RequestRecordMatcher
 from .helm_record_matcher import HelmReleaseRecordMatcher
-from kubedriver.kubegroup.records import EntityGroupRecord
+from kubedriver.keg.records import EntityGroupRecord
 
 def entity_group_record(expected_group_record):
     return EntityGroupRecordMatcher(expected_group_record)

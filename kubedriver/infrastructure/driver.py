@@ -9,7 +9,7 @@ import ignition.model.infrastructure as infrastructure_model
 import ignition.model.failure as failure_model
 from ignition.service.framework import Service
 from ignition.service.infrastructure import InfrastructureDriverCapability
-from kubedriver.kubegroup.records import RequestStates, RequestOperations
+from kubedriver.keg.records import RequestStates, RequestOperations
 
 class InfrastructureDriver(Service, InfrastructureDriverCapability):
 

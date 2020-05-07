@@ -1,4 +1,4 @@
-from kubedriver.kubegroup.records import HelmReleaseRecord
+from kubedriver.keg.records import HelmReleaseRecord
 
 def helm_record(expected_record):
     return HelmReleaseRecordMatcher(expected_record)

@@ -1,0 +1,4 @@
+
+
+class InvalidDeploymentStrategyError(Exception):
+    pass

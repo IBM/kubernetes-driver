@@ -7,9 +7,9 @@ from unittest.mock import MagicMock
 from kubernetes.client import V1ConfigMap
 from kubernetes.client.rest import ApiException
 from kubedriver.kubeobjects.object_config import ObjectConfiguration
-from kubedriver.kubegroup.exceptions import PersistenceError, InvalidUpdateError, RecordNotFoundError
-from kubedriver.kubegroup.record_persistence import ConfigMapRecordPersistence, ConfigMapStorageFormat
-from kubedriver.kubegroup.records import EntityGroupRecord, ObjectRecord, RequestRecord, EntityStates, RequestStates, RequestOperations
+from kubedriver.keg.exceptions import PersistenceError, InvalidUpdateError, RecordNotFoundError
+from kubedriver.keg.record_persistence import ConfigMapRecordPersistence, ConfigMapStorageFormat
+from kubedriver.keg.records import EntityGroupRecord, ObjectRecord, RequestRecord, EntityStates, RequestStates, RequestOperations
 
 def json_body(body):
     return json.dumps(body)

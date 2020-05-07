@@ -1,5 +1,5 @@
 import unittest
-import kubedriver.kubegroup.records as records
+import kubedriver.keg.records as records
 
 class TestImports(unittest.TestCase):
 

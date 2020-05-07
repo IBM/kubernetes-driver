@@ -7,7 +7,7 @@ from ignition.service.queue import JobQueueCapability
 from ignition.service.templating import TemplatingCapability,ResourceTemplateContextCapability 
 from kubedriver.infrastructure import InfrastructureDriver, InfrastructureConverter, ExtendedResourceTemplateContext
 from kubedriver.kubeclient import KubeClientDirector
-from kubedriver.kubegroup import EntityGroupManager, ManagerContextLoader
+from kubedriver.keg import EntityGroupManager, ManagerContextLoader
 from kubedriver.location import KubeDeploymentLocationTranslator
 
 default_config_dir_path = str(pathlib.Path(driverconfig.__file__).parent.resolve())

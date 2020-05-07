@@ -1,4 +1,4 @@
-from kubedriver.kubegroup.records import ObjectRecord
+from kubedriver.keg.records import ObjectRecord
 
 def object_record(expected_record):
     return ObjectRecordMatcher(expected_record)

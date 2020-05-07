@@ -8,7 +8,7 @@ from .template_types import TemplateTypes
 from .name_manager import NameManager
 from kubedriver.helmobjects import HelmReleaseConfiguration
 from kubedriver.kubeobjects import ObjectConfigurationDocument
-from kubedriver.kubegroup import EntityGroup
+from kubedriver.keg import EntityGroup
 
 name_manager = NameManager()
 
@@ -50,7 +50,7 @@ class InfrastructureConverter(Service, Capability):
         release_name = self.__generate_helm_release_name(system_properties)
         install_namespace = properties.get('namespace')
         if install_namespace == None:
-            namespace = kube_location.default_object_namespace
+            install_namespace = kube_location.default_object_namespace
         return HelmReleaseConfiguration(chart_path, release_name, install_namespace, values_path)
 
     def __write_helm_template_to_disk(self, template):

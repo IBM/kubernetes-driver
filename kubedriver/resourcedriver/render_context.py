@@ -6,7 +6,7 @@ class ExtendedResourceTemplateContext(ResourceTemplateContextService):
     def __init__(self):
         self.name_manager = NameManager()
 
-    def _configure_additional_props(self, builder, system_properties, properties, deployment_location):
+    def _configure_additional_props(self, builder, system_properties, resource_properties, request_properties, deployment_location):
         self.__add_resource_id_generated_properties(builder, system_properties)
         self.__add_resource_name_generated_properties(builder, system_properties)
         self.__add_resource_combined_generated_properties(builder, system_properties)
