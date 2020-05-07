@@ -1,17 +1,26 @@
 import yaml
+from ignition.service.framework import Service, Capability
 from kubedriver.kegd.model.exceptions import InvalidDeploymentStrategyError
-from kubedriver.kegd.model.deployment_strategy import DeploymentStrategy
+from kubedriver.kegd.model.deployment_strategy import DeploymentStrategy, DEFAULT_CLEANUP
 from kubedriver.kegd.model.deploy_task import DeployTask
 from kubedriver.kegd.model.compose import ComposeScript
 
-class DeploymentStrategyParser:
+class DeploymentStrategyParser(Service, Capability):
 
     def __init__(self, strategy_class=DeploymentStrategy):
         self._strategy_class = strategy_class
 
+    def read_yaml(self, yaml_content):
+        try:
+            data = yaml.safe_load(yaml_content)
+        except yaml.YAMLError as e:
+            raise InvalidDeploymentStrategyError(str(e))
+        return self.read_dict(data)
+
     def read_dict(self, data):
         compose = self.__read_compose(data)
-        return self._strategy_class(compose=compose)
+        cleanup_on = data.get('cleanupOn', DEFAULT_CLEANUP)
+        return self._strategy_class(compose=compose, cleanup_on=cleanup_on)
 
     def __read_compose(self, data):
         compose = []
@@ -40,7 +49,8 @@ class DeploymentStrategyParser:
             for deploy_task_def in deploy_task_defs:
                 deploy_tasks.append(self.__read_deploy_task(deploy_task_def))
         reverse = compose_def.get('reverse')
-        return ComposeScript(compose_name, deploy=deploy_tasks, reverse=reverse)
+        variable_execution = compose_def.get('variableExecution')
+        return ComposeScript(compose_name, deploy=deploy_tasks, reverse=reverse, variable_execution=variable_execution)
     
     def __read_deploy_task(self, deploy_task_def):
         if not isinstance(deploy_task_def, dict):

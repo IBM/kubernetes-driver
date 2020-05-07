@@ -11,9 +11,9 @@ class KegdReportPersistenceFactory(Service, Capability):
 
     def build(self, kube_location, api_ctl):
         record_builder = self.__build_record_builder(kube_location)
+        cm_persister_args = kube_location.get_cm_persister_args()
         return ConfigMapPersister('KegDeploymentReport', api_ctl, kube_location.driver_namespace, record_builder, 
-                                    cm_api_version=kube_location.cm_api_version, cm_kind=kube_location.cm_kind, 
-                                    cm_data_field=kube_location.cm_data_field)
+                                    **cm_persister_args)
 
     def __build_record_builder(self, kube_location):
-        return CmRecordBuilder(kube_location.client, data_types)
+        return CmRecordBuilder(kube_location.client, V1alpha1KegDeploymentReportStatus, data_types)

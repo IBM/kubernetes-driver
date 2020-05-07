@@ -11,11 +11,11 @@ class WithdrawObjectHandler:
     def __init__(self):
         self.error_reader = ErrorReader()
 
-    def decorate(self, action, parent_task_settings, operation_exec_name, keg_name, keg_status):
+    def decorate(self, action, parent_task_settings, script_name, keg_name, keg_status):
         obj_status = self.__find_object(action, keg_status)
-        self.__do_decorate(obj_status, action, parent_task_settings, operation_exec_name, keg_name, keg_status)
+        self.__do_decorate(obj_status, action, parent_task_settings, script_name, keg_name, keg_status)
 
-    def __do_decorate(self, obj_status, action, parent_task_settings, operation_exec_name, keg_name, keg_status):
+    def __do_decorate(self, obj_status, action, parent_task_settings, script_name, keg_name, keg_status):
         if obj_status == None:
             obj_status = V1alpha1ObjectStatus(group=action.group, kind=action.kind, namespace=action.namespace, 
                                                 name=action.name)
@@ -23,7 +23,7 @@ class WithdrawObjectHandler:
         obj_status.state = EntityStates.DELETE_PENDING
         obj_status.error = None
 
-    def handle(self, action, parent_task_settings, operation_exec_name, keg_name, keg_status, api_ctl):
+    def handle(self, action, parent_task_settings, script_name, keg_name, keg_status, api_ctl):
         task_errors = []
         obj_status = self.__find_object(action, keg_status)
         try:
@@ -31,14 +31,17 @@ class WithdrawObjectHandler:
             obj_status.state = EntityStates.DELETED
             obj_status.error = None
         except Exception as e:
-            if isinstance(e, ApiException) and self.error_reader.is_not_found_err(e):
-                # Object not found, assume it is already delete
+            if self.error_reader.is_api_exception(e) and self.error_reader.is_not_found_err(e):
+                # Object not found, assume it is already deleted
                 obj_status.state = EntityStates.DELETED
                 obj_status.error = None
             else:
                 reference = ObjectReference(action.group, action.kind, action.name, namespace=action.namespace)
                 logger.exception(f'Delete attempt of object ({reference}) in group \'{keg_name}\' failed')
-                error_msg = str(e)
+                if self.error_reader.is_api_exception(e):
+                    error_msg = self.error_reader.summarise_error(e)
+                else:
+                    error_msg = str(e)
                 task_errors.append(error_msg)
                 obj_status.state = EntityStates.DELETE_FAILED
                 obj_status.error = error_msg

@@ -1,4 +1,5 @@
 from kubedriver.kubeobjects import namehelper
+from ignition.service.framework import Service, Capability
 import re
 
 REMOVE_SUBDOMAIN_INVALID_REGEX = re.compile('[^a-z0-9.-]+')
@@ -7,7 +8,7 @@ REMOVE_LABEL_INVALID_REGEX = re.compile('[^a-z0-9-]+')
 REPEATED_LABEL_SEPARATOR_REGEX = re.compile('(?P<sep>['+re.escape('-')+'])(?P=sep)')
 REMOVE_VOWEL_REGEX = re.compile('[aeiouAEIOU]')
 
-class NameManager:
+class NameManager(Service, Capability):
 
     def __execute_attempts(self, attempts, validator, error_title):
         attempt_errors = []
@@ -47,11 +48,15 @@ class NameManager:
         ]
         return self.__execute_attempts(attempts, namehelper.is_valid_label_name, 'safe label name from Resource name')
 
-    def safe_label_name_for_resource(self, resource_id, resource_name):
+    def safe_label_name_for_resource(self, resource_id, resource_name, prefix=None):
+        if prefix == None:
+            prefix = ''
+        else:
+            prefix = prefix + '-'
         attempts = [
-            lambda: self.__make_safe_label(f'{resource_name}-{resource_id}'),
-            lambda: self.__make_safe_label(f'{self.__short_resource_name(resource_name)}-{resource_id}'),
-            lambda: self.__make_safe_label(f'{self.__short_resource_name_reduced(resource_name)}-{resource_id}')
+            lambda: self.__make_safe_label(f'{prefix}{resource_name}-{resource_id}'),
+            lambda: self.__make_safe_label(f'{prefix}{self.__short_resource_name(resource_name)}-{resource_id}'),
+            lambda: self.__make_safe_label(f'{prefix}{self.__short_resource_name_reduced(resource_name)}-{resource_id}')
         ]
         return self.__execute_attempts(attempts, namehelper.is_valid_label_name, 'safe label name for Resource')
 

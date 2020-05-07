@@ -17,9 +17,9 @@ class DeployTask:
 
     def on_write(self):
         data = {
-            self.action.action_name: self.action.write()
+            self.action.action_name: self.action.on_write()
         }
-        data.update(self.settings.write())
+        data.update(self.settings.on_write())
         return data
 
     @staticmethod
@@ -27,7 +27,7 @@ class DeployTask:
         settings, remainder = DeployTaskSettings.on_read(**kwargs)
         if len(remainder) != 1:
             raise InvalidDeploymentStrategyError(f'compose deploy task must specify one type from {ACCEPTED_ACTIONS.keys()} but found multiple {remainder.keys()}')
-        action_name = remainder.keys()[0]
+        action_name = list(remainder.keys())[0]
         if action_name not in ACCEPTED_ACTIONS:
             raise InvalidDeploymentStrategyError(f'compose deploy task must specify one type from {ACCEPTED_ACTIONS.keys()} not {action_name}')
         action_args = remainder.get(action_name, {})
@@ -45,6 +45,5 @@ class DeployTaskSettings:
     def on_read(**kwargs):
         return (DeployTaskSettings(), kwargs)
 
-    @staticmethod
-    def on_write(settings):
+    def on_write(self):
         return {}

@@ -9,7 +9,7 @@ class LocationContextFactory(Service, Capability):
         self.kegd_persister_factory = kegd_persister_factory
         self.keg_persister_factory = keg_persister_factory
     
-    def build_context(self, kube_location):
+    def build(self, kube_location):
         client = self.__build_client(kube_location)
         api_ctl = self.__build_api_ctl(kube_location, client)
         kegd_persister = self.kegd_persister_factory.build(kube_location, api_ctl)

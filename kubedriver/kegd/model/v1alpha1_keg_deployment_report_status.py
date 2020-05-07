@@ -1,12 +1,14 @@
 import pprint 
 from kubedriver.utils.to_dict import to_dict
 
-class V1alpha1DeploymentReportStatus(object):
+class V1alpha1KegDeploymentReportStatus(object):
 
     openapi_types = {
         'uid': 'str',
         'keg_name': 'str',
         'operation': 'str',
+        'included_scripts': 'list[str]',
+        'run_cleanup': 'bool',
         'state': 'str',
         'error': 'str'
     }
@@ -15,14 +17,18 @@ class V1alpha1DeploymentReportStatus(object):
         'uid': 'uid',
         'keg_name': 'kegName',
         'operation': 'operation',
-        'state': 'str',
-        'error': 'str'
+        'included_scripts': 'includedScripts',
+        'run_cleanup': 'runCleanup',
+        'state': 'state',
+        'error': 'error'
     }
 
-    def __init__(self, uid=None, keg_name=None, operation=None, state=None, error=None):
+    def __init__(self, uid=None, keg_name=None, operation=None, included_scripts=None, run_cleanup=None, state=None, error=None):
         self._uid = None
         self._keg_name = None
         self._operation = None
+        self._included_scripts = None
+        self._run_cleanup = None
         self._state = None
         self._error = None
         if uid is not None:
@@ -31,6 +37,10 @@ class V1alpha1DeploymentReportStatus(object):
             self._keg_name = keg_name
         if operation is not None:
             self._operation = operation
+        if included_scripts is not None:
+            self._included_scripts = included_scripts
+        if run_cleanup is not None:
+            self._run_cleanup = run_cleanup
         if state is not None:
             self._state = state
         if error is not None:
@@ -61,6 +71,22 @@ class V1alpha1DeploymentReportStatus(object):
         self._operation = operation
     
     @property
+    def included_scripts(self):
+        return self._included_scripts
+
+    @included_scripts.setter
+    def included_scripts(self, included_scripts):
+        self._included_scripts = included_scripts
+    
+    @property
+    def run_cleanup(self):
+        return self._run_cleanup
+
+    @run_cleanup.setter
+    def run_cleanup(self, run_cleanup):
+        self._run_cleanup = run_cleanup
+
+    @property
     def state(self):
         return self._state
 
@@ -86,7 +112,7 @@ class V1alpha1DeploymentReportStatus(object):
         return self.to_str()
 
     def __eq__(self, other):
-        if not isinstance(other, V1alpha1DeploymentReportStatus):
+        if not isinstance(other, V1alpha1KegDeploymentReportStatus):
             return False
         return self.__dict__ == other.__dict__
 

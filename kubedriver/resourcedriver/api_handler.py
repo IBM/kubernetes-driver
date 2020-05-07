@@ -1,6 +1,7 @@
 import logging
 import ignition.model.lifecycle as lifecycle_model
 import ignition.model.failure as failure_model
+from ignition.service.framework import Service
 from ignition.service.resourcedriver import ResourceDriverHandlerCapability, InvalidRequestError
 from kubedriver.location import KubeDeploymentLocation
 from kubedriver.kegd.model import OperationStates
@@ -9,7 +10,7 @@ from .topology import KubernetesAssociatedTopology
 
 logger = logging.getLogger(__name__)
 
-class KubeResourceDriverHandlerCapability(ResourceDriverHandlerCapability):
+class KubeResourceDriverHandler(Service, ResourceDriverHandlerCapability):
 
     def __init__(self, resource_driver_properties, kegd_orchestrator, kegd_file_reader, render_context_service, name_manager):
         self.resource_driver_properties = resource_driver_properties
@@ -77,10 +78,15 @@ class KubeResourceDriverHandlerCapability(ResourceDriverHandlerCapability):
         outputs = None
         associated_topology = None
         if request_report.state == OperationStates.COMPLETE:
-            pass
+            execution_status = lifecycle_model.STATUS_COMPLETE
         elif request_report.state == OperationStates.FAILED:
+            execution_status = lifecycle_model.STATUS_FAILED
             failure_details = failure_model.FailureDetails(failure_model.FAILURE_CODE_INTERNAL_ERROR, description=request_report.error)
         return lifecycle_model.LifecycleExecution(request_id, execution_status, outputs=outputs, failure_details=failure_details, associated_topology=associated_topology)
+
+    def lifecycle_execution_monitoring_complete(self, request_id, deployment_location):
+        kube_location = self.__translate_location(deployment_location)
+        self.kegd_orchestrator.delete_request_report(kube_location, request_id)
 
     def find_reference(self, instance_name, driver_files, deployment_location):
         """
@@ -109,8 +115,7 @@ class KubeResourceDriverHandlerCapability(ResourceDriverHandlerCapability):
         resource_name = system_properties.get('resourceName')
         if resource_name == None:
             raise InvalidRequestError('system properties missing \'resourceName\' value')
-        resource_id = 'keg-' + str(resource_id)
-        return self.name_manager.safe_subdomain_name_for_resource(resource_id, resource_name)
+        return self.name_manager.safe_label_name_for_resource(resource_id, resource_name, prefix='keg')
 
     def __build_associated_topology(self, keg_name, kube_location):
         topology = KubernetesAssociatedTopology()

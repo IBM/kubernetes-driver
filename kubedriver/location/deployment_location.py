@@ -61,7 +61,7 @@ class KubeDeploymentLocation(KubeDeploymentLocationBase):
         return KubeDeploymentLocation(name, client_config, **kwargs)
 
     def __init__(self, name, client_config, default_object_namespace=DEFAULT_NAMESPACE, crd_api_version=None, driver_namespace=None, \
-                    cm_api_version=None, cm_kind=None, cm_data_field=None, helm_version='2.8.2'):
+                    cm_api_version='v1', cm_kind='ConfigMap', cm_data_field='data', helm_version='2.8.2'):
         super().__init__(name, client_config, default_object_namespace=default_object_namespace)
         self.crd_api_version = crd_api_version
         self.cm_api_version = cm_api_version
@@ -84,6 +84,16 @@ class KubeDeploymentLocation(KubeDeploymentLocationBase):
                     os.remove(config_file_path)
         return self._client
 
+    def get_cm_persister_args(self):
+        args = {}
+        if self.cm_api_version is not None:
+            args['cm_api_version'] = self.cm_api_version
+        if self.cm_kind is not None:
+            args['cm_kind'] = self.cm_kind
+        if self.cm_data_field is not None:
+            args['cm_data_field'] = self.cm_data_field
+        return args
+        
     def to_dict(self):
         data = super().to_dict()
         data[KubeDeploymentLocationBase.PROPERTIES].update({

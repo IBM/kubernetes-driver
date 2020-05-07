@@ -1,10 +1,11 @@
 import uuid
 import logging
-import kubedriver.keg.model as keg_model
-import kubedriver.kegd.model as kegd_model
+from ignition.service.framework import Service, Capability
 from kubedriver.kegd.action_handlers import DeployObjectHandler, WithdrawObjectHandler
+from kubedriver.keg.model import V1alpha1KegStatus, V1alpha1KegCompositionStatus
 from kubedriver.kegd.model import (WithdrawTask, WithdrawTaskSettings, WithdrawObjectAction, DeployTask, DeployHelmAction,
-                                    DeployObjectsAction, DeployObjectAction, Labels, LabelValues, OperationStates)
+                                    DeployObjectsAction, DeployObjectAction, Labels, LabelValues, OperationStates,
+                                    V1alpha1KegDeploymentReportStatus, Tags, OperationExecution, OperationScript)
 from kubedriver.kegd.jobs import ProcessStrategyJob
 from kubedriver.persistence import PersistenceError, RecordNotFoundError
 from kubedriver.kubeobjects import ObjectConfigurationDocument, ObjectConfigurationTemplate, InvalidObjectConfigurationDocumentError, InvalidObjectConfigurationError
@@ -20,7 +21,7 @@ DEPLOY_ACTION_HANDLERS = {
     DeployObjectAction: DeployObjectHandler()
 }
 
-class KegdOrchestrator:
+class KegdOrchestrator(Service, Capability):
 
     def __init__(self, context_factory, templating, job_queue):
         self.context_factory = context_factory
@@ -43,6 +44,11 @@ class KegdOrchestrator:
         context = self.context_factory.build(kube_location)
         worker = LocationWorker(context, self.templating)
         return worker.get_request_report(request_id)
+
+    def delete_request_report(self, kube_location, request_id):
+        context = self.context_factory.build(kube_location)
+        worker = LocationWorker(context, self.templating)
+        return worker.delete_request_report(request_id)
 
     def _handle_process_strategy_job(self, job):
         job_data = job.get('data')
@@ -67,36 +73,50 @@ class LocationWorker:
         except RecordNotFoundError:
             #Not found, first operation on this Keg 
             pass
-        operation_exec_name, withdraw_tasks, deploy_tasks = self.__determine_tasks(kegd_strategy, operation_name, kegd_files, render_context, keg_status=keg_status)
+        operation_execution = self.__build_operation_execution(kegd_strategy, operation_name, kegd_files, render_context, keg_status=keg_status)
         request_id = 'kegdr-' + str(uuid.uuid4())
-        self.__create_report_status(request_id, keg_name, operation_exec_name)
-        return ProcessStrategyJob(request_id, self.kube_location, keg_name, operation_name, withdraw_tasks, deploy_tasks)
+        self.__create_report_status(request_id, keg_name, operation_execution)
+        return ProcessStrategyJob(request_id, self.kube_location, keg_name, operation_execution)
 
     def get_request_report(self, request_id):
         return self.kegd_persister.get(request_id)
 
+    def delete_request_report(self, request_id):
+        try:
+            return self.kegd_persister.delete(request_id)
+        except RecordNotFoundError:
+            #Not found, nothing to do
+            pass
+
     def handle_process_strategy_job(self, process_strategy_job):
+        logger.info(f'Processing request \'{process_strategy_job.request_id}\'')
         # Errors retrieving the request or checking request state result in the job not being requeued
         report_status = self.kegd_persister.get(process_strategy_job.request_id)
         # This point forward we must make best efforts to update the request if there is an error
-        request_errors = []
+        request_errors = None
         try:
-            keg_status = self.__get_or_init_keg(process_strategy_job.keg_name)
-            withdraw_errors = self.__process_withdraw_tasks(report_status, process_strategy_job.keg_name, keg_status, process_strategy_job.withdraw_tasks)
-            if len(withdraw_errors) == 0:
-                deploy_errors = self.__process_deploy_tasks(report_status, process_strategy_job.keg_name, keg_status, process_strategy_job.withdraw_tasks)
-                request_errors.extend(deploy_errors)
-            else:
-                request_errors.extend(withdraw_errors)
+            keg_name = process_strategy_job.keg_name
+            keg_status = self.__get_or_init_keg(keg_name)
+            for script in process_strategy_job.operation_execution.scripts:
+                request_errors = self.__process_script(report_status, keg_name, keg_status, script)
+                if len(request_errors) > 0:
+                    break
+            if process_strategy_job.operation_execution.run_cleanup:
+                logger.debug(f'Cleaning out Keg \'{keg_name}\' on request \'{process_strategy_job.request_id}\'')
+                cleanup_errors = self.__run_cleanup(report_status, keg_name, keg_status)
+                request_errors.extend(cleanup_errors)
         except Exception as e:
             logger.exception(f'An error occurred whilst processing request \'{process_strategy_job.request_id}\' on group \'{process_strategy_job.keg_name}\', attempting to update records with failure')
+            if request_errors == None:
+                request_errors = []
             request_errors.append(f'Internal error: {str(e)}')
         # If we can't update the record then we can't do much else TODO: retry the request and/or update
         self.__update_report_with_results(report_status, request_errors)
+        self.kegd_persister.update(process_strategy_job.request_id, report_status)
         return True
 
     def __update_report_with_results(self, report_status, request_errors):
-        if len(request_errors) > 0:
+        if request_errors != None and len(request_errors) > 0:
             report_status.state = OperationStates.FAILED
             report_status.error = self.__summarise_request_errors(request_errors)
         else:
@@ -121,12 +141,39 @@ class LocationWorker:
             raise StrategyProcessingError(f'Could not find a handler for deploy task {task.action.__class__}')
         return handler
 
-    def __process_withdraw_tasks(self, report_status, keg_name, keg_status, withdraw_tasks):
+    def __run_cleanup(self, report_status, keg_name, keg_status):
+        cleanup_errors = self.__cleanout_keg(report_status, keg_name, keg_status)
+        if len(cleanup_errors) == 0:
+            try:
+                self.keg_persister.delete(keg_name)
+            except PersistenceError as e:
+                msg = f'Failed to remove Keg \'{keg_name}\' on request \'{report_status.uid}\''
+                logger.exception(msg)
+                cleanup_errors.append(msg + ': ' + str(e))
+        return cleanup_errors
+        
+    def __cleanout_keg(self, report_status, keg_name, keg_status):
+        withdraw_tasks = []
+        for obj_status in keg_status.composition.objects:
+            withdraw_tasks.append(WithdrawTask(WithdrawTaskSettings(), WithdrawObjectAction(obj_status.group, obj_status.kind, obj_status.name, obj_status.namespace)))
+        if len(withdraw_tasks) > 0:
+            return self.__process_withdraw_tasks(report_status, 'Cleanup', keg_name, keg_status, withdraw_tasks)
+        else:
+            return []
+
+    def __process_script(self, report_status, keg_name, keg_status, operation_script):
+        script_errors = self.__process_withdraw_tasks(report_status, operation_script.name, keg_name, keg_status, operation_script.withdraw_tasks)
+        if len(script_errors) == 0:
+            script_errors = self.__process_deploy_tasks(report_status, operation_script.name, keg_name, keg_status, operation_script.deploy_tasks)
+        return script_errors
+
+    def __process_withdraw_tasks(self, report_status, script_name, keg_name, keg_status, withdraw_tasks):
         task_errors = []
         if len(withdraw_tasks) > 0:
             for task in withdraw_tasks:
+                logger.info('Processing decorate for withdraw task ' + str(task.on_write()))
                 handler = self.__get_withdraw_task_handler(task)
-                handler.decorate(task.action, task.settings, report_status.operation, keg_name, keg_status)
+                handler.decorate(task.action, task.settings, script_name, keg_name, keg_status)
             try:
                 self.keg_persister.update(keg_name, keg_status)
             except PersistenceError as e:
@@ -136,8 +183,9 @@ class LocationWorker:
             else:
                 #Proceed with withdraw
                 for task in withdraw_tasks:
+                    logger.info('Processing handler for withdraw task ' + str(task.on_write()))
                     handler = self.__get_withdraw_task_handler(task)
-                    handler_errors = handler.handle(task.action, task.settings, report_status.operation, keg_name, keg_status, self.api_ctl)
+                    handler_errors = handler.handle(task.action, task.settings, script_name, keg_name, keg_status, self.api_ctl)
                     task_errors.extend(handler_errors)
                 try:
                     self.keg_persister.update(keg_name, keg_status)
@@ -147,12 +195,13 @@ class LocationWorker:
                     task_errors.append(msg + ': ' + str(e))
         return task_errors
 
-    def __process_deploy_tasks(self, report_status, keg_name, keg_status, deploy_tasks):
+    def __process_deploy_tasks(self, report_status, script_name, keg_name, keg_status, deploy_tasks):
         task_errors = []
         if len(deploy_tasks) > 0:
             for task in deploy_tasks:
+                logger.info('Processing decorate for deploy task ' + str(task.on_write()))
                 handler = self.__get_deploy_task_handler(task)
-                handler.decorate(task.action, task.settings, report_status.operation, keg_name, keg_status)
+                handler.decorate(task.action, task.settings, script_name, keg_name, keg_status)
             try:
                 self.keg_persister.update(keg_name, keg_status)
             except PersistenceError as e:
@@ -162,8 +211,9 @@ class LocationWorker:
             else:
                 #Proceed with deploy
                 for task in deploy_tasks:
+                    logger.info('Processing handler for deploy task ' + str(task.on_write()))
                     handler = self.__get_deploy_task_handler(task)
-                    handler_errors = handler.handle(task.action, task.settings, report_status.operation, keg_name, keg_status, self.api_ctl)
+                    handler_errors = handler.handle(task.action, task.settings, script_name, keg_name, keg_status, self.api_ctl)
                     task_errors.extend(handler_errors)
                 try:
                     self.keg_persister.update(keg_name, keg_status)
@@ -178,21 +228,24 @@ class LocationWorker:
             keg = self.keg_persister.get(keg_name)
         except RecordNotFoundError:
             # Not found
-            keg = keg_model.V1alpha1KegStatus()
-            keg.composition = keg_model.V1alpha1KegCompositionStatus()
+            keg = V1alpha1KegStatus()
+            keg.composition = V1alpha1KegCompositionStatus()
             keg.composition.objects = []
             keg.composition.helm_releases = []
+            self.keg_persister.create(keg_name, keg)
         return keg
 
-    def __create_report_status(self, request_id, keg_name, operation_exec_name):
-        report = kegd_model.V1alpha1KegDeploymentReportStatus()
+    def __create_report_status(self, request_id, keg_name, operation_execution):
+        report = V1alpha1KegDeploymentReportStatus()
         report.uid = request_id
         report.keg_name = keg_name
-        report.operation = operation_exec_name
-        report.state = kegd_model.OperationStates.PENDING
+        report.operation = operation_execution.operation_name
+        report.included_scripts = [script.name for script in operation_execution.scripts]
+        report.run_cleanup = operation_execution.run_cleanup
+        report.state = OperationStates.PENDING
         report.error = None
         labels = {
-            Labels.MANAGED_BY: kegd_model.LabelValues.MANAGED_BY,
+            Labels.MANAGED_BY: LabelValues.MANAGED_BY,
             Labels.KEG: keg_name
         }
         self.kegd_persister.create(request_id, report, labels=labels)
@@ -201,32 +254,64 @@ class LocationWorker:
     def __gen_operation_execution_name(self, compose_script):
         return f'{compose_script.name}'
 
-    def __determine_tasks(self, kegd_strategy, operation_name, kegd_files, render_context, keg_status=None):
-        compose_script, reverse_scripts = kegd_strategy.get_compose_scripts_for(operation_name)
-        operation_exec_name = self.__gen_operation_execution_name(compose_script)
-        withdraw_tasks = self.__determine_reverse_tasks(operation_exec_name, reverse_scripts, kegd_files, render_context, keg_status=keg_status)
-        deploy_tasks = self.__determine_deploy_tasks(operation_exec_name, compose_script, kegd_files, render_context)
-        return (operation_exec_name, withdraw_tasks, deploy_tasks)
+    def __gen_operation_script_name(self, compose_script, render_context):
+        uniqueness_string = None
+        if compose_script.variable_execution != None:
+            if isinstance(compose_script.variable_execution, str):
+                uniqueness_string = self.templating.render('{{' + compose_script.variable_execution + '}}', render_context)
+            elif isinstance(compose_script.variable_execution, list):
+                for variable_execution_param in compose_script.variable_execution:
+                    if uniqueness_string != None:
+                        uniqueness_string += '::'
+                    else:
+                        uniqueness_string = ''
+                    uniqueness_string += self.templating.render('{{' + variable_execution_param + '}}', render_context)
+        script_name = f'{compose_script.name}'
+        if uniqueness_string is not None:
+            script_name += f'::{uniqueness_string}'
+        return script_name
 
-    def __determine_reverse_tasks(self, operation_exec_name, reverse_scripts, kegd_files, render_context, keg_status=None):
-        tasks = []
+    def __gen_reverse_operation_script_name(self, script_to_reverse, render_context):
+        original_script_exec_name = self.__gen_operation_script_name(script_to_reverse, render_context)
+        return f'Withdraw::{original_script_exec_name}'
+
+    def __build_operation_execution(self, kegd_strategy, operation_name, kegd_files, render_context, keg_status=None):
+        compose_script, scripts_to_reverse = kegd_strategy.get_compose_scripts_for(operation_name)
+        all_scripts = []
+        reverse_scripts = self.__build_reverse_scripts(scripts_to_reverse, kegd_files, render_context, keg_status=keg_status)
+        all_scripts.extend(reverse_scripts)
+        if compose_script != None:
+            compose_operation_script = self.__build_operation_script(compose_script, kegd_files, render_context)
+            all_scripts.append(compose_operation_script)
+        run_cleanup = False
+        if kegd_strategy.cleanup_on == operation_name: 
+            run_cleanup = True
+        return OperationExecution(operation_name, scripts=all_scripts, run_cleanup=run_cleanup)
+
+    def __build_reverse_scripts(self, scripts_to_reverse, kegd_files, render_context, keg_status=None):
+        reverse_scripts = []
         if keg_status != None:
-            for reversed_script in reverse_scripts:
-                search_value = self.__gen_operation_execution_name(reversed_script.name)
-                objects = self.__find_composition_with_tag_value_in(keg_status, kegd_model.Tags.DEPLOYED_ON, search_value)
+            for script_to_reverse in scripts_to_reverse:
+                reverse_script_name = self.__gen_reverse_operation_script_name(script_to_reverse, render_context)
+                reverse_script = OperationScript(reverse_script_name)
+                reverse_scripts.append(reverse_script)
+                search_value = self.__gen_operation_script_name(script_to_reverse, render_context)
+                objects = self.__find_composition_with_tag_value_in(keg_status, Tags.DEPLOYED_ON, search_value)
                 for obj in objects:
-                    tasks.append(WithdrawTask(WithdrawTaskSettings(), WithdrawObjectAction(obj.group, obj.kind, obj.name, obj.namespace)))
-        return tasks
+                    reverse_script.withdraw_tasks.append(WithdrawTask(WithdrawTaskSettings(), WithdrawObjectAction(obj.group, obj.kind, obj.name, obj.namespace)))
+        return reverse_scripts
 
-    def __determine_deploy_tasks(self, operation_exec_name, compose_script, kegd_files, render_context):
-        tasks = []
+    def __build_operation_script(self, compose_script, kegd_files, render_context):
+        script_name = self.__gen_operation_script_name(compose_script, render_context)
+        script = OperationScript(script_name)
         for deploy_task in compose_script.deploy:
             if isinstance(deploy_task.action, DeployObjectsAction):
-                tasks.extend(self.__expand_deploy_objects_action(operation_exec_name, deploy_task, kegd_files, render_context))
-        return tasks
+                script.deploy_tasks.extend(self.__expand_deploy_objects_action(deploy_task, kegd_files, render_context))
+        return script
 
-    def __expand_deploy_objects_action(self, operation_exec_name, deploy_task, kegd_files, render_context):
+    def __expand_deploy_objects_action(self, deploy_task, kegd_files, render_context):
         deploy_action = deploy_task.action
+        self.__render_deploy_objects_action_args(deploy_action, render_context)
         tasks = []
         file_path = kegd_files.get_object_file(deploy_action.file)
         with open(file_path, 'r') as f:
@@ -238,17 +323,21 @@ class LocationWorker:
             kind = object_conf.kind
             name = object_conf.name
             namespace = object_conf.namespace
-            if namespace == None and self.keg_persister.api_ctl.is_object_namespaced(group, kind):
+            if namespace == None and self.api_ctl.is_object_namespaced(group, kind):
                 namespace = self.kube_location.default_object_namespace
             tasks.append(DeployTask(deploy_task.settings, DeployObjectAction(group, kind, name, object_conf.data, namespace=namespace)))
         return tasks
+
+    def __render_deploy_objects_action_args(self, deploy_action, render_context):
+        if deploy_action.file != None:
+            deploy_action.file = self.templating.render(deploy_action.file, render_context)
 
     def __find_composition_with_tag_value_in(self, keg_status, tag_key, tag_value):
         objects = []
         if keg_status != None and keg_status.composition is not None:
             if keg_status.composition.objects is not None:
                 for object_status in keg_status.composition.objects:
-                    if object_status.tag != None and tag_value in object_status.tag.get(tag_key):
+                    if object_status.tags != None and tag_value in object_status.tags.get(tag_key):
                         objects.append(object_status)
         return objects
 
