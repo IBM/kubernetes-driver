@@ -1,6 +1,9 @@
 ---
 application:
   port: 8294
+  ssl:
+    enabled: True
+    cert_dir: /var/kubedriver/certs
 
 messaging:
   connection_address: kafka:9092
