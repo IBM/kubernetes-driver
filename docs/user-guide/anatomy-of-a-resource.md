@@ -193,7 +193,6 @@ The global cleanupOn value is a catch all, ensuring any objects we’ve created 
 
 It’s also reasonable to want to remove objects created by Configure or a custom operation much earlier in the Resource lifecycle. To handle these cases (or to change the default for objects deployed in Create/Install/Start), you may set the “cleanupOn” value for a specific compose entry:
 
-
 ```
 compose:
   - name: AddToList
@@ -271,13 +270,13 @@ Any object deployed as part of a transition/operation is expected to be unique a
 
 However, to remain idempotent, if the driver finds an object already exists and was deployed as part of the same Resource it will be updated.
 
-There is a side effect to this. The object will now be cleaned up on either the first transition’s cleanup rules and the second’s. 
+There is a side effect to this. The object will now be cleaned up on either the first transition’s cleanup rules or the second’s. 
 
 For example, if we deploy the same object on Create and Start, the object is set to be cleaned up on both Stop and Delete (so will usually be removed on Stop as this is called before Delete). This is ok, as the Delete call will not fail if the object has been removed previously, however this may not be your desired behaviour. 
 
-## Helm Charts 
+## Deploy Helm Charts 
 
-The driver also supports installing and deleting Helm releases with charts. To install a chart during a transition/operation add the “helm” task to the compose entry: 
+The driver also supports installing (and deleting) Helm charts as releases. To install a chart during a transition/operation add the `helm` task to the compose entry: 
 
 ```
 compose:
@@ -288,11 +287,11 @@ compose:
           name: my-release-name
 ```
 
-The value of “chart” must be either a file in the “helm” directory of your Resource’s Kubernetes directory or the name of a chart from a repository. 
+The value of `chart` must be either a file in the `helm` directory of your Resource’s Kubernetes directory or the name of a chart from a repository (that has been configured on the Helm server of your deployment location). 
 
 A value must be set to give the release a name and you may optionally set the namespace to install to (otherwise the default on the deployment location is used). 
 
-You may also include the “values” option with the name of a file (also found in the helm directory) to customise the installation values. This file will be rendered as a template so you may inject Resource and/or system properties before it is used. 
+You may also include the `values` option with the name of a file (also found in the helm directory) to customise the installation values. This file will be rendered as a template so you may inject Resource and/or system properties before it is used. 
 
 In addition, the values of chart, name, namespace and values are also rendered as templated strings, so you may inject Resource and/or system properties:
 
@@ -302,8 +301,18 @@ compose:
     deploy:
       - helm:
           chart: my-chart-1.0.0.tgz
-          name: {{ system_properties.resource_subdomain }}-release
+          name: r{{ system_properties.resource_id_label }}
 ```
+
+**Note:** care should be taken with the value of `name` as a Helm release name cannot exceed 53 characters and must start with an alphabetic letter
+
+## Updating Helm Releases
+
+To remain idempotent, if the driver finds the helm release already exists and was deployed as part of the same Resource it will be removed and re-created.
+
+There is a side effect to this. The helm release will now be cleaned up on either the first transition’s cleanup rules or the second’s. 
+
+For example, if we deploy the same helm release on Create and Start, the release is set to be cleaned up on both Stop and Delete (so will usually be removed on Stop as this is called before Delete). This is ok, as the Delete call will not fail if the helm release has been removed previously, however this may not be your desired behaviour.
 
 ## Removing Helm Releases
 

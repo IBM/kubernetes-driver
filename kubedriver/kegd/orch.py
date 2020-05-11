@@ -1,10 +1,11 @@
 import uuid
 import logging
 from ignition.service.framework import Service, Capability
-from kubedriver.kegd.action_handlers import DeployObjectHandler, RemoveObjectHandler
+from kubedriver.kegd.action_handlers import DeployObjectHandler, RemoveObjectHandler, DeployHelmHandler, RemoveHelmHandler
 from kubedriver.keg.model import V1alpha1KegStatus, V1alpha1KegCompositionStatus
 from kubedriver.kegd.model import (RemovalTask, RemovalTaskSettings, RemoveObjectAction, DeployTask, DeployHelmAction,
                                     DeployObjectsAction, DeployObjectAction, DeployTaskSettings, Labels, LabelValues, 
+                                    RemoveHelmAction, DeployHelmAction,
                                     OperationStates, V1alpha1KegDeploymentReportStatus, Tags, OperationExecution, OperationScript)
 from kubedriver.kegd.jobs import ProcessStrategyJob
 from kubedriver.persistence import PersistenceError, RecordNotFoundError
@@ -15,10 +16,12 @@ from ignition.templating import TemplatingError
 logger = logging.getLogger(__name__)
 
 REMOVE_ACTION_HANDLERS = {
-    RemoveObjectAction: RemoveObjectHandler()
+    RemoveObjectAction: RemoveObjectHandler(),
+    RemoveHelmAction: RemoveHelmHandler()
 }
 DEPLOY_ACTION_HANDLERS = {
-    DeployObjectAction: DeployObjectHandler()
+    DeployObjectAction: DeployObjectHandler(),
+    DeployHelmAction: DeployHelmHandler()
 }
 
 class KegdOrchestrator(Service, Capability):
@@ -60,6 +63,7 @@ class KegdOrchestrator(Service, Capability):
 class LocationWorker:
 
     def __init__(self, context, templating):
+        self.context = context
         self.kube_location = context.kube_location
         self.templating = templating
         self.keg_persister = context.keg_persister
@@ -180,6 +184,8 @@ class LocationWorker:
         removal_tasks = []
         for obj_status in keg_status.composition.objects:
             removal_tasks.append(RemovalTask(RemovalTaskSettings(), RemoveObjectAction(obj_status.group, obj_status.kind, obj_status.name, obj_status.namespace)))
+        for helm_status in keg_status.composition.helm_releases:
+            removal_tasks.append(RemovalTask(RemovalTaskSettings(), RemoveHelmAction(helm_status.name, helm_status.namespace)))
         if len(removal_tasks) > 0:
             return self.__process_removal_tasks(report_status, 'Cleanup', keg_name, keg_status, removal_tasks)
         else:
@@ -209,7 +215,7 @@ class LocationWorker:
                 for task in removal_tasks:
                     logger.info('Processing handler for remove task ' + str(task.on_write()))
                     handler = self.__get_removal_task_handler(task)
-                    handler_errors = handler.handle(task.action, task.settings, script_name, keg_name, keg_status, self.api_ctl)
+                    handler_errors = handler.handle(task.action, task.settings, script_name, keg_name, keg_status, self.context)
                     task_errors.extend(handler_errors)
                 try:
                     self.keg_persister.update(keg_name, keg_status)
@@ -237,7 +243,7 @@ class LocationWorker:
                 for task in deploy_tasks:
                     logger.info('Processing handler for deploy task ' + str(task.on_write()))
                     handler = self.__get_deploy_task_handler(task)
-                    handler_errors = handler.handle(task.action, task.settings, script_name, keg_name, keg_status, self.api_ctl)
+                    handler_errors = handler.handle(task.action, task.settings, script_name, keg_name, keg_status, self.context)
                     task_errors.extend(handler_errors)
                 try:
                     self.keg_persister.update(keg_name, keg_status)
@@ -297,13 +303,13 @@ class LocationWorker:
 
     def __gen_cleanup_operation_script_name(self, script_to_reverse, render_context):
         original_script_exec_name = self.__gen_operation_script_name(script_to_reverse, render_context)
-        return f'remove::{original_script_exec_name}'
+        return f'cleanup::{original_script_exec_name}'
 
     def __build_operation_execution(self, kegd_strategy, operation_name, kegd_files, render_context, keg_status=None):
         compose_script, scripts_to_cleanup = kegd_strategy.get_compose_scripts_for(operation_name)
         all_scripts = []
-        reverse_scripts = self.__build_cleanup_scripts(scripts_to_cleanup, kegd_files, render_context, keg_status=keg_status)
-        all_scripts.extend(reverse_scripts)
+        cleanup_scripts = self.__build_cleanup_scripts(scripts_to_cleanup, kegd_files, render_context, keg_status=keg_status)
+        all_scripts.extend(cleanup_scripts)
         if compose_script != None:
             compose_operation_script = self.__build_operation_script(compose_script, kegd_files, render_context)
             all_scripts.append(compose_operation_script)
@@ -313,17 +319,19 @@ class LocationWorker:
         return OperationExecution(operation_name, scripts=all_scripts, run_cleanup=run_cleanup)
 
     def __build_cleanup_scripts(self, scripts_to_cleanup, kegd_files, render_context, keg_status=None):
-        reverse_scripts = []
+        cleanup_scripts = []
         if keg_status != None:
             for script_to_reverse in scripts_to_cleanup:
-                reverse_script_name = self.__gen_cleanup_operation_script_name(script_to_reverse, render_context)
-                reverse_script = OperationScript(reverse_script_name)
-                reverse_scripts.append(reverse_script)
+                cleanup_script_name = self.__gen_cleanup_operation_script_name(script_to_reverse, render_context)
+                cleanup_script = OperationScript(cleanup_script_name)
+                cleanup_scripts.append(cleanup_script)
                 search_value = self.__gen_operation_script_name(script_to_reverse, render_context)
-                objects = self.__find_composition_with_tag_value_in(keg_status, Tags.DEPLOYED_ON, search_value)
+                objects, helm_releases = self.__find_composition_with_tag_value_in(keg_status, Tags.DEPLOYED_ON, search_value)
                 for obj in objects:
-                    reverse_script.removal_tasks.append(RemovalTask(RemovalTaskSettings(), RemoveObjectAction(obj.group, obj.kind, obj.name, obj.namespace)))
-        return reverse_scripts
+                    cleanup_script.removal_tasks.append(RemovalTask(RemovalTaskSettings(), RemoveObjectAction(obj.group, obj.kind, obj.name, obj.namespace)))
+                for helm_release in helm_releases:
+                    cleanup_script.removal_tasks.append(RemovalTask(RemovalTaskSettings(), RemoveHelmAction(helm_release.name, namespace=helm_release.namespace)))
+        return cleanup_scripts
 
     def __build_operation_script(self, compose_script, kegd_files, render_context):
         script_name = self.__gen_operation_script_name(compose_script, render_context)
@@ -331,11 +339,36 @@ class LocationWorker:
         for deploy_task in compose_script.deploy:
             if isinstance(deploy_task.action, DeployObjectsAction):
                 script.deploy_tasks.extend(self.__expand_deploy_objects_action(deploy_task, kegd_files, render_context))
+            elif isinstance(deploy_task.action, DeployHelmAction):
+                script.deploy_tasks.extend(self.__expand_helm_action(deploy_task, kegd_files, render_context))
+            else:
+                script.deploy_tasks.append(deploy_task)
         return script
 
+    def __expand_helm_action(self, deploy_task, kegd_files, render_context):
+        deploy_action = deploy_task.action
+        if deploy_action.chart != None:
+            deploy_action.chart = self.templating.render(deploy_action.chart, render_context)
+            if kegd_files.has_helm_file(deploy_action.chart):
+                deploy_action.chart = kegd_files.get_helm_file_base64(deploy_action.chart)
+                deploy_action.chart_encoded = True
+        if deploy_action.name != None:
+            deploy_action.name = self.templating.render(deploy_action.name, render_context)
+        if deploy_action.namespace != None:
+            deploy_action.namespace = self.templating.render(deploy_action.namespace, render_context)
+        if deploy_action.values != None:
+            deploy_action.values = self.templating.render(deploy_action.values, render_context)
+            values_file_path = kegd_files.get_helm_file(deploy_action.values)
+            with open(values_file_path, 'r') as f:
+                values_file_content = f.read()
+            rendered_values_file_content = self.__process_template(values_file_content, render_context, values_file_path)
+            deploy_action.values = rendered_values_file_content
+        return [deploy_task]
+    
     def __expand_deploy_objects_action(self, deploy_task, kegd_files, render_context):
         deploy_action = deploy_task.action
-        self.__render_deploy_objects_action_args(deploy_action, render_context)
+        if deploy_action.file != None:
+            deploy_action.file = self.templating.render(deploy_action.file, render_context)
         tasks = []
         file_path = kegd_files.get_object_file(deploy_action.file)
         with open(file_path, 'r') as f:
@@ -352,18 +385,19 @@ class LocationWorker:
             tasks.append(DeployTask(deploy_task.settings, DeployObjectAction(group, kind, name, object_conf.data, namespace=namespace)))
         return tasks
 
-    def __render_deploy_objects_action_args(self, deploy_action, render_context):
-        if deploy_action.file != None:
-            deploy_action.file = self.templating.render(deploy_action.file, render_context)
-
     def __find_composition_with_tag_value_in(self, keg_status, tag_key, tag_value):
         objects = []
+        helm_releases = []
         if keg_status != None and keg_status.composition is not None:
             if keg_status.composition.objects is not None:
                 for object_status in keg_status.composition.objects:
                     if object_status.tags != None and tag_value in object_status.tags.get(tag_key):
                         objects.append(object_status)
-        return objects
+            if keg_status.composition.helm_releases is not None:
+                for helm_status in keg_status.composition.helm_releases:
+                    if helm_status.tags != None and tag_value in helm_status.tags.get(tag_key):
+                        helm_releases.append(helm_status)
+        return objects, helm_releases
 
     def __process_template(self, template, render_context, source_file_path):
         try:

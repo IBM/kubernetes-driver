@@ -12,6 +12,7 @@ from .exceptions import InvalidDeploymentStrategyError
 from .file_reader import DeploymentStrategyFileReader
 from .parser import DeploymentStrategyParser
 from .remove_object_action import RemoveObjectAction
+from .remove_helm_action  import RemoveHelmAction
 from .removal_task import RemovalTask, RemovalTaskSettings
 from .labels import Labels, LabelValues
 from .operation_states import OperationStates

@@ -40,6 +40,7 @@ class KubeResourceDriverHandler(Service, ResourceDriverHandlerCapability):
             ignition.service.resourcedriver.TemporaryResourceDriverError: there is an issue handling this request at this time
             ignition.service.resourcedriver.ResourceDriverError: there was an error handling this request
         """
+        kube_location = None
         try:
             kube_location = self.__translate_location(deployment_location)
             render_context = self.render_context_service.build(system_properties, resource_properties, request_properties, kube_location.to_dict())
@@ -57,6 +58,12 @@ class KubeResourceDriverHandler(Service, ResourceDriverHandlerCapability):
                     driver_files.remove_all()
                 except Exception as e:
                     logger.exception(f'Encountered an error whilst trying to clear out driver files directory {driver_files.root_path}: {str(e)}')
+            if kube_location != None:
+                try:
+                    logger.debug(f'Attempting to clean up deployment location related files')
+                    kube_location.clean()
+                except Exception as e:
+                    logger.exception(f'Encountered an error whilst trying to clean up deployment location related files: {str(e)}')
 
     def get_lifecycle_execution(self, request_id, deployment_location):
         """
@@ -72,17 +79,24 @@ class KubeResourceDriverHandler(Service, ResourceDriverHandlerCapability):
             ignition.service.resourcedriver.ResourceDriverError: there was an error handling this request
         """
         kube_location = self.__translate_location(deployment_location)
-        request_report = self.kegd_orchestrator.get_request_report(kube_location, request_id)
-        execution_status = lifecycle_model.STATUS_IN_PROGRESS
-        failure_details = None
-        outputs = None
-        associated_topology = None
-        if request_report.state == OperationStates.COMPLETE:
-            execution_status = lifecycle_model.STATUS_COMPLETE
-        elif request_report.state == OperationStates.FAILED:
-            execution_status = lifecycle_model.STATUS_FAILED
-            failure_details = failure_model.FailureDetails(failure_model.FAILURE_CODE_INTERNAL_ERROR, description=request_report.error)
-        return lifecycle_model.LifecycleExecution(request_id, execution_status, outputs=outputs, failure_details=failure_details, associated_topology=associated_topology)
+        try:
+            request_report = self.kegd_orchestrator.get_request_report(kube_location, request_id)
+            execution_status = lifecycle_model.STATUS_IN_PROGRESS
+            failure_details = None
+            outputs = None
+            associated_topology = None
+            if request_report.state == OperationStates.COMPLETE:
+                execution_status = lifecycle_model.STATUS_COMPLETE
+            elif request_report.state == OperationStates.FAILED:
+                execution_status = lifecycle_model.STATUS_FAILED
+                failure_details = failure_model.FailureDetails(failure_model.FAILURE_CODE_INTERNAL_ERROR, description=request_report.error)
+            return lifecycle_model.LifecycleExecution(request_id, execution_status, outputs=outputs, failure_details=failure_details, associated_topology=associated_topology)
+        finally:
+            try:
+                logger.debug(f'Attempting to clean up deployment location related files')
+                kube_location.clean()
+            except Exception as e:
+                logger.exception(f'Encountered an error whilst trying to clean up deployment location related files: {str(e)}')
 
     def lifecycle_execution_monitoring_complete(self, request_id, deployment_location):
         kube_location = self.__translate_location(deployment_location)
@@ -103,7 +117,7 @@ class KubeResourceDriverHandler(Service, ResourceDriverHandlerCapability):
             ignition.service.resourcedriver.TemporaryResourceDriverError: there is an issue handling this request at this time
             ignition.service.resourcedriver.ResourceDriverError: there was an error handling this request
         """
-        pass
+        raise NotImplementedError('Find Reference not implemented')
 
     def __translate_location(self, deployment_location_as_dict):
         return KubeDeploymentLocation.from_dict(deployment_location_as_dict)

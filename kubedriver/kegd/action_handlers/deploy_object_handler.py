@@ -27,7 +27,8 @@ class DeployObjectHandler:
         obj_status.error = None
         self.__add_tags(obj_status, action.tags, script_name)
 
-    def handle(self, action, parent_task_settings, script_name, keg_name, keg_status, api_ctl):
+    def handle(self, action, parent_task_settings, script_name, keg_name, keg_status, context):
+        api_ctl = context.api_ctl
         task_errors = []
         obj_status = self.__find_object(action, keg_status)
         if obj_status == None:

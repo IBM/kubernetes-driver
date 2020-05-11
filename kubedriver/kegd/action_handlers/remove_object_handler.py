@@ -1,6 +1,6 @@
 import logging
 from kubernetes.client.rest import ApiException
-from kubedriver.keg.model import EntityStates,V1alpha1ObjectStatus
+from kubedriver.keg.model import EntityStates, V1alpha1ObjectStatus, V1alpha1KegCompositionStatus
 from kubedriver.kubeobjects import ObjectReference
 from kubedriver.kubeclient import ErrorReader
 
@@ -50,10 +50,13 @@ class RemoveObjectHandler:
         return task_errors
 
     def __find_object(self, action, keg_status):
-        for obj_status in keg_status.composition.objects:
-            if (obj_status.group == action.group and obj_status.kind == action.kind 
-            and obj_status.name == action.name and obj_status.namespace == action.namespace):
-                return obj_status
+        if keg_status.composition != None and keg_status.composition.objects != None:
+            for obj_status in keg_status.composition.objects:
+                if (obj_status.group == action.group and obj_status.kind == action.kind 
+                and obj_status.name == action.name and obj_status.namespace == action.namespace):
+                    return obj_status
+        else:
+            keg_status.composition = V1alpha1KegCompositionStatus(objects=[])
         return None
 
     def __remove_object_from_composition(self, action, keg_status):

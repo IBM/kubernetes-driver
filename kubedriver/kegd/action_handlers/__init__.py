@@ -1,2 +1,4 @@
 from .deploy_object_handler import DeployObjectHandler
 from .remove_object_handler import RemoveObjectHandler
+from .deploy_helm_handler import DeployHelmHandler
+from .remove_helm_handler import RemoveHelmHandler

@@ -5,6 +5,7 @@ import ignition.locations.kubernetes as common_kube_dl
 from ignition.locations.exceptions import InvalidDeploymentLocationError
 from ignition.locations.utils import get_property_or_default
 from kubedriver.kubeclient import DEFAULT_NAMESPACE
+from kubedriver.helmclient import HelmClient
 
 KubeDeploymentLocationBase = common_kube_dl.KubernetesDeploymentLocation
 
@@ -72,6 +73,7 @@ class KubeDeploymentLocation(KubeDeploymentLocationBase):
             self.driver_namespace = self.default_object_namespace
         self.helm_version = helm_version
         self._client = None
+        self._helm_client = None
 
     @property
     def client(self):
@@ -83,6 +85,18 @@ class KubeDeploymentLocation(KubeDeploymentLocationBase):
                 if os.path.exists(config_file_path):
                     os.remove(config_file_path)
         return self._client
+
+    @property
+    def helm_client(self):
+        if self._helm_client is None:
+            self._helm_client = HelmClient(self.client_config, self.helm_version)
+        return self._helm_client
+
+    def clean(self):
+        self.clear_config_files()
+        if self._helm_client is not None:
+            self._helm_client.close()
+            self._helm_client = None
 
     def get_cm_persister_args(self):
         args = {}

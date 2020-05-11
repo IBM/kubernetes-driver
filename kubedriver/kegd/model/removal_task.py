@@ -1,8 +1,10 @@
 from .remove_object_action import RemoveObjectAction
+from .remove_helm_action import RemoveHelmAction
 from .exceptions import InvalidDeploymentStrategyError
 
 ACCEPTED_ACTIONS = {
-    RemoveObjectAction.action_name: RemoveObjectAction
+    RemoveObjectAction.action_name: RemoveObjectAction,
+    RemoveHelmAction.action_name: RemoveHelmAction
 }
 
 class RemovalTask:

@@ -7,21 +7,24 @@ class V1alpha1HelmReleaseStatus(object):
         'name': 'str',
         'namespace': 'str',
         'state': 'str',
-        'error': 'str'
+        'error': 'str',
+        'tags': 'dict(str, list[str])'
     }
 
     attribute_map = {
         'name': 'name',
         'namespace': 'namespace',
         'state': 'state',
-        'error': 'error'
+        'error': 'error',
+        'tags': 'tags'
     }
 
-    def __init__(self, name=None, namespace=None, state=None, error=None):
+    def __init__(self, name=None, namespace=None, state=None, error=None, tags=None):
         self._name = None
         self._namespace = None
         self._state = None
         self._error = None
+        self._tags = None
         if name is not None:
             self._name = name
         if namespace is not None:
@@ -30,6 +33,8 @@ class V1alpha1HelmReleaseStatus(object):
             self._state = state
         if error is not None:
             self._error = error
+        if tags is not None:
+            self._tags = tags
     
     @property
     def name(self):
@@ -62,6 +67,14 @@ class V1alpha1HelmReleaseStatus(object):
     @error.setter
     def error(self, error):
         self._error = error
+    
+    @property
+    def tags(self):
+        return self._tags
+
+    @tags.setter
+    def tags(self, tags):
+        self._tags = tags
 
     def to_dict(self):
         return to_dict(self)
