@@ -4,6 +4,3 @@ class PersistenceError(Exception):
 
 class RecordNotFoundError(Exception):
     pass
-
-class InvalidKegError(Exception):
-    pass

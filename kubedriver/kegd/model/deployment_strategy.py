@@ -1,5 +1,5 @@
 
-DEFAULT_REVERSES = {
+DEFAULT_OPERATION_CLEANUPS = {
     'Create': 'Delete',
     'Install': 'Uninstall',
     'Start': 'Stop'
@@ -15,13 +15,13 @@ class DeploymentStrategy:
 
     def get_compose_scripts_for(self, operation_name):
         compose_script = None
-        reverses = []
+        need_cleanup = []
         for compose in self.compose:
             if compose.name == operation_name:
                 compose_script = compose
-            elif compose.reverse == operation_name:
-                reverses.insert(0, compose)
-            elif compose.reverse == None and DEFAULT_REVERSES.get(compose.name) == operation_name:
-                # Default reverse in use if no reverse has been set
-                reverses.insert(0, compose)
-        return compose_script, reverses
+            elif compose.cleanup_on == operation_name:
+                need_cleanup.insert(0, compose)
+            elif compose.cleanup_on == None and DEFAULT_OPERATION_CLEANUPS.get(compose.name) == operation_name:
+                # Default cleanup in use if no cleanup has been set
+                need_cleanup.insert(0, compose)
+        return compose_script, need_cleanup

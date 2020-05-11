@@ -6,3 +6,6 @@ class EntityStates:
     DELETE_PENDING = 'Delete Pending'
     DELETED = 'Deleted'
     DELETE_FAILED = 'Deleted Failed'
+    UPDATE_PENDING = 'Update Pending'
+    UPDATED = 'Updated'
+    UPDATED_FAILED = 'Updated Failed'

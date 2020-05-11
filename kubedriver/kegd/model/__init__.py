@@ -11,7 +11,7 @@ from .deployment_strategy import DeploymentStrategy
 from .exceptions import InvalidDeploymentStrategyError
 from .file_reader import DeploymentStrategyFileReader
 from .parser import DeploymentStrategyParser
-from .withdraw_object_action import WithdrawObjectAction
-from .withdraw_task import WithdrawTask, WithdrawTaskSettings
+from .remove_object_action import RemoveObjectAction
+from .removal_task import RemovalTask, RemovalTaskSettings
 from .labels import Labels, LabelValues
 from .operation_states import OperationStates

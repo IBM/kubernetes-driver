@@ -17,7 +17,7 @@ class KegDeploymentStrategyFiles:
             path = os.path.join(self.root_path, strategy_file_opt)
             if os.path.exists(path) and os.path.isfile(path):
                 return path
-        raise MissingKegDeploymentStrategyFileError(f'Deployment strategy file not found by any of the possible paths: {KegDeploymentStrategyFiles.STRATEGY_FILE_OPTIONS}')
+        raise MissingKegDeploymentStrategyFileError(f'Deployment strategy file not found by any of the possible paths: {KegDeploymentStrategyFiles.STRATEGY_FILE_OPTIONS} (at: {self.root_path}')
 
 
     def get_object_file(self, object_file_name):

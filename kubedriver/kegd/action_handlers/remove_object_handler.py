@@ -6,7 +6,7 @@ from kubedriver.kubeclient import ErrorReader
 
 logger = logging.getLogger(__name__)
 
-class WithdrawObjectHandler:
+class RemoveObjectHandler:
 
     def __init__(self):
         self.error_reader = ErrorReader()

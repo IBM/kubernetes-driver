@@ -1,7 +1,7 @@
 class ComposeScript:
 
-    def __init__(self, name, deploy=None, reverse=None, variable_execution=None):
+    def __init__(self, name, deploy=None, cleanup_on=None, unique_by=None):
         self.name = name
         self.deploy = deploy if deploy is not None else []
-        self.reverse = reverse
-        self.variable_execution = variable_execution
+        self.cleanup_on = cleanup_on
+        self.unique_by = unique_by

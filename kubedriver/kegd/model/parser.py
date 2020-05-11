@@ -48,9 +48,9 @@ class DeploymentStrategyParser(Service, Capability):
                 raise InvalidDeploymentStrategyError(f'compose deploy must be a list but was {type(deploy_task_defs)}')
             for deploy_task_def in deploy_task_defs:
                 deploy_tasks.append(self.__read_deploy_task(deploy_task_def))
-        reverse = compose_def.get('reverse')
-        variable_execution = compose_def.get('variableExecution')
-        return ComposeScript(compose_name, deploy=deploy_tasks, reverse=reverse, variable_execution=variable_execution)
+        cleanup_on = compose_def.get('cleanupOn')
+        unique_by = compose_def.get('uniqueBy')
+        return ComposeScript(compose_name, deploy=deploy_tasks, cleanup_on=cleanup_on, unique_by=unique_by)
     
     def __read_deploy_task(self, deploy_task_def):
         if not isinstance(deploy_task_def, dict):

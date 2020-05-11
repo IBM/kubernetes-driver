@@ -5,6 +5,3 @@ class TestImports(unittest.TestCase):
 
     def test_deployment_location(self):
         imported = location.KubeDeploymentLocation
-
-    def test_deployment_location_translator(self):
-        imported = location.KubeDeploymentLocationTranslator

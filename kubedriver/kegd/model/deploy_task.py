@@ -38,12 +38,27 @@ class DeployTask:
 
 class DeployTaskSettings:
 
-    def __init__(self):
-        pass
+    IMMEDIATE_CLEANUP_NEVER = 'Never'
+    IMMEDIATE_CLEANUP_SUCCESS = 'Success'
+    IMMEDIATE_CLEANUP_FAILURE = 'Failure'
+    IMMEDIATE_CLEANUP_ALWAYS = 'Always'
+    
+    def __init__(self, immediate_cleanup_on=None):
+        if immediate_cleanup_on == None:
+            immediate_cleanup_on = DeployTaskSettings.IMMEDIATE_CLEANUP_NEVER
+        self.immediate_cleanup_on = immediate_cleanup_on
 
     @staticmethod
-    def on_read(**kwargs):
-        return (DeployTaskSettings(), kwargs)
+    def on_read(immediateCleanupOn=None, **kwargs):
+        if immediateCleanupOn == None:
+            immediateCleanupOn = DeployTaskSettings.IMMEDIATE_CLEANUP_NEVER
+        allowed_cleanup_values = [DeployTaskSettings.IMMEDIATE_CLEANUP_NEVER, DeployTaskSettings.IMMEDIATE_CLEANUP_SUCCESS, 
+                                            DeployTaskSettings.IMMEDIATE_CLEANUP_FAILURE, DeployTaskSettings.IMMEDIATE_CLEANUP_ALWAYS]
+        if immediateCleanupOn not in allowed_cleanup_values:
+            raise InvalidDeploymentStrategyError(f'immediateCleanupOn value must be one of: {allowed_cleanup_values}')
+        return (DeployTaskSettings(immediate_cleanup_on=immediateCleanupOn), kwargs)
 
     def on_write(self):
-        return {}
+        return {
+            'immediateCleanupOn': self.immediate_cleanup_on
+        }

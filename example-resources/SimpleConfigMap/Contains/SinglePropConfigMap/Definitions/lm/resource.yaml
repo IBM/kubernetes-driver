@@ -1,3 +1,4 @@
+description: descriptor for SinglePropConfigMap
 properties:
   propertyA:
     type: string
@@ -8,7 +9,6 @@ infrastructure:
     template:
       file: kube.yaml
       template-type: ObjectConfiguration
-description: descriptor for SinglePropConfigMap
 default-driver:
   ansible:
     infrastructure-type:
