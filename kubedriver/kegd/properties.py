@@ -5,8 +5,16 @@ class KegDeploymentProperties(ConfigurationPropertiesGroup, Service, Capability)
 
     def __init__(self):
         super().__init__('kegd')
+        self.ready_checks = KegDeploymentStrategyReadyCheckProperties()
         self.strategy = KegDeploymentStrategyProperties()
         self.element = KegDeploymentElementProperties()
+
+class KegDeploymentStrategyReadyCheckProperties(ConfigurationProperties, Service, Capability):
+
+    def __init__(self):
+        self.default_max_attempts = None
+        self.default_timeout_seconds = None
+        self.default_interval_seconds = None
 
 class KegDeploymentStrategyProperties(ConfigurationProperties, Service, Capability):
 

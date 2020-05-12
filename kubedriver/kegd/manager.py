@@ -14,14 +14,15 @@ from .processor import KegdStrategyLocationProcessor
 
 class KegdStrategyManager(Service, Capability):
 
-    def __init__(self, context_factory, templating, job_queue):
+    def __init__(self, kegd_properties, context_factory, templating, job_queue):
+        self.kegd_properties = kegd_properties
         self.context_factory = context_factory
         self.templating = templating
         self.job_queue = job_queue
 
     def apply_kegd_strategy(self, kube_location, keg_name, kegd_strategy, operation_name, kegd_files, render_context):
         context = self.context_factory.build(kube_location)
-        worker = KegdStrategyLocationManager(context, self.templating)
+        worker = KegdStrategyLocationManager(self.kegd_properties, context, self.templating)
         process_strategy_job = worker.build_process_strategy_job(keg_name, kegd_strategy, operation_name, kegd_files, render_context)
         job_data = {
             'job_type': ProcessStrategyJob.job_type,
@@ -32,17 +33,18 @@ class KegdStrategyManager(Service, Capability):
 
     def get_request_report(self, kube_location, request_id):
         context = self.context_factory.build(kube_location)
-        worker = KegdStrategyLocationManager(context, self.templating)
+        worker = KegdStrategyLocationManager(self.kegd_properties, context, self.templating)
         return worker.get_request_report(request_id)
 
     def delete_request_report(self, kube_location, request_id):
         context = self.context_factory.build(kube_location)
-        worker = KegdStrategyLocationManager(context, self.templating)
+        worker = KegdStrategyLocationManager(self.kegd_properties, context, self.templating)
         return worker.delete_request_report(request_id)
 
 class KegdStrategyLocationManager:
 
-    def __init__(self, context, templating):
+    def __init__(self, kegd_properties, context, templating):
+        self.kegd_properties = kegd_properties
         self.context = context
         self.kube_location = context.kube_location
         self.templating = templating
@@ -161,11 +163,11 @@ class KegdStrategyLocationManager:
         if retry_settings == None:
             retry_settings = RetrySettings()
         if retry_settings.max_attempts == None:
-            retry_settings.max_attempts = 10
+            retry_settings.max_attempts = self.kegd_properties.ready_checks.default_max_attempts
         if retry_settings.timeout_seconds == None:
-            retry_settings.timeout_seconds = 300
+            retry_settings.timeout_seconds = self.kegd_properties.ready_checks.default_timeout_seconds
         if retry_settings.interval_seconds == None:
-            retry_settings.interval_seconds = 5
+            retry_settings.interval_seconds = self.kegd_properties.ready_checks.default_interval_seconds
         return ReadyCheckTask(ready_script_content, ready_script_name, retry_settings)
 
     def __expand_helm_action(self, deploy_task, kegd_files, render_context):

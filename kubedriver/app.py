@@ -53,7 +53,8 @@ def create_app():
     app_builder.add_service(KegdStrategyManager, 
             context_factory=LocationContextFactory, 
             templating=TemplatingCapability, 
-            job_queue=JobQueueCapability
+            job_queue=JobQueueCapability,
+            kegd_properties=KegDeploymentProperties
     )
     app_builder.add_service(KubeResourceDriverHandler, 
             resource_driver_properties=AdditionalResourceDriverProperties, 

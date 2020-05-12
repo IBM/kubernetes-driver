@@ -9,3 +9,9 @@ bootstrap:
   templating:
     # Providing our own
     resource_context_service_enabled: False
+
+kegd:
+  ready_checks:
+    default_max_attempts: 10
+    default_timeout_seconds: 300
+    default_interval_seconds: 5

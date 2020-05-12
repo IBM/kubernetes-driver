@@ -156,19 +156,20 @@ class KegdStrategyLocationProcessor:
 
     def handle_process_strategy_job(self, process_strategy_job):
         logger.info(f'Processing request \'{process_strategy_job.request_id}\'')
-        # Errors retrieving the request or checking request state result in the job not being requeued
-        strategy_execution = process_strategy_job.strategy_execution
-        report_status = self.kegd_persister.get(process_strategy_job.request_id)
-        self.__mark_as_running(report_status)
-        # TODO Request not found?
 
         cancel_process, errors, requeue_process = self.__check_retry_status(process_strategy_job)
         if requeue_process:
             # Not finished == False
             return False
         
+        # Errors retrieving the request or checking request state result in the job not being requeued
+        strategy_execution = process_strategy_job.strategy_execution
+        report_status = self.kegd_persister.get(process_strategy_job.request_id)
+        # TODO Request not found?
+        
         # This point forward we must make best efforts to update the request if there is an error
         if not cancel_process:
+            self.__mark_as_running(report_status)
             phase_result = None
             try:
                 if report_status.phase == None:
