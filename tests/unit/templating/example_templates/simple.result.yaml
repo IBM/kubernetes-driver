@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: testing
-data:
-  dataA: TestA
-  dataB: TestB

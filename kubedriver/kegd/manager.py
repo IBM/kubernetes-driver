@@ -2,7 +2,7 @@ import uuid
 import logging
 from ignition.service.framework import Service, Capability
 from kubedriver.kegd.model import (RemovalTask, RemovalTaskSettings, RemoveObjectAction, DeployTask, DeployHelmAction,
-                                    DeployObjectsAction, DeployObjectAction, Labels, LabelValues, 
+                                    DeployObjectsAction, DeployObjectAction, Labels, LabelValues, OutputExtractionTask,
                                     RemoveHelmAction, DeployHelmAction, ReadyCheckTask, RetrySettings,
                                     StrategyExecutionStates, V1alpha1KegdStrategyReportStatus, Tags, StrategyExecution, TaskGroup)
 from kubedriver.kegd.jobs import ProcessStrategyJob
@@ -114,6 +114,7 @@ class KegdStrategyLocationManager:
     def __build_strategy_execution(self, kegd_strategy, operation_name, kegd_files, render_context, keg_status=None):
         task_groups = []
         ready_check_task = None
+        output_extraction_task = None
         compose_script, scripts_to_remove = kegd_strategy.get_compose_scripts_for(operation_name)
         removal_task_groups = self.__build_removal_task_groups(scripts_to_remove, kegd_files, render_context, keg_status=keg_status)
         task_groups.extend(removal_task_groups)
@@ -122,10 +123,13 @@ class KegdStrategyLocationManager:
             task_groups.append(deploy_task_group)
             if compose_script.ready_check != None:
                 ready_check_task = self.__build_ready_check_task(compose_script, kegd_files)
+            if compose_script.output_extraction != None:
+                output_extraction_task = self.__build_output_extraction_task(compose_script, kegd_files)
         run_cleanup = False
         if kegd_strategy.cleanup_on == operation_name: 
             run_cleanup = True
-        return StrategyExecution(operation_name, task_groups=task_groups, ready_check_task=ready_check_task, run_cleanup=run_cleanup)
+        return StrategyExecution(operation_name, task_groups=task_groups, ready_check_task=ready_check_task, 
+                                    output_extraction_task=output_extraction_task, run_cleanup=run_cleanup)
 
     def __build_removal_task_groups(self, scripts_to_remove, kegd_files, render_context, keg_status=None):
         task_groups = []
@@ -169,6 +173,13 @@ class KegdStrategyLocationManager:
         if retry_settings.interval_seconds == None:
             retry_settings.interval_seconds = self.kegd_properties.ready_checks.default_interval_seconds
         return ReadyCheckTask(ready_script_content, ready_script_name, retry_settings)
+
+    def __build_output_extraction_task(self, compose_script, kegd_files):
+        output_script_name = compose_script.output_extraction.script
+        file_path = kegd_files.get_script_file(output_script_name)
+        with open(file_path, 'r') as f:
+            output_script_content = f.read()
+        return OutputExtractionTask(output_script_content, output_script_name)
 
     def __expand_helm_action(self, deploy_task, kegd_files, render_context):
         deploy_action = deploy_task.action

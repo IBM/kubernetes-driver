@@ -3,3 +3,4 @@ from .remove_object_handler import RemoveObjectHandler
 from .deploy_helm_handler import DeployHelmHandler
 from .remove_helm_handler import RemoveHelmHandler
 from .ready_check_handler import ReadyCheckHandler
+from .output_extraction_handler import OutputExtractionHandler

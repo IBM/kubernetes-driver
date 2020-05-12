@@ -14,3 +14,15 @@ class Log:
 
     def get_entries(self):
         return self.__entries.copy()
+
+    def has_entries(self):
+        return len(self.__entries) > 0
+
+    def summarise(self):
+        summary = 'Execution Log:'
+        if len(self.__entries) == 0:
+            summary += '\n\t<No Entries>'
+        else:
+            for entry in self.__entries:
+                summary += f'\n\t{entry}'
+        return summary

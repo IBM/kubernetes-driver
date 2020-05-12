@@ -87,6 +87,7 @@ class KubeResourceDriverHandler(Service, ResourceDriverHandlerCapability):
             associated_topology = None
             if request_report.state == StrategyExecutionStates.COMPLETE:
                 execution_status = lifecycle_model.STATUS_COMPLETE
+                outputs = request_report.outputs
             elif request_report.state == StrategyExecutionStates.FAILED:
                 execution_status = lifecycle_model.STATUS_FAILED
                 failure_details = failure_model.FailureDetails(failure_model.FAILURE_CODE_INTERNAL_ERROR, description=str(request_report.errors))

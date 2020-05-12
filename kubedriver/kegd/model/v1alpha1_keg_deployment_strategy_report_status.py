@@ -11,7 +11,8 @@ class V1alpha1KegdStrategyReportStatus(object):
         'run_cleanup': 'bool',
         'state': 'str',
         'phase': 'str',
-        'errors': 'list[str]'
+        'errors': 'list[str]', 
+        'outputs': 'dict(str, str)'
     }
 
     attribute_map = {
@@ -22,10 +23,11 @@ class V1alpha1KegdStrategyReportStatus(object):
         'run_cleanup': 'runCleanup',
         'state': 'state',
         'phase': 'phase',
-        'errors': 'errors'
+        'errors': 'errors',
+        'outputs': 'outputs'
     }
 
-    def __init__(self, uid=None, keg_name=None, operation=None, task_groups=None, run_cleanup=None, state=None, phase=None, errors=None):
+    def __init__(self, uid=None, keg_name=None, operation=None, task_groups=None, run_cleanup=None, state=None, phase=None, errors=None, outputs=None):
         self._uid = None
         self._keg_name = None
         self._operation = None
@@ -34,6 +36,7 @@ class V1alpha1KegdStrategyReportStatus(object):
         self._state = None
         self._phase = None
         self._errors = None
+        self._outputs = None
         if uid is not None:
             self._uid = uid
         if keg_name is not None:
@@ -50,6 +53,8 @@ class V1alpha1KegdStrategyReportStatus(object):
             self._phase = phase
         if errors is not None:
             self._errors = errors
+        if outputs is not None:
+            self._outputs = outputs
 
     @property
     def uid(self):
@@ -114,6 +119,14 @@ class V1alpha1KegdStrategyReportStatus(object):
     @errors.setter
     def errors(self, errors):
         self._errors = errors
+
+    @property
+    def outputs(self):
+        return self._outputs
+
+    @outputs.setter
+    def outputs(self, outputs):
+        self._outputs = outputs
 
     def to_dict(self):
         return to_dict(self)

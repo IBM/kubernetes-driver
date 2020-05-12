@@ -1,1 +1,2 @@
 from .persistence import KegPersistenceFactory
+from .composition_reader import CompositionReader

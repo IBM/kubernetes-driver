@@ -7,11 +7,8 @@ FAILED = 'Failed'
 class ReadyResultHolder:
 
     def __init__(self):
-        self.__readiness = NOT_READY
+        self.__readiness = READY
         self.__reason = None
-
-    def get_reason(self):
-        return self.__reason
 
     def ready(self):
         self.__readiness = READY
@@ -33,7 +30,7 @@ class ReadyResultHolder:
         return self.__readiness == READY
 
     def has_failed(self):
-        return (self.__readiness == FAILED), self.get_reason()
+        return (self.__readiness == FAILED), self.__reason
 
     def __str__(self):
         return f'{self.__class__.__name__}(readiness: {self.__readiness}, reason: {self.__reason})'

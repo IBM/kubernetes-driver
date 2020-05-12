@@ -1,6 +1,7 @@
 import logging
 from ignition.service.framework import Service, Capability
-from kubedriver.kegd.action_handlers import DeployObjectHandler, RemoveObjectHandler, DeployHelmHandler, RemoveHelmHandler, ReadyCheckHandler
+from kubedriver.kegd.action_handlers import (DeployObjectHandler, RemoveObjectHandler, DeployHelmHandler, 
+                                                RemoveHelmHandler, ReadyCheckHandler, OutputExtractionHandler)
 from kubedriver.keg.model import V1alpha1KegStatus, V1alpha1KegCompositionStatus
 from kubedriver.kegd.model import (RemovalTask, RemovalTaskSettings, RemoveObjectAction, DeployTask, DeployHelmAction,
                                     DeployObjectAction, DeployTaskSettings, RetryStatus,
@@ -22,7 +23,7 @@ DEPLOY_ACTION_HANDLERS = {
     DeployHelmAction: DeployHelmHandler()
 }
 
-PHASES = [
+NORMAL_PHASE_ORDER = [
     StrategyExecutionPhases.TASKS, 
     StrategyExecutionPhases.READY_CHECK,
     StrategyExecutionPhases.OUTPUTS,
@@ -210,7 +211,7 @@ class KegdStrategyLocationProcessor:
                     elif report_status.phase == StrategyExecutionPhases.READY_CHECK:
                         phase_result = self.__execute_ready_check_task(report_status, keg_name, keg_status, strategy_execution, resource_context_properties)
                     elif report_status.phase == StrategyExecutionPhases.OUTPUTS:
-                        phase_result = PhaseResult()
+                        phase_result = self.__execute_output_extraction_task(report_status, keg_name, keg_status, strategy_execution, resource_context_properties)
                     elif report_status.phase == StrategyExecutionPhases.IMMEDIATE_CLEANUP or report_status.phase == StrategyExecutionPhases.IMMEDIATE_CLEANUP_ON_FAILURE:
                         phase_result = self.__process_immediate_cleanup(report_status, keg_name, keg_status, strategy_execution, all_errors)
                     elif report_status.phase == StrategyExecutionPhases.CLEANUP:
@@ -241,8 +242,8 @@ class KegdStrategyLocationProcessor:
         if report_status.phase == StrategyExecutionPhases.IMMEDIATE_CLEANUP_ON_FAILURE:
             next_phase = StrategyExecutionPhases.END
         elif len(current_errors) > 0:
-            immediate_cleanup_num = PHASES.index(StrategyExecutionPhases.IMMEDIATE_CLEANUP)
-            phase_num = PHASES.index(report_status.phase)
+            immediate_cleanup_num = NORMAL_PHASE_ORDER.index(StrategyExecutionPhases.IMMEDIATE_CLEANUP)
+            phase_num = NORMAL_PHASE_ORDER.index(report_status.phase)
             if phase_num < immediate_cleanup_num:
                 next_phase = StrategyExecutionPhases.IMMEDIATE_CLEANUP_ON_FAILURE
                 # Update with errors so we don't lose them in case this request is dropped and picked up by another node
@@ -252,10 +253,10 @@ class KegdStrategyLocationProcessor:
             else:
                 next_phase = StrategyExecutionPhases.END
         else:
-            phase_num = PHASES.index(report_status.phase)
+            phase_num = NORMAL_PHASE_ORDER.index(report_status.phase)
             next_phase_num = phase_num + 1
-            if next_phase_num < len(PHASES):
-                next_phase = PHASES[next_phase_num]
+            if next_phase_num < len(NORMAL_PHASE_ORDER):
+                next_phase = NORMAL_PHASE_ORDER[next_phase_num]
             else:
                 next_phase = StrategyExecutionPhases.END
         report_status.phase = next_phase
@@ -344,6 +345,20 @@ class KegdStrategyLocationProcessor:
             elif not ready_result.is_ready():
                 requeue_request = RequeueRequest('Ready Check', ready_check_task.retry_settings)
         return PhaseResult(errors=errors, requeue=requeue_request)
+
+    def __execute_output_extraction_task(self, report_status, keg_name, keg_status, strategy_execution, resource_context_properties):
+        errors = []
+        requeue_request = None
+        if strategy_execution.output_extraction_task != None:
+            output_extraction_task = strategy_execution.output_extraction_task
+            handler = OutputExtractionHandler()
+            extraction_result = handler.handle(report_status.operation, keg_name, keg_status, self.context, output_extraction_task, resource_context_properties)
+            has_failed, reason = extraction_result.has_failed()
+            if has_failed:
+                errors.append(reason)
+            else:
+                report_status.outputs = extraction_result.outputs
+        return PhaseResult(errors=errors)
 
     def __process_immediate_cleanup(self, report_status, keg_name, keg_status, strategy_execution, exec_errors):
         allowed_values = [DeployTaskSettings.IMMEDIATE_CLEANUP_ALWAYS]

@@ -1,25 +1,31 @@
 from kubedriver.kegd.model.deploy_task import DeployTask
 from kubedriver.kegd.model.removal_task import RemovalTask
-from .ready_check_task import ReadyCheckTask
+from kubedriver.kegd.model.ready_check_task import ReadyCheckTask
+from kubedriver.kegd.model.output_extraction_task import OutputExtractionTask
 
 class StrategyExecution:
 
-    def __init__(self, operation_name, task_groups=None, ready_check_task=None, run_cleanup=False):
+    def __init__(self, operation_name, task_groups=None, ready_check_task=None, output_extraction_task=None, run_cleanup=False):
         self.operation_name = operation_name
         self.task_groups = task_groups if task_groups is not None else []
         self.ready_check_task = ready_check_task
         self.run_cleanup = run_cleanup
+        self.output_extraction_task = output_extraction_task
 
     @staticmethod
-    def on_read(operationName=None, task_groups=None, readyCheckTask=None, runCleanup=None):
+    def on_read(operationName=None, taskGroups=None, readyCheckTask=None, outputExtractionTask=None, runCleanup=None):
         parsed_task_groups = []
-        if task_groups != None:
-            for script in task_groups:
+        if taskGroups != None:
+            for script in taskGroups:
                 parsed_task_groups.append(TaskGroup.on_read(**script))
         parsed_ready_check_task = None
         if readyCheckTask != None:
             parsed_ready_check_task = ReadyCheckTask.on_read(**readyCheckTask)
-        return StrategyExecution(operation_name=operationName, task_groups=parsed_task_groups, ready_check_task=parsed_ready_check_task, run_cleanup=runCleanup)
+        parsed_output_extraction_task = None
+        if outputExtractionTask != None:
+            parsed_output_extraction_task = OutputExtractionTask.on_read(**outputExtractionTask)
+        return StrategyExecution(operation_name=operationName, task_groups=parsed_task_groups, ready_check_task=parsed_ready_check_task, 
+                                    output_extraction_task=parsed_output_extraction_task, run_cleanup=runCleanup)
 
     def on_write(self):
         write_task_groups = []
@@ -28,10 +34,14 @@ class StrategyExecution:
         write_ready_check_task = None
         if self.ready_check_task != None:
             write_ready_check_task = self.ready_check_task.on_write()
+        write_output_extraction_task = None
+        if self.output_extraction_task != None:
+            write_output_extraction_task = self.output_extraction_task.on_write()
         return {
             'operationName': self.operation_name,
-            'task_groups': write_task_groups,
+            'taskGroups': write_task_groups,
             'readyCheckTask': write_ready_check_task,
+            'outputExtractionTask': write_output_extraction_task,
             'runCleanup': self.run_cleanup
         }
 
