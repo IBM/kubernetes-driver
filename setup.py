@@ -18,6 +18,7 @@ setup(
     install_requires=[
         'ignition-framework==1.2.0.dev0',
         'kubernetes==11.0.0',
+        'RestrictedPython==5.0.0',
         'gunicorn>=19.9.0,<20.0'
     ],
     entry_points='''

@@ -50,7 +50,8 @@ class DeploymentStrategyParser(Service, Capability):
                 deploy_tasks.append(self.__read_deploy_task(deploy_task_def))
         cleanup_on = compose_def.get('cleanupOn')
         unique_by = compose_def.get('uniqueBy')
-        return ComposeScript(compose_name, deploy=deploy_tasks, cleanup_on=cleanup_on, unique_by=unique_by)
+        ready_script = compose_def.get('readyScript')
+        return ComposeScript(compose_name, deploy=deploy_tasks, ready_script=ready_script, cleanup_on=cleanup_on, unique_by=unique_by)
     
     def __read_deploy_task(self, deploy_task_def):
         if not isinstance(deploy_task_def, dict):

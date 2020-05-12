@@ -4,7 +4,7 @@ import ignition.model.failure as failure_model
 from ignition.service.framework import Service
 from ignition.service.resourcedriver import ResourceDriverHandlerCapability, InvalidRequestError
 from kubedriver.location import KubeDeploymentLocation
-from kubedriver.kegd.model import OperationStates
+from kubedriver.kegd.model import StrategyExecutionStates
 from kubedriver.kegd.strategy_files import KegDeploymentStrategyFiles
 from .topology import KubernetesAssociatedTopology
 
@@ -12,9 +12,9 @@ logger = logging.getLogger(__name__)
 
 class KubeResourceDriverHandler(Service, ResourceDriverHandlerCapability):
 
-    def __init__(self, resource_driver_properties, kegd_orchestrator, kegd_file_reader, render_context_service, name_manager):
+    def __init__(self, resource_driver_properties, kegd_strategy_manager, kegd_file_reader, render_context_service, name_manager):
         self.resource_driver_properties = resource_driver_properties
-        self.kegd_orchestrator = kegd_orchestrator
+        self.kegd_strategy_manager = kegd_strategy_manager
         self.kegd_file_reader = kegd_file_reader
         self.render_context_service = render_context_service
         self.name_manager = name_manager
@@ -47,7 +47,7 @@ class KubeResourceDriverHandler(Service, ResourceDriverHandlerCapability):
             keg_name = self.__generate_keg_name(system_properties)
             kegd_files = KegDeploymentStrategyFiles(driver_files.root_path)
             kegd_strategy = self.kegd_file_reader.read(kegd_files.get_strategy_file(), render_context)
-            request_id = self.kegd_orchestrator.apply_kegd_strategy(kube_location, keg_name, kegd_strategy, lifecycle_name, kegd_files, render_context)
+            request_id = self.kegd_strategy_manager.apply_kegd_strategy(kube_location, keg_name, kegd_strategy, lifecycle_name, kegd_files, render_context)
             associated_topology = self.__build_associated_topology(keg_name, kube_location)
             return lifecycle_model.LifecycleExecuteResponse(request_id, associated_topology)
         finally:
@@ -80,16 +80,16 @@ class KubeResourceDriverHandler(Service, ResourceDriverHandlerCapability):
         """
         kube_location = self.__translate_location(deployment_location)
         try:
-            request_report = self.kegd_orchestrator.get_request_report(kube_location, request_id)
+            request_report = self.kegd_strategy_manager.get_request_report(kube_location, request_id)
             execution_status = lifecycle_model.STATUS_IN_PROGRESS
             failure_details = None
             outputs = None
             associated_topology = None
-            if request_report.state == OperationStates.COMPLETE:
+            if request_report.state == StrategyExecutionStates.COMPLETE:
                 execution_status = lifecycle_model.STATUS_COMPLETE
-            elif request_report.state == OperationStates.FAILED:
+            elif request_report.state == StrategyExecutionStates.FAILED:
                 execution_status = lifecycle_model.STATUS_FAILED
-                failure_details = failure_model.FailureDetails(failure_model.FAILURE_CODE_INTERNAL_ERROR, description=request_report.error)
+                failure_details = failure_model.FailureDetails(failure_model.FAILURE_CODE_INTERNAL_ERROR, description=str(request_report.errors))
             return lifecycle_model.LifecycleExecution(request_id, execution_status, outputs=outputs, failure_details=failure_details, associated_topology=associated_topology)
         finally:
             try:
@@ -98,9 +98,9 @@ class KubeResourceDriverHandler(Service, ResourceDriverHandlerCapability):
             except Exception as e:
                 logger.exception(f'Encountered an error whilst trying to clean up deployment location related files: {str(e)}')
 
-    def lifecycle_execution_monitoring_complete(self, request_id, deployment_location):
+    def post_lifecycle_response(self, request_id, deployment_location):
         kube_location = self.__translate_location(deployment_location)
-        self.kegd_orchestrator.delete_request_report(kube_location, request_id)
+        self.kegd_strategy_manager.delete_request_report(kube_location, request_id)
 
     def find_reference(self, instance_name, driver_files, deployment_location):
         """

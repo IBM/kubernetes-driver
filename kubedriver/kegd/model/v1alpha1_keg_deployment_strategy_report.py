@@ -2,14 +2,14 @@ import pprint
 from kubedriver.utils.to_dict import to_dict
 
 #apiVersion: keg.ibm/v1alpha1
-#kind: KegDeploymentReport
-class V1alpha1KegDeploymentReport(object):
+#kind: KegdStrategyReport
+class V1alpha1KegdStrategyReport(object):
 
     openapi_types = {
         'api_version': 'str',
         'kind': 'str',
         'metadata': 'V1ObjectMeta',
-        'status': 'V1alpha1KegDeploymentReportStatus'
+        'status': 'V1alpha1KegdStrategyReport'
     }
 
     attribute_map = {
@@ -76,7 +76,7 @@ class V1alpha1KegDeploymentReport(object):
         return self.to_str()
 
     def __eq__(self, other):
-        if not isinstance(other, V1alpha1KegDeploymentReport):
+        if not isinstance(other, V1alpha1KegdStrategyReport):
             return False
 
         return self.__dict__ == other.__dict__

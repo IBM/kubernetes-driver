@@ -1,50 +1,55 @@
 import pprint 
 from kubedriver.utils.to_dict import to_dict
 
-class V1alpha1KegDeploymentReportStatus(object):
+class V1alpha1KegdStrategyReportStatus(object):
 
     openapi_types = {
         'uid': 'str',
         'keg_name': 'str',
         'operation': 'str',
-        'included_scripts': 'list[str]',
+        'task_groups': 'list[str]',
         'run_cleanup': 'bool',
         'state': 'str',
-        'error': 'str'
+        'phase': 'str',
+        'errors': 'list[str]'
     }
 
     attribute_map = {
         'uid': 'uid',
         'keg_name': 'kegName',
         'operation': 'operation',
-        'included_scripts': 'includedScripts',
+        'task_groups': 'taskGroups',
         'run_cleanup': 'runCleanup',
         'state': 'state',
-        'error': 'error'
+        'phase': 'phase',
+        'errors': 'errors'
     }
 
-    def __init__(self, uid=None, keg_name=None, operation=None, included_scripts=None, run_cleanup=None, state=None, error=None):
+    def __init__(self, uid=None, keg_name=None, operation=None, task_groups=None, run_cleanup=None, state=None, phase=None, errors=None):
         self._uid = None
         self._keg_name = None
         self._operation = None
-        self._included_scripts = None
+        self._task_groups = None
         self._run_cleanup = None
         self._state = None
-        self._error = None
+        self._phase = None
+        self._errors = None
         if uid is not None:
             self._uid = uid
         if keg_name is not None:
             self._keg_name = keg_name
         if operation is not None:
             self._operation = operation
-        if included_scripts is not None:
-            self._included_scripts = included_scripts
+        if task_groups is not None:
+            self._task_groups = task_groups
         if run_cleanup is not None:
             self._run_cleanup = run_cleanup
         if state is not None:
             self._state = state
-        if error is not None:
-            self._error = error
+        if phase is not None:
+            self._phase = phase
+        if errors is not None:
+            self._errors = errors
 
     @property
     def uid(self):
@@ -71,12 +76,12 @@ class V1alpha1KegDeploymentReportStatus(object):
         self._operation = operation
     
     @property
-    def included_scripts(self):
-        return self._included_scripts
+    def task_groups(self):
+        return self._task_groups
 
-    @included_scripts.setter
-    def included_scripts(self, included_scripts):
-        self._included_scripts = included_scripts
+    @task_groups.setter
+    def task_groups(self, task_groups):
+        self._task_groups = task_groups
     
     @property
     def run_cleanup(self):
@@ -95,12 +100,20 @@ class V1alpha1KegDeploymentReportStatus(object):
         self._state = state
 
     @property
-    def error(self):
-        return self._error
+    def phase(self):
+        return self._phase
 
-    @error.setter
-    def error(self, error):
-        self._error = error
+    @phase.setter
+    def phase(self, phase):
+        self._phase = phase
+
+    @property
+    def errors(self):
+        return self._errors
+
+    @errors.setter
+    def errors(self, errors):
+        self._errors = errors
 
     def to_dict(self):
         return to_dict(self)
@@ -112,7 +125,7 @@ class V1alpha1KegDeploymentReportStatus(object):
         return self.to_str()
 
     def __eq__(self, other):
-        if not isinstance(other, V1alpha1KegDeploymentReportStatus):
+        if not isinstance(other, V1alpha1KegdStrategyReportStatus):
             return False
         return self.__dict__ == other.__dict__
 

@@ -4,11 +4,14 @@ import base64
 import os
 import shutil
 from kubedriver.keg.model import EntityStates, V1alpha1HelmReleaseStatus, V1alpha1KegCompositionStatus
-from kubedriver.kegd.model import Tags, Labels, LabelValues
+from kubedriver.kegd.model import Tags, Labels, LabelValues, RemoveHelmAction, RemovalTask, RemovalTaskSettings
 
 logger = logging.getLogger(__name__)
 
 class DeployHelmHandler:
+
+    def build_cleanup(self, action, parent_task_settings):
+        return RemovalTask(RemovalTaskSettings(), RemoveHelmAction(action.name, namespace=action.namespace))
 
     def decorate(self, action, parent_task_settings, script_name, keg_name, keg_status):
         helm_status = self.__find_helm_status(action, keg_status)

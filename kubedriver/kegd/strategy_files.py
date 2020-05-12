@@ -8,6 +8,7 @@ class KegDeploymentStrategyFiles:
 
     OBJECTS_DIR = 'objects'
     HELM_DIR = 'helm'
+    SCRIPTS_DIR = 'scripts'
     STRATEGY_FILE = base_strategy_file
     STRATEGY_FILE_OPTIONS = [base_strategy_file, 'keg.yaml', 'kegd.yml', 'keg.yml']
 
@@ -52,3 +53,12 @@ class KegDeploymentStrategyFiles:
         path = self.get_helm_file(helm_file_name)
         with open(path, 'rb') as f:
             return base64.b64encode(f.read()).decode('utf-8')
+
+    def get_script_file(self, script_file_name):
+        sub_path = os.path.join(KegDeploymentStrategyFiles.SCRIPTS_DIR, script_file_name)
+        path = os.path.join(self.root_path, sub_path)
+        if not os.path.exists(path):
+            raise MissingKegDeploymentStrategyFileError(f'Deployment strategy files missing script file {script_file_name} (path: {sub_path})')
+        if not os.path.isfile(path):
+            raise MissingKegDeploymentStrategyFileError(f'Deployment strategy files missing script file {script_file_name}, the path exists but it is not a valid file (path: {sub_path})')
+        return path

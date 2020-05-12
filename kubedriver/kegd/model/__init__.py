@@ -1,8 +1,8 @@
-from .v1alpha1_keg_deployment_report import V1alpha1KegDeploymentReport
-from .v1alpha1_keg_deployment_report_status import V1alpha1KegDeploymentReportStatus
+from .v1alpha1_keg_deployment_strategy_report import V1alpha1KegdStrategyReport
+from .v1alpha1_keg_deployment_strategy_report_status import V1alpha1KegdStrategyReportStatus
 from .tags import Tags
 from .compose import ComposeScript
-from .operation_execution import OperationExecution, OperationScript
+from .strategy_execution import StrategyExecution, TaskGroup
 from .deploy_helm_action import DeployHelmAction
 from .deploy_object_action import DeployObjectAction
 from .deploy_objects_action import DeployObjectsAction
@@ -15,4 +15,7 @@ from .remove_object_action import RemoveObjectAction
 from .remove_helm_action  import RemoveHelmAction
 from .removal_task import RemovalTask, RemovalTaskSettings
 from .labels import Labels, LabelValues
-from .operation_states import OperationStates
+from .strategy_exec_states import StrategyExecutionStates
+from .strategy_exec_phases import StrategyExecutionPhases
+from .ready_result import ReadyResult
+from .ready_check_task import ReadyCheckTask

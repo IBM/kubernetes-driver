@@ -1,11 +1,11 @@
 from ignition.service.framework import Service, Capability
 from kubedriver.persistence import ConfigMapPersister, CmRecordBuilder
 from kubedriver.kubeclient import KubeApiController
-from kubedriver.kegd.model import (V1alpha1KegDeploymentReport, V1alpha1KegDeploymentReportStatus)
+from kubedriver.kegd.model import (V1alpha1KegdStrategyReport, V1alpha1KegdStrategyReportStatus)
 
 data_types = {}
-data_types['V1alpha1KegDeploymentReport'] = V1alpha1KegDeploymentReport
-data_types['V1alpha1KegDeploymentReportStatus'] = V1alpha1KegDeploymentReportStatus
+data_types['V1alpha1KegdStrategyReport'] = V1alpha1KegdStrategyReport
+data_types['V1alpha1KegdStrategyReportStatus'] = V1alpha1KegdStrategyReportStatus
 
 class KegdReportPersistenceFactory(Service, Capability):
 
@@ -16,4 +16,4 @@ class KegdReportPersistenceFactory(Service, Capability):
                                     **cm_persister_args)
 
     def __build_record_builder(self, kube_location):
-        return CmRecordBuilder(kube_location.client, V1alpha1KegDeploymentReportStatus, data_types)
+        return CmRecordBuilder(kube_location.client, V1alpha1KegdStrategyReportStatus, data_types)

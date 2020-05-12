@@ -56,8 +56,12 @@ class KubeApiController:
         update_method(**update_args)
 
     def is_object_namespaced(self, api_version, kind):
-        read_method, is_namespaced, is_custom_object = self.client_director.determine_api_method_for_read_object(self.base_kube_client, api_version, kind)
+        _, is_namespaced, _ = self.client_director.determine_api_method_for_read_object(self.base_kube_client, api_version, kind)
         return is_namespaced
+
+    def is_object_custom(self, api_version, kind):
+        _, _, is_custom_obj = self.client_director.determine_api_method_for_read_object(self.base_kube_client, api_version, kind)
+        return is_custom_obj
 
     def __build_create_arguments(self, object_config, is_namespaced, default_namespace, is_custom_object):
         if is_custom_object:

@@ -1,3 +1,4 @@
-from .orch import KegdOrchestrator
+from .manager import KegdStrategyManager
+from .processor import KegdStrategyProcessor
 from .properties import KegDeploymentStrategyProperties, KegDeploymentProperties
 from .persistence import KegdReportPersistenceFactory

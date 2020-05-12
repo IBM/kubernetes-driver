@@ -9,7 +9,7 @@ from kubedriver.kubeclient import KubeClientDirector
 from kubedriver.resourcedriver import (KubeResourceDriverHandler, AdditionalResourceDriverProperties, ExtendedResourceTemplateContext,
                                         NameManager)
 from kubedriver.keg import KegPersistenceFactory
-from kubedriver.kegd import KegdOrchestrator, KegDeploymentProperties, KegDeploymentStrategyProperties, KegdReportPersistenceFactory
+from kubedriver.kegd import KegdStrategyProcessor, KegdStrategyManager, KegDeploymentProperties, KegDeploymentStrategyProperties, KegdReportPersistenceFactory
 from kubedriver.kegd.model import DeploymentStrategyFileReader, DeploymentStrategyParser
 from kubedriver.locationcontext import LocationContextFactory
 
@@ -45,14 +45,19 @@ def create_app():
             templating=TemplatingCapability, 
             parser=DeploymentStrategyParser
     )
-    app_builder.add_service(KegdOrchestrator, 
+    app_builder.add_service(KegdStrategyProcessor, 
+            context_factory=LocationContextFactory, 
+            templating=TemplatingCapability, 
+            job_queue=JobQueueCapability
+    )
+    app_builder.add_service(KegdStrategyManager, 
             context_factory=LocationContextFactory, 
             templating=TemplatingCapability, 
             job_queue=JobQueueCapability
     )
     app_builder.add_service(KubeResourceDriverHandler, 
             resource_driver_properties=AdditionalResourceDriverProperties, 
-            kegd_orchestrator=KegdOrchestrator,
+            kegd_strategy_manager=KegdStrategyManager,
             kegd_file_reader=DeploymentStrategyFileReader, 
             render_context_service=ResourceTemplateContextCapability, 
             name_manager=NameManager
