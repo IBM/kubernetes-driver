@@ -3,7 +3,7 @@ import logging
 from ignition.service.framework import Service, Capability
 from kubedriver.kegd.model import (RemovalTask, RemovalTaskSettings, RemoveObjectAction, DeployTask, DeployHelmAction,
                                     DeployObjectsAction, DeployObjectAction, Labels, LabelValues, 
-                                    RemoveHelmAction, DeployHelmAction, ReadyCheckTask,
+                                    RemoveHelmAction, DeployHelmAction, ReadyCheckTask, RetrySettings,
                                     StrategyExecutionStates, V1alpha1KegdStrategyReportStatus, Tags, StrategyExecution, TaskGroup)
 from kubedriver.kegd.jobs import ProcessStrategyJob
 from kubedriver.persistence import RecordNotFoundError
@@ -118,7 +118,7 @@ class KegdStrategyLocationManager:
         if compose_script != None:
             deploy_task_group = self.__build_deploy_task_group(compose_script, kegd_files, render_context)
             task_groups.append(deploy_task_group)
-            if compose_script.ready_script != None:
+            if compose_script.ready_check != None:
                 ready_check_task = self.__build_ready_check_task(compose_script, kegd_files)
         run_cleanup = False
         if kegd_strategy.cleanup_on == operation_name: 
@@ -153,11 +153,20 @@ class KegdStrategyLocationManager:
         return task_group
 
     def __build_ready_check_task(self, compose_script, kegd_files):
-        ready_script_name = compose_script.ready_script
+        ready_script_name = compose_script.ready_check.script
         file_path = kegd_files.get_script_file(ready_script_name)
         with open(file_path, 'r') as f:
             ready_script_content = f.read()
-        return ReadyCheckTask(ready_script_content, ready_script_name)
+        retry_settings = compose_script.ready_check.retry_settings
+        if retry_settings == None:
+            retry_settings = RetrySettings()
+        if retry_settings.max_attempts == None:
+            retry_settings.max_attempts = 10
+        if retry_settings.timeout_seconds == None:
+            retry_settings.timeout_seconds = 300
+        if retry_settings.interval_seconds == None:
+            retry_settings.interval_seconds = 5
+        return ReadyCheckTask(ready_script_content, ready_script_name, retry_settings)
 
     def __expand_helm_action(self, deploy_task, kegd_files, render_context):
         deploy_action = deploy_task.action

@@ -67,7 +67,7 @@ class KubeResourceDriverHandler(Service, ResourceDriverHandlerCapability):
 
     def get_lifecycle_execution(self, request_id, deployment_location):
         """
-        Retreive the status of a lifecycle transition/operation request
+        Retrieve the status of a lifecycle transition/operation request
 
         :param str request_id: identifier of the request to check
         :param dict deployment_location: the deployment location the Resource is assigned to

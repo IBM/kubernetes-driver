@@ -4,6 +4,7 @@ from kubedriver.kegd.model.exceptions import InvalidDeploymentStrategyError
 from kubedriver.kegd.model.deployment_strategy import DeploymentStrategy, DEFAULT_CLEANUP
 from kubedriver.kegd.model.deploy_task import DeployTask
 from kubedriver.kegd.model.compose import ComposeScript
+from kubedriver.kegd.model.ready_check import ReadyCheck
 
 class DeploymentStrategyParser(Service, Capability):
 
@@ -50,9 +51,21 @@ class DeploymentStrategyParser(Service, Capability):
                 deploy_tasks.append(self.__read_deploy_task(deploy_task_def))
         cleanup_on = compose_def.get('cleanupOn')
         unique_by = compose_def.get('uniqueBy')
-        ready_script = compose_def.get('readyScript')
-        return ComposeScript(compose_name, deploy=deploy_tasks, ready_script=ready_script, cleanup_on=cleanup_on, unique_by=unique_by)
+        ready_check_def = compose_def.get('ready')
+        if ready_check_def != None:
+            ready_check = self.__read_ready_check_task(ready_check_def)
+        else:
+            ready_check = None
+        return ComposeScript(compose_name, deploy=deploy_tasks, ready_check=ready_check, cleanup_on=cleanup_on, unique_by=unique_by)
     
+    def __read_ready_check_task(self, ready_check_def):
+        if isinstance(ready_check_def, str):
+            return ReadyCheck(script=ready_check_def)
+        elif isinstance(ready_check_def, dict):
+            return ReadyCheck.on_read(**ready_check_def)
+        else:
+            raise InvalidDeploymentStrategyError(f'compose ready task must be a dict/map or string but found a {type(ready_check_def)}')
+
     def __read_deploy_task(self, deploy_task_def):
         if not isinstance(deploy_task_def, dict):
             raise InvalidDeploymentStrategyError(f'compose deploy task must be a dict/map but found a {type(deploy_task_def)}')
