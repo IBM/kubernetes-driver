@@ -59,7 +59,7 @@ spec:
             subPath: kubedriver_config.yml
           {{- if and .Values.app.config.security.ssl.enabled .Values.app.config.security.ssl.secret.name }}
           - name: {{ .Values.app.config.security.ssl.secret.name }}
-            mountPath: /var/ald/certs
+            mountPath: /var/kubedriver/certs
           {{- end }}
       volumes:
       - name: config
