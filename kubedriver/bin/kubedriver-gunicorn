@@ -1,3 +1,7 @@
 #!/usr/bin/env bash
 
-gunicorn -w $NUM_PROCESSES -b :$DRIVER_PORT "kubedriver:create_wsgi_app()"
+if [[ $( tr '[:upper:]' '[:lower:]' <<<$SSL_ENABLED ) == "true" ]]; then
+    SSL="--certfile /var/kubedriver/certs/tls.crt --keyfile /var/kubedriver/certs/tls.key"
+fi
+
+gunicorn -w $NUM_PROCESSES -b :$DRIVER_PORT $SSL "kubedriver:create_wsgi_app()"

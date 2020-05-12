@@ -34,7 +34,7 @@ spec:
             httpGet:
               path: /management/health
               port: 8294
-              scheme: HTTP
+              scheme: {{- if .Values.app.config.security.ssl.enabled }} HTTPS {{- else }} HTTP {{- end }}
             initialDelaySeconds: {{ .Values.app.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.app.livenessProbe.periodSeconds }}
           {{- end }}
@@ -44,7 +44,7 @@ spec:
             httpGet:
               path: /management/health
               port: 8294
-              scheme: HTTP
+              scheme: {{- if .Values.app.config.security.ssl.enabled }} HTTPS {{- else }} HTTP {{- end }}
             initialDelaySeconds: {{ .Values.app.readinessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.app.readinessProbe.periodSeconds }}         
           {{- end }}
@@ -57,10 +57,19 @@ spec:
           - name: config
             mountPath: /var/kubedriver/kubedriver_config.yml
             subPath: kubedriver_config.yml
+          {{- if and .Values.app.config.security.ssl.enabled .Values.app.config.security.ssl.secret.name }}
+          - name: {{ .Values.app.config.security.ssl.secret.name }}
+            mountPath: /var/kubedriver/certs
+          {{- end }}
       volumes:
       - name: config
         configMap:
           name: kubedriver
+      {{- if and .Values.app.config.security.ssl.enabled .Values.app.config.security.ssl.secret.name }}
+      - name: {{ .Values.app.config.security.ssl.secret.name }}
+        secret:
+          secretName: {{ .Values.app.config.security.ssl.secret.name }}
+      {{- end }}
 {{- if .Values.app.autoscaler.enabled }}
 ---
 apiVersion: autoscaling/v1
