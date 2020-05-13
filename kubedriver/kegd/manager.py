@@ -27,8 +27,8 @@ class KegdStrategyManager(Service, Capability):
         if self.kegd_properties.ready_checks.default_timeout_seconds <= 0:
             raise ValueError('Must set kegd.ready_checks.default_timeout_seconds above zero in the configuration properties')
         if self.kegd_properties.ready_checks.max_timeout_seconds != None:
-            if self.kegd_properties.ready_checks.default_timeout_seconds < self.kegd_properties.ready_checks.max_timeout_seconds:
-                raise ValueError(f'Must set a value on kegd.ready_checks.default_timeout_seconds ({self.kegd_properties.ready_checks.default_timeout_seconds}) that is greater than kegd.ready_checks.max_timeout_seconds ({self.kegd_properties.ready_checks.max_timeout_seconds}) in the configuration properties')
+            if self.kegd_properties.ready_checks.default_timeout_seconds > self.kegd_properties.ready_checks.max_timeout_seconds:
+                raise ValueError(f'Must set a value on kegd.ready_checks.default_timeout_seconds ({self.kegd_properties.ready_checks.default_timeout_seconds}) that is less than kegd.ready_checks.max_timeout_seconds ({self.kegd_properties.ready_checks.max_timeout_seconds}) in the configuration properties')
 
     def apply_kegd_strategy(self, kube_location, keg_name, kegd_strategy, operation_name, kegd_files, render_context):
         context = self.context_factory.build(kube_location)
@@ -193,7 +193,8 @@ class KegdStrategyLocationManager:
         if retry_settings.interval_seconds == None:
             retry_settings.interval_seconds = self.kegd_properties.ready_checks.default_interval_seconds
         if self.kegd_properties.ready_checks.max_timeout_seconds != None and retry_settings.timeout_seconds > self.kegd_properties.ready_checks.max_timeout_seconds:
-            raise InvalidKegDeploymentStrategyError(f'timeout seconds value ({retry_settings.timeout_seconds}) cannot exceed the maximum allowed ({self.kegd_properties.ready_checks.max_timeout_seconds})')
+            logger.warning(f'Retry timeout seconds value of ({retry_settings.timeout_seconds}) is greater than the max timeout allowed ({self.kegd_properties.ready_checks.max_timeout_seconds}). The value will be reduced to the maximum.')
+            retry_settings.timeout_seconds = self.kegd_properties.ready_checks.max_timeout_seconds
         if retry_settings.timeout_seconds <= 0:
             raise InvalidKegDeploymentStrategyError(f'timeout seconds value ({retry_settings.timeout_seconds}) must be greater than zero')
         return ReadyCheckTask(ready_script_content, ready_script_name, retry_settings)

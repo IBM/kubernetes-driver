@@ -60,7 +60,9 @@ There are no guarantees to how many times the check will be attempted, as the ta
 | --- | --- | --- | 
 | N | - | `kegd.ready_checks.default_timeout_seconds` property value of the driver application (default is `300`) | N |
 
-The amount of time that may pass, since the first ready check attempt, before the task is considered expired and the transition is marked as failed. This value should be a valid `int` and never `0` or below.
+The amount of time that may pass, since the first ready check attempt, before the task is considered expired and the transition is marked as failed. 
+
+This value should be a valid `int` and never `0` or below. The value should also stay below the configured `kegd.ready_checks.max_timeout_seconds` on the driver. If it exceeds this, the value of `max_timeout_seconds` is used instead.
 
 There are no guarantees the task will expire exactly after this time has passed, as the task is placed in a queue and may be dequeued at any time based on load. However, on dequeue, this value is checked and the next attempt is cancelled and no future attempts will be made.
 
