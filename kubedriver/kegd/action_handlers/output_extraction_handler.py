@@ -63,6 +63,6 @@ class OutputExtractionHandler:
 
     def __build_script(self, outputs_script):
         script = outputs_script
-        script += '\nget_outputs(keg, props, resultBuilder, log)'
+        script += '\ngetOutputs(keg, props, resultBuilder, log)'
         return script
             

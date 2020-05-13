@@ -61,6 +61,6 @@ class ReadyCheckHandler:
 
     def __build_script(self, ready_script):
         script = ready_script
-        script += '\ncheck_ready(keg, props, resultBuilder, log)'
+        script += '\ncheckReady(keg, props, resultBuilder, log)'
         return script
             

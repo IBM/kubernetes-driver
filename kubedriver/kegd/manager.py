@@ -11,6 +11,9 @@ from kubedriver.kubeobjects import ObjectConfigurationDocument, InvalidObjectCon
 from .exceptions import InvalidKegDeploymentStrategyError
 from ignition.templating import TemplatingError
 from .processor import KegdStrategyLocationProcessor
+from ignition.service.logging import logging_context
+
+logger = logging.getLogger(__name__)
 
 class KegdStrategyManager(Service, Capability):
 
@@ -19,6 +22,13 @@ class KegdStrategyManager(Service, Capability):
         self.context_factory = context_factory
         self.templating = templating
         self.job_queue = job_queue
+        if self.kegd_properties.ready_checks.default_timeout_seconds == None:
+            raise ValueError('Must set kegd.ready_checks.default_timeout_seconds in the configuration properties')
+        if self.kegd_properties.ready_checks.default_timeout_seconds <= 0:
+            raise ValueError('Must set kegd.ready_checks.default_timeout_seconds above zero in the configuration properties')
+        if self.kegd_properties.ready_checks.max_timeout_seconds != None:
+            if self.kegd_properties.ready_checks.default_timeout_seconds < self.kegd_properties.ready_checks.max_timeout_seconds:
+                raise ValueError(f'Must set a value on kegd.ready_checks.default_timeout_seconds ({self.kegd_properties.ready_checks.default_timeout_seconds}) that is greater than kegd.ready_checks.max_timeout_seconds ({self.kegd_properties.ready_checks.max_timeout_seconds}) in the configuration properties')
 
     def apply_kegd_strategy(self, kube_location, keg_name, kegd_strategy, operation_name, kegd_files, render_context):
         context = self.context_factory.build(kube_location)
@@ -26,9 +36,19 @@ class KegdStrategyManager(Service, Capability):
         process_strategy_job = worker.build_process_strategy_job(keg_name, kegd_strategy, operation_name, kegd_files, render_context)
         job_data = {
             'job_type': ProcessStrategyJob.job_type,
-            'data': process_strategy_job.on_write()
+            'data': process_strategy_job.on_write(),
+            'logging_context': {k:v for k,v in logging_context.get_all().items()}
         }
-        self.job_queue.queue_job(job_data)
+        try:
+            self.job_queue.queue_job(job_data)
+        except Exception as e:
+            #Try and delete the request as we never scheduled the job
+            logger.exception(f'Failed to queue request \'{process_strategy_job.request_id}\', will attempt to remove report data')
+            try:
+                worker.delete_request_report(request_id)
+            except Exception as nested:
+                logger.exception(f'Failed to remove report for a request which failed to be queued: {process_strategy_job.request_id}')
+            raise e from None
         return process_strategy_job.request_id
 
     def get_request_report(self, kube_location, request_id):
@@ -172,6 +192,10 @@ class KegdStrategyLocationManager:
             retry_settings.timeout_seconds = self.kegd_properties.ready_checks.default_timeout_seconds
         if retry_settings.interval_seconds == None:
             retry_settings.interval_seconds = self.kegd_properties.ready_checks.default_interval_seconds
+        if self.kegd_properties.ready_checks.max_timeout_seconds != None and retry_settings.timeout_seconds > self.kegd_properties.ready_checks.max_timeout_seconds:
+            raise InvalidKegDeploymentStrategyError(f'timeout seconds value ({retry_settings.timeout_seconds}) cannot exceed the maximum allowed ({self.kegd_properties.ready_checks.max_timeout_seconds})')
+        if retry_settings.timeout_seconds <= 0:
+            raise InvalidKegDeploymentStrategyError(f'timeout seconds value ({retry_settings.timeout_seconds}) must be greater than zero')
         return ReadyCheckTask(ready_script_content, ready_script_name, retry_settings)
 
     def __build_output_extraction_task(self, compose_script, kegd_files):

@@ -15,6 +15,7 @@ class KegDeploymentStrategyReadyCheckProperties(ConfigurationProperties, Service
         self.default_max_attempts = None
         self.default_timeout_seconds = None
         self.default_interval_seconds = None
+        self.max_timeout_seconds = None
 
 class KegDeploymentStrategyProperties(ConfigurationProperties, Service, Capability):
 

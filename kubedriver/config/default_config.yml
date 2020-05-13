@@ -18,3 +18,4 @@ kegd:
     default_max_attempts: 10
     default_timeout_seconds: 300
     default_interval_seconds: 5
+    max_timeout_seconds: 3600
