@@ -33,27 +33,23 @@ class DeployHelmHandler:
             self.__do_decorate(helm_status, action, parent_task_settings, script_name, keg_name, keg_status)
         
         try:
-            helm_client.get(action.name)
-            # Found
-            must_recreate = True
+            found, _ = helm_client.safe_get(action.name, action.namespace)
+            if found: 
+                must_recreate = True
         except Exception as e:
             must_recreate = False
-            if f'release: \"{action.name}\" not found' in str(e):
-                #Not found, so can create freely
-                pass
-            else:
-                logger.exception(f'Checking existence of helm release \'{action.name}\' in group \'{keg_name}\' failed')
-                error_msg = str(e)
-                task_errors.append(error_msg)
-                helm_status.state = EntityStates.CREATE_FAILED
-                helm_status.error = error_msg
+            logger.exception(f'Checking existence of helm release \'{action.name}\' in group \'{keg_name}\' failed')
+            error_msg = f'{e}'
+            task_errors.append(error_msg)
+            helm_status.state = EntityStates.CREATE_FAILED
+            helm_status.error = error_msg
 
-        if must_recreate is True:
+        if must_recreate is True and len(task_errors) == 0:
             try:
                 helm_client.purge(action.name)
             except Exception as e:
                 logger.exception(f'Attempting to recreate helm release \'{action.name}\' in group \'{keg_name}\' failed')
-                error_msg = str(e)
+                error_msg = f'{e}'
                 task_errors.append(error_msg)
                 helm_status.state = EntityStates.CREATE_FAILED
                 helm_status.error = error_msg
@@ -67,7 +63,7 @@ class DeployHelmHandler:
                 helm_status.error = None
             except Exception as e:
                 logger.exception(f'Create attempt of helm release \'{action.name}\' in group \'{keg_name}\' failed')
-                error_msg = str(e)
+                error_msg = f'{e}'
                 task_errors.append(error_msg)
                 helm_status.state = EntityStates.CREATE_FAILED
                 helm_status.error = error_msg

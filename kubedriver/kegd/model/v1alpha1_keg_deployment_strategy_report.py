@@ -20,19 +20,10 @@ class V1alpha1KegdStrategyReport(object):
     }
     
     def __init__(self, api_version=None, kind=None, metadata=None, status=None):
-        self._api_version = None
-        self._kind = None
-        self._metadata = None
-        self._Status = None
-        self._status = None
-        if api_version is not None:
-            self.api_version = api_version
-        if kind is not None:
-            self.kind = kind
-        if metadata is not None:
-            self.metadata = metadata
-        if status is not None:
-            self.status = status
+        self._api_version = api_version
+        self._kind = kind
+        self._metadata = metadata
+        self._status = status
 
     @property
     def api_version(self):

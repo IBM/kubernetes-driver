@@ -6,6 +6,10 @@ def to_dict(obj):
         attrs = obj.dict_attrs
     else:
         attrs = []
+    if hasattr(obj, 'attribute_map'):
+        alt_attr_names = obj.attribute_map
+    else:
+        alt_attr_names = {}
     for attr in attrs:
         value = getattr(obj, attr)
         if isinstance(value, list):
@@ -14,7 +18,7 @@ def to_dict(obj):
                 if hasattr(e, 'to_dict'):
                     result[attr].append(e.to_dict())
                 else:
-                    result[attr] = e
+                    result[attr].append(e)
         elif hasattr(value, 'to_dict'):
             result[attr] = value.to_dict()
         elif isinstance(value, dict):

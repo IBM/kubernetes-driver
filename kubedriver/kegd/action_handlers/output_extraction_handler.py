@@ -1,6 +1,6 @@
 import logging
 from kubedriver.kegd.model import OutputExtractionResult
-from kubedriver.keg import CompositionReader
+from kubedriver.keg import CompositionLoader
 from kubedriver.sandbox import Sandbox, SandboxConfiguration, SandboxError, ExecuteError
 from kubedriver.kegd.scripting import KegCollection, OutputExtractionResultHolder
 
@@ -15,19 +15,20 @@ class OutputExtractionHandler:
         script = output_extraction_task.script
         sandbox = self.__build_sandbox()
         api_ctl = location_context.api_ctl
-        objects = self.__load_composition(keg_status, api_ctl)
+        helm_client = location_context.kube_location.helm_client
+        composition = self.__load_composition(keg_status, api_ctl, helm_client)
         result_holder = OutputExtractionResultHolder()
-        inputs = self.__build_inputs(objects, result_holder, resource_context_properties)
+        inputs = self.__build_inputs(composition, result_holder, resource_context_properties)
         complete_script = self.__build_script(script)
         try:
             execute_result = sandbox.run(complete_script, file_name=script_file_name, inputs=inputs)
         except SandboxError as e:
-            logger.exception(f'Error occurred during execution of output extraction script {script_file_name}: {str(e)}')
-            full_detail = str(e)
-            if isinstance(e, ExecuteError) and hasattr(e, 'log'):
-                full_detail += '\n'
-                full_detail += e.log.summarise()
-            return OutputExtractionResult.failed(full_detail)
+            full_detail = None
+            if isinstance(e, ExecuteError) and hasattr(e, 'execution_log') and getattr(e, 'execution_log') != None:
+                full_detail = ': '
+                full_detail += e.execution_log.summarise()
+            logger.exception(f'Error occurred during execution of output extraction script {script_file_name}{full_detail}')
+            return OutputExtractionResult.failed(f'Error occurred during execution of output extraction script {script_file_name}: {e}')
 
         log_msg = f'Output extraction script {script_file_name} complete, result: {result_holder}'
         if execute_result.log != None and execute_result.log.has_entries():
@@ -37,7 +38,7 @@ class OutputExtractionHandler:
 
         failed, reason = result_holder.has_failed()
         if failed:
-            return OutputExtractionResult.failed(reason)
+            return OutputExtractionResult.failed(f'{script_file_name}: {reason}')
         else:
             #Make a copy of the outputs so they are clean (in case the holder has been contaminated)
             outputs = {}
@@ -45,8 +46,8 @@ class OutputExtractionHandler:
                 outputs[k] = str(v)
             return OutputExtractionResult.success(outputs)
 
-    def __load_composition(self, keg_status, api_ctl):
-        return CompositionReader().load_composition(keg_status, api_ctl)
+    def __load_composition(self, keg_status, api_ctl, helm_client):
+        return CompositionLoader(api_ctl, helm_client).load_composition(keg_status)
 
     def __build_sandbox(self):
         config = SandboxConfiguration()
@@ -54,9 +55,9 @@ class OutputExtractionHandler:
         config.log_member_name = 'log'
         return Sandbox(config)
 
-    def __build_inputs(self, objects, result_holder, resource_context_properties):
+    def __build_inputs(self, composition, result_holder, resource_context_properties):
         inputs = {}
-        inputs['keg'] = KegCollection(objects)
+        inputs['keg'] = KegCollection(composition)
         inputs['resultBuilder'] = result_holder
         inputs['props'] = resource_context_properties
         return inputs

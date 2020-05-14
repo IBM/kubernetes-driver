@@ -37,7 +37,7 @@ class Sandbox:
     def run(self, script, file_name='<inline code>', inputs=None):
         compile_result = compile_restricted_exec(script, filename=file_name)
         if compile_result.errors != None and len(compile_result.errors) > 0:
-            raise CompileError(str(compile_result.errors))
+            raise CompileError(f'Compilation of {file_name} failed with errors: {compile_result.errors}')
         if inputs == None:
             inputs = {}
         builtins = self.__build_builtins()
@@ -48,7 +48,7 @@ class Sandbox:
         try:
             exec(compile_result.code, global_scope, local_scope)
         except Exception as e:
-            raise ExecuteError(f'Sandbox execution of script returned an error: {str(e)}') from e
+            raise ExecuteError(f'Sandbox execution of script {file_name} returned an error: {e}', execution_log=self._log) from e
         return ExecutionResult(global_scope, local_scope, log=self._log)
 
     def __build_builtins(self):

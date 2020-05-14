@@ -16,7 +16,7 @@ class DeploymentStrategyParser(Service, Capability):
         try:
             data = yaml.safe_load(yaml_content)
         except yaml.YAMLError as e:
-            raise InvalidDeploymentStrategyError(str(e))
+            raise InvalidDeploymentStrategyError(f'{e}')
         return self.read_dict(data)
 
     def read_dict(self, data):

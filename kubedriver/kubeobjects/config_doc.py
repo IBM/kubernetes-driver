@@ -11,7 +11,7 @@ class ObjectConfigurationDocument:
         try:
             resource_docs = yaml.safe_load_all(self.content)
         except yaml.YAMLError as e:
-            raise InvalidObjectConfigurationDocumentError(str(e), self.content) from e
+            raise InvalidObjectConfigurationDocumentError(f'{e}', self.content) from e
         object_configurations = []
         for resource_doc in resource_docs:
             if resource_doc != None: #empty doc
@@ -22,7 +22,7 @@ class ObjectConfigurationDocument:
         try:
             resource_docs = yaml.safe_load_all(self.content)
         except yaml.YAMLError as e:
-            raise InvalidObjectConfigurationDocumentError(str(e), self.content) from e
+            raise InvalidObjectConfigurationDocumentError(f'{e}', self.content) from e
         object_configurations = []
         for resource_doc in resource_docs:
             if resource_doc != None: #empty doc

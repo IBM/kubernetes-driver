@@ -23,31 +23,32 @@ class RemoveHelmHandler:
         helm_status = self.__find_helm_status(action, keg_status)
 
         try:
-            helm_client.get(action.name)
-            # Found
-            should_delete = True
+            found, _ = helm_client.safe_get(action.name, action.namespace)
+            if found: 
+                should_delete = True
         except Exception as e:
             should_delete = False
-            if f'release: \"{action.name}\" not found' in str(e):
-                #Not found, so ignore the delete
-                pass
-            else:
-                logger.exception(f'Checking existence of helm release \'{action.name}\' in group \'{keg_name}\' failed')
-                error_msg = str(e)
-                task_errors.append(error_msg)
-                helm_status.state = EntityStates.DELETE_FAILED
-                helm_status.error = error_msg
-        if should_delete:
+            logger.exception(f'Checking existence of helm release \'{action.name}\' in group \'{keg_name}\' failed')
+            error_msg = f'{e}'
+            task_errors.append(error_msg)
+            helm_status.state = EntityStates.DELETE_FAILED
+            helm_status.error = error_msg
+
+        if should_delete and len(task_errors) == 0:
             try:
                 helm_client.purge(action.name)
                 helm_status.state = EntityStates.DELETED
                 helm_status.error = None
             except Exception as e:
                 logger.exception(f'Delete attempt of helm release \'{action.name}\' in group \'{keg_name}\' failed')
-                error_msg = str(e)
+                error_msg = f'{e}'
                 task_errors.append(error_msg)
                 helm_status.state = EntityStates.DELETE_FAILED
                 helm_status.error = error_msg
+
+        if helm_status.state == EntityStates.DELETED:
+            self.__remove_helm_release_from_composition(action, keg_status)
+
         return task_errors
 
     def __find_helm_status(self, action, keg_status):
@@ -58,3 +59,12 @@ class RemoveHelmHandler:
         else:
             keg_status.composition = V1alpha1KegCompositionStatus(helm_releases=[])
         return None
+
+    def __remove_helm_release_from_composition(self, action, keg_status):
+        new_helm_releases = []
+        for helm_status in keg_status.composition.helm_releases:
+            if helm_status.name == action.name and helm_status.namespace == action.namespace:
+                pass
+            else:
+                new_helm_releases.append(helm_status)
+        keg_status.composition.helm_releases = new_helm_releases

@@ -28,33 +28,15 @@ class V1alpha1KegdStrategyReportStatus(object):
     }
 
     def __init__(self, uid=None, keg_name=None, operation=None, task_groups=None, run_cleanup=None, state=None, phase=None, errors=None, outputs=None):
-        self._uid = None
-        self._keg_name = None
-        self._operation = None
-        self._task_groups = None
-        self._run_cleanup = None
-        self._state = None
-        self._phase = None
-        self._errors = None
-        self._outputs = None
-        if uid is not None:
-            self._uid = uid
-        if keg_name is not None:
-            self._keg_name = keg_name
-        if operation is not None:
-            self._operation = operation
-        if task_groups is not None:
-            self._task_groups = task_groups
-        if run_cleanup is not None:
-            self._run_cleanup = run_cleanup
-        if state is not None:
-            self._state = state
-        if phase is not None:
-            self._phase = phase
-        if errors is not None:
-            self._errors = errors
-        if outputs is not None:
-            self._outputs = outputs
+        self._uid = uid
+        self._keg_name = keg_name
+        self._operation = operation
+        self._task_groups = task_groups
+        self._run_cleanup = run_cleanup
+        self._state = state
+        self._phase = phase
+        self._errors = errors
+        self._outputs = outputs
 
     @property
     def uid(self):

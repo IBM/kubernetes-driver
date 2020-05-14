@@ -115,7 +115,7 @@ class KegdStrategyLocationProcessor:
                 logger.exception(f'An error occurred whilst processing deployment strategy \'{report_status.uid}\' on group \'{process_strategy_job.keg_name}\', attempting to update records with failure')
                 if isinstance(e, MultiErrorStrategyProcessingError):
                     errors.extend(e.original_errors)
-                errors.append(f'Internal error: {str(e)}')
+                errors.append(f'Internal error: {e}')
             if phase_result != None:
                 errors.extend(phase_result.errors)
 
@@ -227,7 +227,7 @@ class KegdStrategyLocationProcessor:
                         phase_result = self.__execute_cleanup(report_status, keg_name, keg_status, strategy_execution)
                 except Exception as e:
                     logger.exception(f'An error occurred whilst processing phase \'{report_status.phase}\' of deployment strategy \'{report_status.uid}\' on group \'{keg_name}\'')
-                    phase_result = PhaseResult(errors=[str(e)])
+                    phase_result = PhaseResult(errors=[f'{e}'])
 
                 if phase_result.requeue is not None:
                     return phase_result
@@ -239,8 +239,8 @@ class KegdStrategyLocationProcessor:
             # Fail safe catch all, that makes sure we don't lose any of the original errors 
             if len(all_errors) > 0:
                 logger.exception(f'An error occurred whilst processing phases of the deployment strategy \'{report_status.uid}\' on group \'{keg_name}\'')
-                all_errors.append(str(e))
-                raise MultiErrorStrategyProcessingError(str(e), all_errors) from e
+                all_errors.append(f'{e}')
+                raise MultiErrorStrategyProcessingError(f'{e}', all_errors) from e
             else:
                 raise
 
@@ -289,7 +289,7 @@ class KegdStrategyLocationProcessor:
         task_errors = []
         if len(removal_tasks) > 0:
             for task in removal_tasks:
-                logger.info('Processing decorate for remove task ' + str(task.on_write()))
+                logger.debug('Processing decorate for remove task ' + str(task.on_write()))
                 handler = self.__get_removal_task_handler(task)
                 handler.decorate(task.action, task.settings, task_group_name, keg_name, keg_status)
             try:
@@ -297,11 +297,11 @@ class KegdStrategyLocationProcessor:
             except PersistenceError as e:
                 msg = f'Failed to update Keg \'{keg_name}\' with planned composition remove changes on request \'{report_status.uid}\''
                 logger.exception(msg)
-                task_errors.append(msg + ': ' + str(e))
+                task_errors.append(f'{msg}: {e}')
             else:
                 #Proceed with remove
                 for task in removal_tasks:
-                    logger.info('Processing handler for remove task ' + str(task.on_write()))
+                    logger.debug('Processing handler for remove task ' + str(task.on_write()))
                     handler = self.__get_removal_task_handler(task)
                     handler_errors = handler.handle(task.action, task.settings, task_group_name, keg_name, keg_status, self.context)
                     task_errors.extend(handler_errors)
@@ -310,14 +310,14 @@ class KegdStrategyLocationProcessor:
                 except PersistenceError as e:
                     msg = f'Failed to update Keg \'{keg_name}\' with composition remove changes on request \'{report_status.uid}\''
                     logger.exception(msg)
-                    task_errors.append(msg + ': ' + str(e))
+                    task_errors.append(f'{msg}: {e}')
         return task_errors
 
     def __process_deploy_tasks(self, report_status, keg_name, keg_status, task_group_name, deploy_tasks):
         task_errors = []
         if len(deploy_tasks) > 0:
             for task in deploy_tasks:
-                logger.info('Processing decorate for deploy task ' + str(task.on_write()))
+                logger.debug('Processing decorate for deploy task ' + str(task.on_write()))
                 handler = self.__get_deploy_task_handler(task)
                 handler.decorate(task.action, task.settings, task_group_name, keg_name, keg_status)
             try:
@@ -325,11 +325,11 @@ class KegdStrategyLocationProcessor:
             except PersistenceError as e:
                 msg = f'Failed to update Keg \'{keg_name}\' with planned composition deploy changes on request \'{report_status.uid}\''
                 logger.exception(msg)
-                task_errors.append(msg + ': ' + str(e))
+                task_errors.append(f'{msg}: {e}')
             else:
                 #Proceed with deploy
                 for task in deploy_tasks:
-                    logger.info('Processing handler for deploy task ' + str(task.on_write()))
+                    logger.debug('Processing handler for deploy task ' + str(task.on_write()))
                     handler = self.__get_deploy_task_handler(task)
                     handler_errors = handler.handle(task.action, task.settings, task_group_name, keg_name, keg_status, self.context)
                     task_errors.extend(handler_errors)
@@ -338,7 +338,7 @@ class KegdStrategyLocationProcessor:
                 except PersistenceError as e:
                     msg = f'Failed to update Keg \'{keg_name}\' with composition deploy changes on request \'{report_status.uid}\''
                     logger.exception(msg)
-                    task_errors.append(msg + ': ' + str(e))
+                    task_errors.append(f'{msg}: {e}')
         return task_errors
 
     def __execute_ready_check_task(self, report_status, keg_name, keg_status, strategy_execution, resource_context_properties):
@@ -430,7 +430,7 @@ class KegdStrategyLocationProcessor:
                 except PersistenceError as e:
                     msg = f'Failed to remove Keg \'{keg_name}\' on request \'{report_status.uid}\''
                     logger.exception(msg)
-                    cleanup_errors.append(msg + ': ' + str(e))
+                    cleanup_errors.append(f'{msg}: {e}')
         return PhaseResult(errors=cleanup_errors)
         
     def __cleanout_keg(self, report_status, keg_name, keg_status):

@@ -3,12 +3,11 @@ import logging
 from ignition.service.framework import Service, Capability
 from kubedriver.kegd.model import (RemovalTask, RemovalTaskSettings, RemoveObjectAction, DeployTask, DeployHelmAction,
                                     DeployObjectsAction, DeployObjectAction, Labels, LabelValues, OutputExtractionTask,
-                                    RemoveHelmAction, DeployHelmAction, ReadyCheckTask, RetrySettings,
+                                    RemoveHelmAction, DeployHelmAction, ReadyCheckTask, RetrySettings, InvalidDeploymentStrategyError,
                                     StrategyExecutionStates, V1alpha1KegdStrategyReportStatus, Tags, StrategyExecution, TaskGroup)
 from kubedriver.kegd.jobs import ProcessStrategyJob
 from kubedriver.persistence import RecordNotFoundError
 from kubedriver.kubeobjects import ObjectConfigurationDocument, InvalidObjectConfigurationDocumentError, InvalidObjectConfigurationError
-from .exceptions import InvalidKegDeploymentStrategyError
 from ignition.templating import TemplatingError
 from .processor import KegdStrategyLocationProcessor
 from ignition.service.logging import logging_context
@@ -196,7 +195,7 @@ class KegdStrategyLocationManager:
             logger.warning(f'Retry timeout seconds value of ({retry_settings.timeout_seconds}) is greater than the max timeout allowed ({self.kegd_properties.ready_checks.max_timeout_seconds}). The value will be reduced to the maximum.')
             retry_settings.timeout_seconds = self.kegd_properties.ready_checks.max_timeout_seconds
         if retry_settings.timeout_seconds <= 0:
-            raise InvalidKegDeploymentStrategyError(f'timeout seconds value ({retry_settings.timeout_seconds}) must be greater than zero')
+            raise InvalidDeploymentStrategyError(f'timeout seconds value ({retry_settings.timeout_seconds}) must be greater than zero')
         return ReadyCheckTask(ready_script_content, ready_script_name, retry_settings)
 
     def __build_output_extraction_task(self, compose_script, kegd_files):
@@ -264,11 +263,11 @@ class KegdStrategyLocationManager:
         try:
             return self.templating.render(template, render_context)
         except TemplatingError as e:
-            raise InvalidKegDeploymentStrategyError(f'Failed to render template {source_file_path}: {str(e)}') from e
+            raise InvalidDeploymentStrategyError(f'Failed to render template {source_file_path}: {e}') from e
 
     def __parse_doc_to_objects(self, doc_data, source_file_path):
         try:
             return ObjectConfigurationDocument(doc_data).read()
         except (InvalidObjectConfigurationDocumentError, InvalidObjectConfigurationError) as e:
-            raise InvalidKegDeploymentStrategyError(f'Object configuration found in file {source_file_path} is invalid: {str(e)}') from e
+            raise InvalidDeploymentStrategyError(f'Object configuration found in file {source_file_path} is invalid: {e}') from e
             

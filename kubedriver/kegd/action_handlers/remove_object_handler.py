@@ -42,7 +42,7 @@ class RemoveObjectHandler:
                 if self.error_reader.is_api_exception(e):
                     error_msg = self.error_reader.summarise_error(e)
                 else:
-                    error_msg = str(e)
+                    error_msg = f'{e}'
                 task_errors.append(error_msg)
                 obj_status.state = EntityStates.DELETE_FAILED
                 obj_status.error = error_msg
