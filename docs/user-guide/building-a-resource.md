@@ -81,7 +81,9 @@ For full details on templates and the syntax used may be found in the [Templatin
 
 # Kubernetes Entity Group Deployment (kegd.yaml)
 
-The Kubernetes driver can deploy any number of Kubernetes objects as part of a Resource, at different stages of it's lifecycle. The driver keeps track of the objects it has deployed for a single Resource in a Kubernetes Entity Group, known as a Keg. (This includes objects created through the installation of Helm charts, which we will come to later. Even if you only intend to use Helm charts, we recommend reading the rest of the section on objects as the general process for deploying and removing them is the same).
+The Kubernetes driver can deploy any number of Kubernetes objects as part of a Resource, at different stages of it's lifecycle. The driver keeps track of the objects it has deployed for a single Resource in a Kubernetes Entity Group, known as a Keg. 
+
+This includes objects created through the installation of Helm charts, which we will come to later. Even if you only intend to use Helm charts, we recommend reading the rest of the section on objects as the general process for deploying and removing them is the same.
 
 You are in control of when objects are deployed into and removed from the Keg through a deployment strategy (kegd = keg deployment). 
 
@@ -321,7 +323,7 @@ The removal of installed Helm charts follows the same rules as objects:
 
 # Next Steps
 
-See how to add [ready checks](ready-checks.md) in order to inspect your object's statuses before completing a transition/operation.
+See how to add [ready checks](ready-checks.md) in order to inspect objects statuses before completing a transition/operation.
 
 Also, check out [extracting-outputs](extracting-outputs.md) in order to return fields from an object's status as outputs on the transition/operation (for Brent to set these properties on the Resource).
 

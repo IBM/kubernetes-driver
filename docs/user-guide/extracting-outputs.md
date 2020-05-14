@@ -76,7 +76,7 @@ This function is the one called by the driver to perform the output extraction. 
 
 | Name | Description |
 | --- | --- |
-| keg | A collection of all the objects deployed as part of this resource (only those that still exist, so any objects that have been removed by a transition are not included) |
+| keg | A collection of all the objects/helm releases deployed as part of this resource (only those that still exist, so any objects that have been removed by a transition are not included) |
 | props | A dictionary of all the properties available for this resource. These are the same properties used when rendering templates |
 | resultBuilder | Helper object for managing the result | 
 | log | Utility to log messages to (see more later) |
@@ -84,13 +84,13 @@ This function is the one called by the driver to perform the output extraction. 
 
 ## Keg
 
-The keg value can be used to retrieve objects deployed as part of this resource. This includes any objects deployed in earlier transitions/operations and the current one. Any objects removed in earlier transitions/operations or the current one are not included.
+The keg value can be used to retrieve members deployed as part of this resource. This includes any objects/helm releases deployed in earlier transitions/operations and the current one. Any members removed in earlier transitions/operations or the current one are not included.
 
-**Note:** as Helm charts are not objects, they are not in the Keg. Currently the driver does not inspect the Helm installation for all of the objects deployed.
+**Note:** objects/helm releases marked with `immediateCleanupOn` are still available in the `keg` during the output extraction and are only removed afterwards.
 
-**Note:** objects marked with `immediateCleanupOn` are still available in the `keg` during the output extraction and are only removed afterwards.
+### Objects
 
-Each object is retrievable by it's apiVersion (sometimes referred to as group), kind, name and namespace (if not a cluster wide type). For example, if in our `my-deployment.yaml` file we have deployed the following:
+Each object deployed directly (so without Helm) is retrievable by it's apiVersion (sometimes referred to as group), kind, name and namespace (if not a cluster wide type). For example, if in our `my-deployment.yaml` file we have deployed the following:
 
 ```yaml
 apiVersion: apps/v1
@@ -106,13 +106,13 @@ We can retrieve this object like so:
 
 ```python
 def getOutputs(keg, props, resultBuilder, log, *args, **kwargs):
-    found, deployment = keg.getObject('apps/v1', 'Deployment', 'Example', namespace='demo')
+    found, deployment = keg.objects.get('apps/v1', 'Deployment', 'Example', namespace='demo')
 
     #Alternative if you prefer snake case:
     #found, deployment = keg.get_object('apps/v1', 'Deployment', 'Example', namespace='demo')
 ```
 
-**Note:** getObject does not perform an API call on Kubernetes, the driver has already pre-fetched all the possible objects
+**Note:** this does not perform an API call on Kubernetes, the driver has already pre-fetched all the possible objects
 
 The variable names `found` and `deployment` can be any valid Python variable name of your choosing. 
 
@@ -137,14 +137,66 @@ When `found` is `True`, the value of `deployment` will be a dictionary copy of t
 }
 ```
 
-You may now use dictionary navigation to inspect the contents of the object:
+You can use this to inspect the contents of the object:
 
 ```python
 def getOutputs(keg, props, resultBuilder, log, *args, **kwargs):
-    found, deployment = keg.getObject('apps/v1', 'Deployment', 'Example', namespace='demo')
+    found, deployment = keg.objects.get('apps/v1', 'Deployment', 'Example', namespace='demo')
     if found:
         # deploymentName will equal 'Example'
         deploymentName = deployment['metadata']['name']
+```
+
+### Helm Releases
+
+Each Helm release deployed is retrievable by it's name and namespace (Releases are actually unique by their name in Helm2 but in future Helm versions they will be unique by namespace as well, so best to use both to avoid compatiblity issues).
+
+As an example, if we've deployed a Helm chart in our kegd.yaml file:
+
+```yaml
+compose:
+  - name: Create
+    deploy:
+      - helm:
+          chart: nginx-ingress-1.24.4.tgz
+          name: MyReleaseName
+          namespace: MyNamespace
+```
+
+```python
+def getOutputs(keg, props, resultBuilder, log, *args, **kwargs):
+    found, helm_release = keg.helm_releases.get('MyReleaseName', 'MyNamespace')
+```
+
+The variable names `found` and `helm_release` can be any valid Python variable name of your choosing. 
+
+The value of `found` is a boolean (True/False) to indicate if the helm release is in the keg. When `False`, the value of `helm_release` will be `None`. You should always check `found` before proceeding to use the value of `helm_release`. 
+
+When `found` is `True`, the value of `helm_release` will be a special Helm object with two attributes: 
+
+`info` - dictionary of details related to the Helm release
+`objects` - a collection of the objects managed by this Helm release
+
+Example of `info`:
+
+```python
+{
+  'name': 'MyReleaseName',
+  'namespace': 'MyNamespace',
+  'revision': 1,
+  'released': 'Mon Mar 30 13:04:31 2020',
+  'chart': 'nginx-ingress-1.24.4',
+  ...
+}
+```
+
+The `objects` attribute has the same functions as `keg.objects`, so you can lookup objects in the Helm release by their apiVersion, kind, name and namespace.
+
+```python
+def getOutputs(keg, props, resultBuilder, log, *args, **kwargs):
+    found, helm_release = keg.helm_releases.get('MyReleaseName', 'MyNamespace')
+    if found:
+      objFound, controller = helm_release.objects.get('v1', 'Service', 'MyReleaseName-nginx-ingress-controller', namespace=helm_release.info['namespace'])
 ```
 
 ## Props
@@ -167,7 +219,7 @@ Then you will need to use the same value to retrieve the object:
 
 ```python
 def getOutputs(keg, props, resultBuilder, log, *args, **kwargs):
-    found, deployment = keg.getObject('apps/v1', 'Deployment', props['system_properties']['resource_subdomain'], namespace='demo')
+    found, deployment = keg.objects.get('apps/v1', 'Deployment', props['system_properties']['resource_subdomain'], namespace='demo')
 ```
 
 You may also return the properties as outputs. Normally this would seem odd as the properties were originally inputs to this request however it may be useful to return a generated `system_property` such as `resource_subdomain`, which may have been used as an identifier for an object. (See how to return this as an output later).
@@ -190,7 +242,7 @@ To return a field from an object, first retrieve the object and then set the out
 
 ```python
 def getOutputs(keg, props, resultBuilder, log, *args, **kwargs):
-    found, service = keg.getObject('v1', 'Service', props['system_properties']['resource_subdomain'], namespace='demo')
+    found, service = keg.objects.get('v1', 'Service', props['system_properties']['resource_subdomain'], namespace='demo')
     if found:
         resultBuilder.setOutput('nodePort', service['spec']['nodePort'])
 ```
@@ -206,7 +258,7 @@ In addition to returning outputs, the resultBuilder can be used to exit with an 
 
 ```python
 def getOutputs(keg, props, resultBuilder, log, *args, **kwargs):
-    found, service = keg.getObject('v1', 'Service', props['system_properties']['resource_subdomain'], namespace='demo')
+    found, service = keg.objects.get('v1', 'Service', props['system_properties']['resource_subdomain'], namespace='demo')
     if not found:
         return resultBuilder.failed(f'Could not find service "{props['system_properties']['resource_subdomain']}"')
 ```
@@ -234,7 +286,7 @@ Below is an academic example of using all of the arguments together to produce a
 
 ```python
 def getOutputs(keg, props, resultBuilder, log, *args, **kwargs):
-    found, service = keg.getObject('v1', 'Service', props['system_properties']['resource_subdomain'], namespace='demo')
+    found, service = keg.objects.get('v1', 'Service', props['system_properties']['resource_subdomain'], namespace='demo')
     if not found:
         return resultBuilder.failed(f'Could not find service "{props['system_properties']['resource_subdomain']}"')
     resultBuilder.setOutput('nodePort', service['spec']['nodePort'])

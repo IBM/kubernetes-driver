@@ -4,30 +4,19 @@ class KegCollection:
 
     def __init__(self, composition):
         self.__composition = composition
-        self.__object_collection = ObjectsCollection(composition.get('objects', {}))
-        self.__helm_releases_collection = HelmReleasesCollection(composition.get('helm_releases', {}))
-
-    def get_object(self, group, kind, name, namespace=None):
-        return self.__object_collection.get_object(group, kind, name, namespace=namespace)
-
-    def getObject(self, group, kind, name, namespace=None):
-        return self.get_object(group, kind, name, namespace=namespace)
-
-    def get_helm_release(self, name, namespace):
-        return self.__helm_releases_collection.get_helm_release(name, namespace)
-
-    def getHelmRelease(self, name, namespace):
-        return self.get_helm_release(name, namespace)
+        self.objects = ObjectsCollection(composition.get('objects', []))
+        self.helm_releases = HelmReleasesCollection(composition.get('helm_releases', []))
 
 class ObjectsCollection:
 
-    def __init__(self, objects):
+    def __init__(self, objects, default_namespace=None):
         self.__objects = objects
+        self.__default_namespace = default_namespace
 
-    def __a_new_me(self, with_objects):
+    def _a_new_me(self, with_objects):
         return ObjectsCollection(with_objects)
 
-    def get_object(self, group, kind, name, namespace=None):
+    def get(self, group, kind, name, namespace=None):
         for obj in self.__objects:
             if (obj.get('apiVersion') == group and obj.get('kind') == kind):
                 if obj.get('metadata') != None:
@@ -40,10 +29,7 @@ class ObjectsCollection:
                             return True, obj
         return False, None
 
-    def getObject(self, group, kind, name, namespace=None):
-        return self.get_object(group, kind, name, namespace=namespace)
-
-    def get_objects_by_labels(self, **kwargs):
+    def get_by_labels(self, **kwargs):
         result = []
         for obj in self.__objects:
             metadata = obj.get('metadata')
@@ -55,29 +41,46 @@ class ObjectsCollection:
                             result.append(obj)
         return result
 
-    def getObjectsByLabels(self, **kwargs):
-        return self.get_objects_by_labels(**kwargs)
+    def getByLabels(self, **labels):
+        return self.get_by_labels(**labels)
 
-    def ofKind(self, group, kind):
+    def filter_by_kind(self, group, kind):
         subset = []
         for obj in self.__objects:
-            
+            if (obj.get('apiVersion') == group and obj.get('kind') == kind):
+                subset.append(obj)
+        return self._a_new_me(subset)
 
-                
+    def filterByKind(self, group, kind):
+        return self.filter_by_kind(group, kind)
+
 class HelmReleasesCollection:
 
     def __init__(self, helm_releases):
-        self.__helm_releases = helm_releases
-        for entry in self.__helm_releases:
-            if 'objects' in entry:
-                objects = entry['objects']
-            else:
-                objects = []
-            entry['objects'] = ObjectsCollection(objects)
+        self.__helm_releases = []
+        for entry in helm_releases:
+            self.__helm_releases.append(HelmReleaseCollection(entry))
 
-    def get_helm_release(self, name, namespace):
+    def get(self, name, namespace):
         for helm_release in self.__helm_releases:
-            if helm_release.get('name') == name and helm_release.get('namespace') == namespace:
-                print(f'Found {helm_release.get("objects")}')
+            if helm_release.info.get('name') == name and helm_release.info.get('namespace') == namespace:
                 return True, helm_release
         return False, None
+
+class HelmReleaseCollection:
+
+    def __init__(self, helm_release):
+        self.__helm_release = helm_release
+        if 'objects' in self.__helm_release:
+            objects = self.__helm_release.pop('objects')
+        else:
+            objects = []
+        self.__objects = ObjectsCollection(objects)
+
+    @property
+    def info(self):
+        return self.__helm_release
+
+    @property
+    def objects(self):
+        return self.__objects

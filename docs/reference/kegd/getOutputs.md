@@ -34,7 +34,7 @@ This function is the one called by the driver to perform the output extraction. 
 
 | Name | Description |
 | --- | --- |
-| keg | A collection of all the objects deployed as part of this resource (only those that still exist, so any objects that have been removed by a transition are not included) |
+| keg | A collection of all the objects/helm releases deployed as part of this resource (only those that still exist, so any objects that have been removed by a transition are not included) |
 | props | A dictionary of all the properties available for this resource. These are the same properties used when rendering templates |
 | resultBuilder | Helper object for managing the result | 
 | log | Utility to log messages to (see more later) |

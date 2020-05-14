@@ -33,7 +33,7 @@ This function is the one called by the driver to perform the ready check. The ar
 
 | Name | Description |
 | --- | --- |
-| keg | A collection of all the objects deployed as part of this Resource (only those that still exist, so any objects that have been removed by a transition are not included) |
+| keg | A collection of all the objects/helm releases deployed as part of this Resource (only those that still exist, so any objects that have been removed by a transition are not included) |
 | props | A dictionary of all the properties available for this Resource. These are the same properties used when rendering templates |
 | resultBuilder | Helper object for managing the result of the ready check | 
 | log | Utility to log messages to (see more later) |
