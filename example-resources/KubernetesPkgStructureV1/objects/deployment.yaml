@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: Deplyoment
-metadata:
-  name: {{ systemProperties.resourceSubdomain }}
-spec:
-  ...deployment spec...
