@@ -3,7 +3,7 @@ from ignition.service.framework import Service, Capability
 from ignition.service.logging import logging_context
 from kubedriver.kegd.action_handlers import (DeployObjectHandler, RemoveObjectHandler, DeployHelmHandler, 
                                                 RemoveHelmHandler, ReadyCheckHandler, OutputExtractionHandler)
-from kubedriver.keg.model import V1alpha1KegStatus, V1alpha1KegCompositionStatus, EntityStates
+from kubedriver.keg.model import V1alpha1KegStatus, V1alpha1KegCompositionStatus, EntityStates, V1alpha1ObjectStatus
 from kubedriver.kegd.model import (RemovalTask, RemovalTaskSettings, RemoveObjectAction, DeployTask, DeployHelmAction,
                                     DeployObjectAction, DeployTaskSettings, RetryStatus,
                                     RemoveHelmAction, DeployHelmAction, ReadyCheckTask,
@@ -209,7 +209,16 @@ class KegdStrategyLocationProcessor:
         return cancel_process, errors, requeue_process
 
     def __process_next_phases(self, report_status, keg_name, strategy_execution, resource_context_properties):
-        keg_status = self.__get_or_init_keg(keg_name)
+        keg_status, new_keg = self.__get_or_init_keg(keg_name)
+        if new_keg is True:
+            uid = self.keg_persister.get_record_uid(keg_name)
+            record_ref = self.keg_persister.build_record_reference(uid, keg_name)
+            delta_capture = KegDeltaCapture(report_status.delta)
+            delta_capture.deployed_object(V1alpha1ObjectStatus(group=record_ref.get('apiVersion'), kind=record_ref.get('kind'), 
+                                                                namespace=record_ref['metadata'].get('namespace'), name=record_ref['metadata'].get('name'),
+                                                                uid=record_ref['metadata'].get('uid')))
+            report_status.delta = delta_capture.delta
+            self.kegd_persister.update(report_status.uid, report_status)
         all_errors = []
         try:
             # This point forward we must make best efforts to update the request if there is an error (and to run Immediate cleanup on error)
@@ -437,6 +446,11 @@ class KegdStrategyLocationProcessor:
                     msg = f'Failed to remove Keg \'{keg_name}\' on request \'{report_status.uid}\''
                     logger.exception(msg)
                     cleanup_errors.append(f'{msg}: {e}')
+                else:
+                    record_ref = self.keg_persister.build_record_reference(keg_status.uid, keg_name)
+                    delta_capture.removed_object(V1alpha1ObjectStatus(group=record_ref.get('apiVersion'), kind=record_ref.get('kind'), 
+                                                                namespace=record_ref['metadata'].get('namespace'), name=record_ref['metadata'].get('name'),
+                                                                uid=record_ref['metadata'].get('uid')))
         report_status.delta = delta_capture.delta
         return PhaseResult(errors=cleanup_errors)
         
@@ -454,6 +468,7 @@ class KegdStrategyLocationProcessor:
     def __get_or_init_keg(self, keg_name):
         try:
             keg = self.keg_persister.get(keg_name)
+            return keg, False
         except RecordNotFoundError:
             # Not found
             keg = V1alpha1KegStatus()
@@ -461,4 +476,4 @@ class KegdStrategyLocationProcessor:
             keg.composition.objects = []
             keg.composition.helm_releases = []
             self.keg_persister.create(keg_name, keg)
-        return keg
+            return keg, True

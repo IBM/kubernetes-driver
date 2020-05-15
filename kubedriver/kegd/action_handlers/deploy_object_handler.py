@@ -38,9 +38,10 @@ class DeployObjectHandler:
         self.config_utils.add_label(object_config, Labels.KEG, keg_name)
         try:
             if obj_status.state == EntityStates.UPDATE_PENDING:
-                api_ctl.update_object(object_config)
+                return_obj = api_ctl.update_object(object_config)
             else:
-                api_ctl.create_object(object_config)
+                return_obj = api_ctl.create_object(object_config)
+            obj_status.uid = self.__get_uid(return_obj)
             obj_status.state = EntityStates.CREATED if obj_status.state == EntityStates.CREATE_PENDING else EntityStates.UPDATED
             obj_status.error = None
             if obj_status.state == EntityStates.CREATED:
@@ -55,6 +56,14 @@ class DeployObjectHandler:
             obj_status.state = EntityStates.CREATE_FAILED if obj_status.state == EntityStates.CREATE_PENDING else EntityStates.UPDATE_FAILED
             obj_status.error = error_msg
         return task_errors
+
+    def __get_uid(self, return_obj):
+        if hasattr(return_obj, 'metadata'):
+            metadata = return_obj.metadata
+            return metadata.uid
+        else:
+            metadata = return_obj.get('metadata', {})
+            return metadata.get('uid')
 
     def build_cleanup(self, action, parent_task_settings):
         return RemovalTask(RemovalTaskSettings(), RemoveObjectAction(action.group, action.kind, action.name, namespace=action.namespace))

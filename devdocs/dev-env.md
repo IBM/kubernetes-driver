@@ -75,6 +75,7 @@ If you intend to run the driver locally and deploy Resources with Helm charts, y
 On ubuntu, you can do this using the same script used by the Dockerfile to bundle Helm into the image:
 
 ```
+chmod u+x ./docker/setup-helm.sh
 ./docker/setup-helm.sh 2.8.2 2.16.7
 ```
 

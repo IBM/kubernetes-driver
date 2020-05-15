@@ -23,6 +23,21 @@ class ConfigMapPersister:
             raise InvalidRecordError(message) from exception
         else:
             raise PersistenceError(message) from exception
+
+    def build_record_reference(self, uid, record_name):
+        return {
+            'apiVersion': self.cm_api_version,
+            'kind': self.cm_kind,
+            'metadata': {
+                'name': record_name,
+                'namespace': self.storage_namespace,
+                'uid': uid
+            }
+        }
+    
+    def get_record_uid(self, record_name):
+        record_cm = self.__get_config_map_for(record_name)
+        return record_cm.metadata.uid
     
     def create(self, record_name, record_data, labels=None):
         cm_config = self.__build_config_map_for_record(record_name, record_data, labels=labels)

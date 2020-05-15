@@ -1,10 +1,9 @@
-#!/bin/bash
+#!/bin/sh
 
-set -e
-
-mkdir helm
-cd helm
-for version in $SUPPORTED_HELM_VERSIONS
+rm -rf helmtmp
+mkdir helmtmp
+cd helmtmp
+for version in $1
 do
     wget https://get.helm.sh/helm-v$version-linux-amd64.tar.gz 
     tar -xvzf helm-v$version-linux-amd64.tar.gz 
@@ -13,3 +12,6 @@ do
     rm -rf linux-amd64
     rm helm-v$version-linux-amd64.tar.gz 
 done
+
+cd ..
+rm -rf helmtmp

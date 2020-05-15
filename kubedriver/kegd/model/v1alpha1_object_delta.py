@@ -7,7 +7,8 @@ class V1alpha1ObjectDelta(object):
         'group': 'str',
         'kind': 'str',
         'namespace': 'str',
-        'name': 'str'
+        'name': 'str',
+        'uid': 'str'
     }
 
     attribute_map = {
@@ -15,13 +16,15 @@ class V1alpha1ObjectDelta(object):
         'kind': 'kind',
         'namespace': 'namespace',
         'name': 'name',
+        'uid': 'uid'
     }
 
-    def __init__(self, group=None, kind=None, name=None, namespace=None):
+    def __init__(self, group=None, kind=None, name=None, namespace=None, uid=None):
         self._group = None
         self._kind = None
         self._namespace = None
         self._name = None
+        self._uid = None
         if group is not None:
             self._group = group
         if kind is not None:
@@ -30,6 +33,8 @@ class V1alpha1ObjectDelta(object):
             self._namespace = namespace
         if name is not None:
             self._name = name
+        if uid is not None:
+            self._uid = uid
 
     @property
     def group(self):
@@ -62,6 +67,14 @@ class V1alpha1ObjectDelta(object):
     @name.setter
     def name(self, name):
         self._name = name
+
+    @property
+    def uid(self):
+        return self._uid
+
+    @uid.setter
+    def uid(self, uid):
+        self._uid = uid
 
     def to_dict(self):
         return to_dict(self)

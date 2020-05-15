@@ -8,6 +8,7 @@ class V1alpha1ObjectStatus(object):
         'kind': 'str',
         'namespace': 'str',
         'name': 'str',
+        'uid': 'str',
         'state': 'str',
         'error': 'str',
         'tags': 'dict(str, list[str])'
@@ -18,16 +19,18 @@ class V1alpha1ObjectStatus(object):
         'kind': 'kind',
         'namespace': 'namespace',
         'name': 'name',
+        'uid': 'uid',
         'state': 'state',
         'error': 'error',
         'tags': 'tags'
     }
 
-    def __init__(self, group=None, kind=None, namespace=None, name=None, state=None, error=None, tags=None):
+    def __init__(self, group=None, kind=None, namespace=None, name=None, uid=None, state=None, error=None, tags=None):
         self._group = None
         self._kind = None
         self._namespace = None
         self._name = None
+        self._uid = None
         self._state = None
         self._error = None
         self._tags = None
@@ -39,6 +42,8 @@ class V1alpha1ObjectStatus(object):
             self._namespace = namespace
         if name is not None:
             self._name = name
+        if uid is not None:
+            self._uid = uid
         if state is not None:
             self._state = state
         if error is not None:
@@ -77,6 +82,14 @@ class V1alpha1ObjectStatus(object):
     @name.setter
     def name(self, name):
         self._name = name
+
+    @property
+    def uid(self):
+        return self._uid
+
+    @uid.setter
+    def uid(self, uid):
+        self._uid = uid
 
     @property
     def state(self):

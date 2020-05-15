@@ -132,6 +132,7 @@ class DeployHelmHandler:
             removed_objects = None
             deployed_objects = [self.__dict_to_obj_status(obj) for obj in loaded_objects]
         delta_capture.deployed_helm_release(helm_status, objects_only=objects_only, deployed_objects=deployed_objects, removed_objects=removed_objects)
+        print(delta_capture.delta)
 
     def __delta_snapshot_of_lists(self, before, after):
         removed = []
@@ -161,4 +162,5 @@ class DeployHelmHandler:
         metadata = obj_dict.get('metadata')
         name = metadata.get('name')
         namespace = metadata.get('namespace')
-        return V1alpha1ObjectStatus(group=group, kind=kind, name=name, namespace=namespace)
+        uid = metadata.get('uid')
+        return V1alpha1ObjectStatus(group=group, kind=kind, name=name, namespace=namespace, uid=uid)

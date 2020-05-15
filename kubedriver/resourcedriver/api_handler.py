@@ -47,9 +47,7 @@ class KubeResourceDriverHandler(Service, ResourceDriverHandlerCapability):
                 request_id = self.kegd_strategy_manager.apply_kegd_strategy(kube_location, keg_name, kegd_strategy, lifecycle_name, kegd_files, render_context)
             except InvalidDeploymentStrategyError as e:
                 raise InvalidRequestError(f'{e}') from e
-
-            associated_topology = self.__build_keg_associated_topology(keg_name, kube_location)
-            return lifecycle_model.LifecycleExecuteResponse(request_id, associated_topology)
+            return lifecycle_model.LifecycleExecuteResponse(request_id)
         finally:
             keep_files = self.resource_driver_properties.keep_files
             if not keep_files and driver_files is not None:
@@ -172,8 +170,4 @@ class KubeResourceDriverHandler(Service, ResourceDriverHandlerCapability):
             raise InvalidRequestError('system properties missing \'resourceName\' value')
         return self.name_manager.safe_label_name_for_resource(resource_id, resource_name, prefix='keg')
 
-    def __build_keg_associated_topology(self, keg_name, kube_location):
-        topology = KubeAssociatedTopology()
-        topology.add_keg_entry(keg_name, kube_location)
-        return topology
     

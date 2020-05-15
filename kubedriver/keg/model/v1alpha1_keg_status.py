@@ -5,19 +5,31 @@ from kubedriver.utils.to_dict import to_dict
 class V1alpha1KegStatus(object):
 
     openapi_types = {
+        'uid': 'str',
         'composition': 'V1alpha1KegCompositionStatus'
     }
 
     attribute_map = {
+        'uid': 'uid',
         'composition': 'composition'
     }
 
-    def __init__(self, composition=None):
+    def __init__(self, uid=None, composition=None):
+        self._uid = None
         self._composition = None
-        self._requests = None
+        if uid is not None:
+            self._uid = uid
         if composition is not None:
             self._composition = composition
 
+    @property
+    def uid(self):
+        return self._uid
+
+    @uid.setter
+    def uid(self, uid):
+        self._uid = uid
+    
     @property
     def composition(self):
         return self._composition

@@ -36,14 +36,14 @@ class KegDeltaCapture:
 
     def deployed_object(self, obj_status):
         self.__init_deployed_objects()
-        new_entry = V1alpha1ObjectDelta(group=obj_status.group, kind=obj_status.kind, name=obj_status.name, namespace=obj_status.namespace)
+        new_entry = V1alpha1ObjectDelta(group=obj_status.group, kind=obj_status.kind, name=obj_status.name, namespace=obj_status.namespace, uid=obj_status.uid)
         self.__add(new_entry, self.delta.deployed.objects)
         if self.delta.removed != None and self.delta.removed.objects != None:
             self.__remove(new_entry, self.delta.removed.objects)
 
     def removed_object(self, obj_status):
         self.__init_removed_objects()
-        new_entry = V1alpha1ObjectDelta(group=obj_status.group, kind=obj_status.kind, name=obj_status.name, namespace=obj_status.namespace)
+        new_entry = V1alpha1ObjectDelta(group=obj_status.group, kind=obj_status.kind, name=obj_status.name, namespace=obj_status.namespace, uid=obj_status.uid)
         self.__add(new_entry, self.delta.removed.objects)
         if self.delta.deployed != None and self.delta.deployed.objects != None:
             self.__remove(new_entry, self.delta.deployed.objects)
@@ -52,11 +52,11 @@ class KegDeltaCapture:
         self.__init_deployed_helm_releases()
         parsed_objs = None
         if deployed_objects != None and len(deployed_objects) > 0:
-            parsed_objs = [V1alpha1ObjectDelta(group=obj.group, kind=obj.kind, name=obj.name, namespace=obj.namespace) for obj in deployed_objects]
+            parsed_objs = [V1alpha1ObjectDelta(group=obj.group, kind=obj.kind, name=obj.name, namespace=obj.namespace, uid=obj.uid) for obj in deployed_objects]
         #Upgrades may remove objects
         parsed_removed_objs = None
         if removed_objects != None and len(removed_objects) > 0:
-            parsed_removed_objs = [V1alpha1ObjectDelta(group=obj.group, kind=obj.kind, name=obj.name, namespace=obj.namespace) for obj in removed_objects]
+            parsed_removed_objs = [V1alpha1ObjectDelta(group=obj.group, kind=obj.kind, name=obj.name, namespace=obj.namespace, uid=obj.uid) for obj in removed_objects]
         new_entry = V1alpha1HelmReleaseDelta(name=helm_release_status.name, namespace=helm_release_status.namespace, objects_only=objects_only, deployed_objects=parsed_objs, removed_objects=parsed_removed_objs)
         self.__add_helm(new_entry, self.delta.deployed.helm_releases)
         if self.delta.removed != None and self.delta.removed.helm_releases != None:
@@ -66,7 +66,7 @@ class KegDeltaCapture:
         self.__init_removed_helm_releases()
         parsed_objs = None
         if removed_objects != None and len(removed_objects) > 0:
-            parsed_objs = [V1alpha1ObjectDelta(group=obj.group, kind=obj.kind, name=obj.name, namespace=obj.namespace) for obj in removed_objects]
+            parsed_objs = [V1alpha1ObjectDelta(group=obj.group, kind=obj.kind, name=obj.name, namespace=obj.namespace, uid=obj.uid) for obj in removed_objects]
         new_entry = V1alpha1HelmReleaseDelta(name=helm_release_status.name, namespace=helm_release_status.namespace, removed_objects=parsed_objs)
         self.__add_helm(new_entry, self.delta.removed.helm_releases)
         if self.delta.deployed != None and self.delta.deployed.helm_releases != None:
