@@ -8,7 +8,7 @@ import stat
 import uuid
 from .exceptions import HelmError
 from kubedriver.kubeobjects import ObjectConfigurationDocument
-from kubedriver.helmobjects import HelmReleaseStatus
+from kubedriver.helmobjects import HelmReleaseDetails
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +61,19 @@ class HelmClient:
             raise HelmError(f'Helm install failed: {process_result.stdout}')
         return name
 
+    def upgrade(self, chart, name, values=None, reuse_values=False):
+        args = ['upgrade', name, chart]
+        if values != None:
+            args.append('-f')
+            args.append(values)
+        if reuse_values is True:
+            args.append('--reuse-values')
+        cmd = self.__helm_cmd(*args)
+        process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        if process_result.returncode != 0:
+            raise HelmError(f'Helm upgrade failed: {process_result.stdout}')
+        return name
+
     def get(self, name, namespace):
         cmd = self.__helm_cmd('get', name)
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -92,7 +105,7 @@ class HelmClient:
 
     def __parse_to_helm_release(self, output, name, namespace):
         output = output.decode('utf-8')
-        status = HelmReleaseStatus(name=name, namespace=namespace)
+        status = HelmReleaseDetails(name=name, namespace=namespace)
         split_lines = output.splitlines()
         idx = 0
         total_lines = len(split_lines)

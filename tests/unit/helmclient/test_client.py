@@ -1,9 +1,9 @@
 import unittest
 from unittest.mock import patch, MagicMock
 from kubedriver.helmclient import HelmClient
-from kubedriver.helmobjects import HelmReleaseStatus
+from kubedriver.helmobjects import HelmReleaseDetails
 
-EXAMPLE_MANIFEST = '''
+EXAMPLE_MANIFEST = b'''
 REVISION: 1
 RELEASED: Wed May 13 13:03:30 2020
 CHART: example-chart-0.9.0
@@ -50,8 +50,8 @@ class TestHelmClient(unittest.TestCase):
     @patch('kubedriver.helmclient.client.subprocess')
     def test_get(self, mock_subprocess):
         self.__mock_subprocess_reponse(mock_subprocess, 0, EXAMPLE_MANIFEST)
-        helm_release = self.client.get('example')
-        self.assertIsInstance(helm_release, HelmReleaseStatus)
+        helm_release = self.client.get('example', 'namespace')
+        self.assertIsInstance(helm_release, HelmReleaseDetails)
         self.assertEqual(helm_release.revision, 1)
         self.assertEqual(helm_release.released, 'Wed May 13 13:03:30 2020')
         self.assertEqual(helm_release.chart, 'example-chart-0.9.0')

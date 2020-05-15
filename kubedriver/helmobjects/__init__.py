@@ -1,1 +1,1 @@
-from .helm_release_status import HelmReleaseStatus
+from .helm_release_details import HelmReleaseDetails

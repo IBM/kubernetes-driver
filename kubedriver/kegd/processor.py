@@ -3,7 +3,7 @@ from ignition.service.framework import Service, Capability
 from ignition.service.logging import logging_context
 from kubedriver.kegd.action_handlers import (DeployObjectHandler, RemoveObjectHandler, DeployHelmHandler, 
                                                 RemoveHelmHandler, ReadyCheckHandler, OutputExtractionHandler)
-from kubedriver.keg.model import V1alpha1KegStatus, V1alpha1KegCompositionStatus
+from kubedriver.keg.model import V1alpha1KegStatus, V1alpha1KegCompositionStatus, EntityStates
 from kubedriver.kegd.model import (RemovalTask, RemovalTaskSettings, RemoveObjectAction, DeployTask, DeployHelmAction,
                                     DeployObjectAction, DeployTaskSettings, RetryStatus,
                                     RemoveHelmAction, DeployHelmAction, ReadyCheckTask,
@@ -11,6 +11,7 @@ from kubedriver.kegd.model import (RemovalTask, RemovalTaskSettings, RemoveObjec
 from kubedriver.kegd.jobs import ProcessStrategyJob
 from kubedriver.persistence import PersistenceError, RecordNotFoundError
 from .exceptions import StrategyProcessingError, MultiErrorStrategyProcessingError
+from .delta_capture import KegDeltaCapture
 import kubedriver.utils.time as timeutil
 
 logger = logging.getLogger(__name__)
@@ -178,11 +179,11 @@ class KegdStrategyLocationProcessor:
             process_strategy_job.retry_status.recent_attempt_times.append(attempt_time)
             if len(process_strategy_job.retry_status.recent_attempt_times) > 5:
                 process_strategy_job.retry_status.recent_attempt_times.pop(0)
-        logger.info(f'Retry status updated: {process_strategy_job.retry_status}')     
+        logger.debug(f'Retry status updated for request {process_strategy_job.request_id}: {process_strategy_job.retry_status}')
 
     def __clear_retry_status(self, process_strategy_job):
         process_strategy_job.retry_status = None
-        logger.info(f'Retry status cleared')
+        logger.debug(f'Retry status cleared on {process_strategy_job.request_id}')
 
     def __mark_as_running(self, report_status):
         if report_status.state != StrategyExecutionStates.RUNNING:
@@ -273,19 +274,21 @@ class KegdStrategyLocationProcessor:
 
     def __execute_task_groups(self, report_status, keg_name, keg_status, strategy_execution):
         errors = []
+        delta_capture = KegDeltaCapture(existing_delta=report_status.delta)
         for task_group in strategy_execution.task_groups:
-            errors = self.__execute_task_group(report_status, keg_name, keg_status, task_group)
+            errors = self.__execute_task_group(report_status, keg_name, keg_status, task_group, delta_capture)
             if len(errors) > 0:
                 break
+        report_status.delta = delta_capture.delta
         return PhaseResult(errors=errors)
 
-    def __execute_task_group(self, report_status, keg_name, keg_status, task_group):
-        errors = self.__process_removal_tasks(report_status, keg_name, keg_status, task_group.name, task_group.removal_tasks)
+    def __execute_task_group(self, report_status, keg_name, keg_status, task_group, delta_capture):
+        errors = self.__process_removal_tasks(report_status, keg_name, keg_status, task_group.name, task_group.removal_tasks, delta_capture)
         if len(errors) == 0:
-            errors = self.__process_deploy_tasks(report_status, keg_name, keg_status, task_group.name, task_group.deploy_tasks)
+            errors = self.__process_deploy_tasks(report_status, keg_name, keg_status, task_group.name, task_group.deploy_tasks, delta_capture)
         return errors
 
-    def __process_removal_tasks(self, report_status, keg_name, keg_status, task_group_name, removal_tasks):
+    def __process_removal_tasks(self, report_status, keg_name, keg_status, task_group_name, removal_tasks, delta_capture):
         task_errors = []
         if len(removal_tasks) > 0:
             for task in removal_tasks:
@@ -303,7 +306,7 @@ class KegdStrategyLocationProcessor:
                 for task in removal_tasks:
                     logger.debug('Processing handler for remove task ' + str(task.on_write()))
                     handler = self.__get_removal_task_handler(task)
-                    handler_errors = handler.handle(task.action, task.settings, task_group_name, keg_name, keg_status, self.context)
+                    handler_errors = handler.handle(task.action, task.settings, task_group_name, keg_name, keg_status, self.context, delta_capture)
                     task_errors.extend(handler_errors)
                 try:
                     self.keg_persister.update(keg_name, keg_status)
@@ -313,7 +316,7 @@ class KegdStrategyLocationProcessor:
                     task_errors.append(f'{msg}: {e}')
         return task_errors
 
-    def __process_deploy_tasks(self, report_status, keg_name, keg_status, task_group_name, deploy_tasks):
+    def __process_deploy_tasks(self, report_status, keg_name, keg_status, task_group_name, deploy_tasks, delta_capture):
         task_errors = []
         if len(deploy_tasks) > 0:
             for task in deploy_tasks:
@@ -331,7 +334,7 @@ class KegdStrategyLocationProcessor:
                 for task in deploy_tasks:
                     logger.debug('Processing handler for deploy task ' + str(task.on_write()))
                     handler = self.__get_deploy_task_handler(task)
-                    handler_errors = handler.handle(task.action, task.settings, task_group_name, keg_name, keg_status, self.context)
+                    handler_errors = handler.handle(task.action, task.settings, task_group_name, keg_name, keg_status, self.context, delta_capture)
                     task_errors.extend(handler_errors)
                 try:
                     self.keg_persister.update(keg_name, keg_status)
@@ -383,7 +386,9 @@ class KegdStrategyLocationProcessor:
                     removal_task = handler.build_cleanup(deploy_task.action, deploy_task.settings)
                     removal_tasks.append(removal_task)
         if len(removal_tasks) > 0:
-            errors = self.__process_removal_tasks(report_status, keg_name, keg_status, 'Immediate Cleanup', removal_tasks)
+            delta_capture = KegDeltaCapture(existing_delta=report_status.delta)
+            errors = self.__process_removal_tasks(report_status, keg_name, keg_status, 'Immediate Cleanup', removal_tasks, delta_capture)
+            report_status.delta = delta_capture.delta
             return PhaseResult(errors=errors)
         else:
             return PhaseResult()
@@ -422,8 +427,9 @@ class KegdStrategyLocationProcessor:
 
     def __execute_cleanup(self, report_status, keg_name, keg_status, strategy_execution):
         cleanup_errors = []
+        delta_capture = KegDeltaCapture(existing_delta=report_status.delta)
         if strategy_execution.run_cleanup:
-            cleanup_errors = self.__cleanout_keg(report_status, keg_name, keg_status)
+            cleanup_errors = self.__cleanout_keg(report_status, keg_name, keg_status, delta_capture)
             if len(cleanup_errors) == 0:
                 try:
                     self.keg_persister.delete(keg_name)
@@ -431,16 +437,17 @@ class KegdStrategyLocationProcessor:
                     msg = f'Failed to remove Keg \'{keg_name}\' on request \'{report_status.uid}\''
                     logger.exception(msg)
                     cleanup_errors.append(f'{msg}: {e}')
+        report_status.delta = delta_capture.delta
         return PhaseResult(errors=cleanup_errors)
         
-    def __cleanout_keg(self, report_status, keg_name, keg_status):
+    def __cleanout_keg(self, report_status, keg_name, keg_status, delta_capture):
         removal_tasks = []
         for obj_status in keg_status.composition.objects:
             removal_tasks.append(RemovalTask(RemovalTaskSettings(), RemoveObjectAction(obj_status.group, obj_status.kind, obj_status.name, obj_status.namespace)))
         for helm_status in keg_status.composition.helm_releases:
             removal_tasks.append(RemovalTask(RemovalTaskSettings(), RemoveHelmAction(helm_status.name, helm_status.namespace)))
         if len(removal_tasks) > 0:
-            return self.__process_removal_tasks(report_status, 'Cleanup', keg_name, keg_status, removal_tasks)
+            return self.__process_removal_tasks(report_status, keg_name, keg_status, 'Cleanup', removal_tasks, delta_capture)
         else:
             return []
 

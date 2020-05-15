@@ -7,7 +7,7 @@ from kubedriver.location import KubeDeploymentLocation
 from kubedriver.persistence import RecordNotFoundError
 from kubedriver.kegd.model import StrategyExecutionStates, InvalidDeploymentStrategyError
 from kubedriver.kegd.strategy_files import KegDeploymentStrategyFiles
-from .topology import KubernetesAssociatedTopology
+from .topology import KubeAssociatedTopology
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,7 @@ class KubeResourceDriverHandler(Service, ResourceDriverHandlerCapability):
             except InvalidDeploymentStrategyError as e:
                 raise InvalidRequestError(f'{e}') from e
 
-            associated_topology = self.__build_associated_topology(keg_name, kube_location)
+            associated_topology = self.__build_keg_associated_topology(keg_name, kube_location)
             return lifecycle_model.LifecycleExecuteResponse(request_id, associated_topology)
         finally:
             keep_files = self.resource_driver_properties.keep_files
@@ -85,13 +85,13 @@ class KubeResourceDriverHandler(Service, ResourceDriverHandlerCapability):
             execution_status = lifecycle_model.STATUS_IN_PROGRESS
             failure_details = None
             outputs = None
-            associated_topology = None
             if request_report.state == StrategyExecutionStates.COMPLETE:
                 execution_status = lifecycle_model.STATUS_COMPLETE
                 outputs = request_report.outputs
             elif request_report.state == StrategyExecutionStates.FAILED:
                 execution_status = lifecycle_model.STATUS_FAILED
                 failure_details = failure_model.FailureDetails(failure_model.FAILURE_CODE_INTERNAL_ERROR, description=str(request_report.errors))
+            associated_topology = self.__build_associated_topology_from_delta(request_report.delta)
             return lifecycle_model.LifecycleExecution(request_id, execution_status, outputs=outputs, failure_details=failure_details, associated_topology=associated_topology)
         finally:
             try:
@@ -100,13 +100,48 @@ class KubeResourceDriverHandler(Service, ResourceDriverHandlerCapability):
             except Exception as e:
                 logger.exception(f'Encountered an error whilst trying to clean up deployment location related files: {e}')
 
+    def __build_associated_topology_from_delta(self, request_delta):
+        if request_delta == None:
+            return None
+        deployed = request_delta.deployed
+        removed = request_delta.removed
+        associated_topology = KubeAssociatedTopology()
+        if removed != None:
+            if removed.objects != None:
+                for obj in removed.objects:
+                    associated_topology.add_removed_object(obj)
+            if removed.helm_releases != None:
+                for helm in removed.helm_releases:
+                    if helm.objects_only is not True:
+                        associated_topology.add_removed_helm_release(helm)
+                    if helm.removed_objects != None:
+                        for obj in helm.removed_objects:
+                            associated_topology.add_removed_object(obj)
+        if deployed != None:
+            if deployed.objects != None:
+                for obj in deployed.objects:
+                    associated_topology.add_object(obj)
+            if deployed.helm_releases != None:
+                for helm in deployed.helm_releases:
+                    if helm.objects_only is not True:
+                        associated_topology.add_helm_release(helm)
+                    if helm.deployed_objects != None:
+                        for obj in helm.deployed_objects:
+                            associated_topology.add_object(obj)
+                    # May be an upgrade which could cause objects to be removed
+                    if helm.removed_objects != None:
+                        for obj in helm.removed_objects:
+                            associated_topology.add_removed_object(obj)
+        return associated_topology
+
     def post_lifecycle_response(self, request_id, deployment_location):
         """
         Clears the kegd report to keep Kubernetes clusters tidy. 
         This is only called if the lifecycle monitor has posted a message on Kafka (in response to Brent) so this is safe to do, as this request will not be checked again.
         """
-        kube_location = self.__translate_location(deployment_location)
-        self.kegd_strategy_manager.delete_request_report(kube_location, request_id)
+        if self.resource_driver_properties.keep_kegdrs is False:
+            kube_location = self.__translate_location(deployment_location)
+            self.kegd_strategy_manager.delete_request_report(kube_location, request_id)
 
     def find_reference(self, instance_name, driver_files, deployment_location):
         """
@@ -137,8 +172,8 @@ class KubeResourceDriverHandler(Service, ResourceDriverHandlerCapability):
             raise InvalidRequestError('system properties missing \'resourceName\' value')
         return self.name_manager.safe_label_name_for_resource(resource_id, resource_name, prefix='keg')
 
-    def __build_associated_topology(self, keg_name, kube_location):
-        topology = KubernetesAssociatedTopology()
+    def __build_keg_associated_topology(self, keg_name, kube_location):
+        topology = KubeAssociatedTopology()
         topology.add_keg_entry(keg_name, kube_location)
         return topology
     

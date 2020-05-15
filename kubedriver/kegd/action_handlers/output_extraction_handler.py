@@ -34,7 +34,7 @@ class OutputExtractionHandler:
         if execute_result.log != None and execute_result.log.has_entries():
             log_msg += '\n'
             log_msg += execute_result.log.summarise()
-        logger.info(log_msg)
+        logger.debug(log_msg)
 
         failed, reason = result_holder.has_failed()
         if failed:

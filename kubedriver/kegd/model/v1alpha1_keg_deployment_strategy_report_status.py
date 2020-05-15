@@ -12,7 +12,8 @@ class V1alpha1KegdStrategyReportStatus(object):
         'state': 'str',
         'phase': 'str',
         'errors': 'list[str]', 
-        'outputs': 'dict(str, str)'
+        'outputs': 'dict(str, str)',
+        'delta': 'V1alpha1KegdCompositionDelta'
     }
 
     attribute_map = {
@@ -24,10 +25,11 @@ class V1alpha1KegdStrategyReportStatus(object):
         'state': 'state',
         'phase': 'phase',
         'errors': 'errors',
-        'outputs': 'outputs'
+        'outputs': 'outputs',
+        'delta': 'delta'
     }
 
-    def __init__(self, uid=None, keg_name=None, operation=None, task_groups=None, run_cleanup=None, state=None, phase=None, errors=None, outputs=None):
+    def __init__(self, uid=None, keg_name=None, operation=None, task_groups=None, run_cleanup=None, state=None, phase=None, errors=None, outputs=None, delta=None):
         self._uid = uid
         self._keg_name = keg_name
         self._operation = operation
@@ -37,6 +39,7 @@ class V1alpha1KegdStrategyReportStatus(object):
         self._phase = phase
         self._errors = errors
         self._outputs = outputs
+        self._delta = delta
 
     @property
     def uid(self):
@@ -109,6 +112,14 @@ class V1alpha1KegdStrategyReportStatus(object):
     @outputs.setter
     def outputs(self, outputs):
         self._outputs = outputs
+
+    @property
+    def delta(self):
+        return self._delta
+
+    @delta.setter
+    def delta(self, delta):
+        self._delta = delta
 
     def to_dict(self):
         return to_dict(self)

@@ -1,5 +1,9 @@
 from .v1alpha1_keg_deployment_strategy_report import V1alpha1KegdStrategyReport
 from .v1alpha1_keg_deployment_strategy_report_status import V1alpha1KegdStrategyReportStatus
+from .v1alpha1_composition_delta import V1alpha1KegdCompositionDelta
+from .v1alpha1_composition_delta_subset import V1alpha1KegdCompositionDeltaSubset
+from .v1alpha1_object_delta import V1alpha1ObjectDelta
+from .v1alpha1_helm_release_delta import V1alpha1HelmReleaseDelta
 from .tags import Tags
 from .compose import ComposeScript
 from .strategy_execution import StrategyExecution, TaskGroup

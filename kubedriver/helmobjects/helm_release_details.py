@@ -1,7 +1,7 @@
 import pprint 
 from kubedriver.utils.to_dict import to_dict
 
-class HelmReleaseStatus:
+class HelmReleaseDetails:
     openapi_types = {
         'name': 'str',
         'namespace': 'str',
@@ -107,7 +107,7 @@ class HelmReleaseStatus:
         return self.to_str()
 
     def __eq__(self, other):
-        if not isinstance(other, HelmReleaseStatus):
+        if not isinstance(other, HelmReleaseDetails):
             return False
         return self.__dict__ == other.__dict__
 

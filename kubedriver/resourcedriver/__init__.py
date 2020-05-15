@@ -2,4 +2,4 @@ from .api_handler import KubeResourceDriverHandler
 from .name_manager import NameManager
 from .properties import AdditionalResourceDriverProperties
 from .render_context import ExtendedResourceTemplateContext
-from .topology import KubernetesAssociatedTopology
+from .topology import KubeAssociatedTopology

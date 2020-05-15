@@ -23,31 +23,33 @@ class RemoveObjectHandler:
         obj_status.state = EntityStates.DELETE_PENDING
         obj_status.error = None
 
-    def handle(self, action, parent_task_settings, script_name, keg_name, keg_status, context):
+    def handle(self, action, parent_task_settings, script_name, keg_name, keg_status, context, delta_capture):
         api_ctl = context.api_ctl
         task_errors = []
         obj_status = self.__find_object(action, keg_status)
-        try:
-            api_ctl.delete_object(action.group, action.kind, action.name, namespace=action.namespace)
-            obj_status.state = EntityStates.DELETED
-            obj_status.error = None
-        except Exception as e:
-            if self.error_reader.is_api_exception(e) and self.error_reader.is_not_found_err(e):
-                # Object not found, assume it is already deleted
+        if obj_status != None:
+            try:
+                api_ctl.delete_object(action.group, action.kind, action.name, namespace=action.namespace)
                 obj_status.state = EntityStates.DELETED
                 obj_status.error = None
-            else:
-                reference = ObjectReference(action.group, action.kind, action.name, namespace=action.namespace)
-                logger.exception(f'Delete attempt of object ({reference}) in group \'{keg_name}\' failed')
-                if self.error_reader.is_api_exception(e):
-                    error_msg = self.error_reader.summarise_error(e)
+            except Exception as e:
+                if self.error_reader.is_api_exception(e) and self.error_reader.is_not_found_err(e):
+                    # Object not found, assume it is already deleted
+                    obj_status.state = EntityStates.DELETED
+                    obj_status.error = None
                 else:
-                    error_msg = f'{e}'
-                task_errors.append(error_msg)
-                obj_status.state = EntityStates.DELETE_FAILED
-                obj_status.error = error_msg
-        if obj_status.state == EntityStates.DELETED:
-            self.__remove_object_from_composition(action, keg_status)
+                    reference = ObjectReference(action.group, action.kind, action.name, namespace=action.namespace)
+                    logger.exception(f'Delete attempt of object ({reference}) in group \'{keg_name}\' failed')
+                    if self.error_reader.is_api_exception(e):
+                        error_msg = self.error_reader.summarise_error(e)
+                    else:
+                        error_msg = f'{e}'
+                    task_errors.append(error_msg)
+                    obj_status.state = EntityStates.DELETE_FAILED
+                    obj_status.error = error_msg
+            if obj_status.state == EntityStates.DELETED:
+                self.__capture_deltas(delta_capture, obj_status)
+                self.__remove_object_from_composition(action, keg_status)
         return task_errors
 
     def __find_object(self, action, keg_status):
@@ -69,3 +71,6 @@ class RemoveObjectHandler:
             else:
                 new_objects.append(obj_status)
         keg_status.composition.objects = new_objects
+
+    def __capture_deltas(self, delta_capture, object_status):
+        delta_capture.removed_object(object_status)

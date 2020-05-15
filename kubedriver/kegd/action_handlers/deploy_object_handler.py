@@ -27,12 +27,12 @@ class DeployObjectHandler:
         obj_status.error = None
         self.__add_tags(obj_status, action.tags, script_name)
 
-    def handle(self, action, parent_task_settings, script_name, keg_name, keg_status, context):
+    def handle(self, action, parent_task_settings, script_name, keg_name, keg_status, context, delta_capture):
         api_ctl = context.api_ctl
         task_errors = []
         obj_status = self.__find_object(action, keg_status)
         if obj_status == None:
-            self.__do_decorate(obj_status, action, parent_task_settings, script_name, keg_name, keg_status)
+            obj_status = self.__do_decorate(obj_status, action, parent_task_settings, script_name, keg_name, keg_status)
         object_config = ObjectConfiguration(action.config)
         self.config_utils.add_label(object_config, Labels.MANAGED_BY, LabelValues.MANAGED_BY)
         self.config_utils.add_label(object_config, Labels.KEG, keg_name)
@@ -41,8 +41,10 @@ class DeployObjectHandler:
                 api_ctl.update_object(object_config)
             else:
                 api_ctl.create_object(object_config)
-            obj_status.state = EntityStates.CREATED
+            obj_status.state = EntityStates.CREATED if obj_status.state == EntityStates.CREATE_PENDING else EntityStates.UPDATED
             obj_status.error = None
+            if obj_status.state == EntityStates.CREATED:
+                self.__capture_deltas(delta_capture, obj_status)
         except Exception as e:
             logger.exception(f'Create attempt of object ({object_config.reference}) in group \'{keg_name}\' failed')
             if self.error_reader.is_api_exception(e):
@@ -50,7 +52,7 @@ class DeployObjectHandler:
             else:
                 error_msg = f'{e}'
             task_errors.append(error_msg)
-            obj_status.state = EntityStates.CREATE_FAILED
+            obj_status.state = EntityStates.CREATE_FAILED if obj_status.state == EntityStates.CREATE_PENDING else EntityStates.UPDATE_FAILED
             obj_status.error = error_msg
         return task_errors
 
@@ -95,3 +97,5 @@ class DeployObjectHandler:
                 elif tag_value not in obj_status.tags[tag_key]:
                     obj_status.tags[tag_key].append(tag_value)
     
+    def __capture_deltas(self, delta_capture, object_status):
+        delta_capture.deployed_object(object_status)

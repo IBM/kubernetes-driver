@@ -6,3 +6,4 @@ class AdditionalResourceDriverProperties(ConfigurationPropertiesGroup, Service, 
     def __init__(self):
         super().__init__('resource_driver')
         self.keep_files = False
+        self.keep_kegdrs = False

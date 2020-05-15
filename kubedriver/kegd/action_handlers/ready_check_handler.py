@@ -34,7 +34,7 @@ class ReadyCheckHandler:
         if execute_result.log != None and execute_result.log.has_entries():
             log_msg += '\n'
             log_msg += execute_result.log.summarise()
-        logger.info(log_msg)
+        logger.debug(log_msg)
 
         if result_holder.is_ready():
             return ReadyResult.ready()

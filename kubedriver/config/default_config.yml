@@ -19,3 +19,6 @@ kegd:
     default_timeout_seconds: 300
     default_interval_seconds: 5
     max_timeout_seconds: 3600
+
+resource_driver:
+  keep_kegdrs: True
