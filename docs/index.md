@@ -15,7 +15,7 @@ The following sections explain the functionality of this driver and the requirem
     - [Ready Checks](user-guide/ready-checks.md) - scripts used to check Kubernetes are ready as part of a transition or operation
     - [Extracting Outputs](user-guide/extracting-outputs.md) - scripts used to extract output values for a transition or operation
 - [Templating](user-guide/templating.md) - details how properties of a Resource can be used as injected values in templates
-- [Available](user-guide/properties.md) - details the full list of properties available in templates and scripts
+- [Available Properties](user-guide/properties.md) - details the full list of properties available in templates and scripts
 
 # Reference
 

@@ -30,7 +30,7 @@ def getOutputs(keg, props, resultBuilder, log, *args, **kwargs):
     pass 
 ```
 
-This function is the one called by the driver to perform the output extraction. The arguments to this function are as follows:
+This function is called by the driver to perform the output extraction. The arguments to this function are as follows:
 
 | Name | Description |
 | --- | --- |

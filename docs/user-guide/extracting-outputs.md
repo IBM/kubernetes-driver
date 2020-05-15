@@ -43,7 +43,7 @@ Lifecycle/
     kegd.yaml
 ```
 
-We'll talk about the contents of this file later. For now, we'll configure our Create transition to use this script by modifying the `kegd.yaml` file. Add a `getOutputs` field to the compose entry for Create and specify the name of your script.
+We'll talk about the contents of this file later. For now, configure the Create transition to use this script by modifying the `kegd.yaml` file. Add a `getOutputs` field to the compose entry for Create and specify the name of your script.
 
 ```
 compose:
@@ -60,7 +60,7 @@ compose:
 
 Now, on a Create transition for this resource, the driver will deploy the objects, execute the `check-ready-on-create.py` script until it returns a "ready" result, then execute the `outputs-on-create.py` to extract outputs.
 
-# Writing a ready check script
+# Writing an output extraction script
 
 Output extraction scripts are written in Python syntax but it's worth noting that you will not have the full power of the language at your disposal. For example, you won't be able to import modules and perform API calls out to external systems.
 
@@ -72,7 +72,7 @@ def getOutputs(keg, props, resultBuilder, log, *args, **kwargs):
     pass 
 ```
 
-This function is the one called by the driver to perform the output extraction. The arguments to this function are as follows:
+This function is called by the driver to perform the output extraction. The arguments to this function are as follows:
 
 | Name | Description |
 | --- | --- |
@@ -82,149 +82,7 @@ This function is the one called by the driver to perform the output extraction. 
 | log | Utility to log messages to (see more later) |
 | *args and **kwargs | Python constructs for consuming any additional arguments passed to this function. You won't need to use them, so they are not required but it is highly recommended, as it will keep your scripts compatible with later versions of the driver if new arguments are added to this interface |
 
-## Keg
-
-The keg value can be used to retrieve members deployed as part of this resource. This includes any objects/helm releases deployed in earlier transitions/operations and the current one. Any members removed in earlier transitions/operations or the current one are not included.
-
-**Note:** objects/helm releases marked with `immediateCleanupOn` are still available in the `keg` during the output extraction and are only removed afterwards.
-
-### Objects
-
-Each object deployed directly (so without Helm) is retrievable by it's apiVersion (sometimes referred to as group), kind, name and namespace (if not a cluster wide type). For example, if in our `my-deployment.yaml` file we have deployed the following:
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: Example
-  namespace: demo
-spec:
-    ...spec data...
-```
-
-We can retrieve this object like so:
-
-```python
-def getOutputs(keg, props, resultBuilder, log, *args, **kwargs):
-    found, deployment = keg.objects.get('apps/v1', 'Deployment', 'Example', namespace='demo')
-
-    #Alternative if you prefer snake case:
-    #found, deployment = keg.get_object('apps/v1', 'Deployment', 'Example', namespace='demo')
-```
-
-**Note:** this does not perform an API call on Kubernetes, the driver has already pre-fetched all the possible objects
-
-The variable names `found` and `deployment` can be any valid Python variable name of your choosing. 
-
-The value of `found` is a boolean (True/False) to indicate if the object is in the keg. When `False`, the value of `deployment` will instead be `None`. You should always check `found` before proceeding to use the value of `deployment`. 
-
-When `found` is `True`, the value of `deployment` will be a dictionary copy of the object's configuration and status, for example:
-
-```python
-{
-    'apiVersion': 'apps/v1',
-    'kind': 'Deployment',
-    'metadata': {
-        'name': 'Example',
-        'namespace': 'demo'
-    },
-    'spec': {
-        ...the spec...
-    },
-    'status': {
-        ...the status...
-    }
-}
-```
-
-You can use this to inspect the contents of the object:
-
-```python
-def getOutputs(keg, props, resultBuilder, log, *args, **kwargs):
-    found, deployment = keg.objects.get('apps/v1', 'Deployment', 'Example', namespace='demo')
-    if found:
-        # deploymentName will equal 'Example'
-        deploymentName = deployment['metadata']['name']
-```
-
-### Helm Releases
-
-Each Helm release deployed is retrievable by it's name and namespace (Releases are actually unique by their name in Helm2 but in future Helm versions they will be unique by namespace as well, so best to use both to avoid compatiblity issues).
-
-As an example, if we've deployed a Helm chart in our kegd.yaml file:
-
-```yaml
-compose:
-  - name: Create
-    deploy:
-      - helm:
-          chart: nginx-ingress-1.24.4.tgz
-          name: MyReleaseName
-          namespace: MyNamespace
-```
-
-```python
-def getOutputs(keg, props, resultBuilder, log, *args, **kwargs):
-    found, helm_release = keg.helm_releases.get('MyReleaseName', 'MyNamespace')
-```
-
-The variable names `found` and `helm_release` can be any valid Python variable name of your choosing. 
-
-The value of `found` is a boolean (True/False) to indicate if the helm release is in the keg. When `False`, the value of `helm_release` will be `None`. You should always check `found` before proceeding to use the value of `helm_release`. 
-
-When `found` is `True`, the value of `helm_release` will be a special Helm object with two attributes: 
-
-`info` - dictionary of details related to the Helm release
-`objects` - a collection of the objects managed by this Helm release
-
-Example of `info`:
-
-```python
-{
-  'name': 'MyReleaseName',
-  'namespace': 'MyNamespace',
-  'revision': 1,
-  'released': 'Mon Mar 30 13:04:31 2020',
-  'chart': 'nginx-ingress-1.24.4',
-  ...
-}
-```
-
-The `objects` attribute has the same functions as `keg.objects`, so you can lookup objects in the Helm release by their apiVersion, kind, name and namespace.
-
-```python
-def getOutputs(keg, props, resultBuilder, log, *args, **kwargs):
-    found, helm_release = keg.helm_releases.get('MyReleaseName', 'MyNamespace')
-    if found:
-      objFound, controller = helm_release.objects.get('v1', 'Service', 'MyReleaseName-nginx-ingress-controller', namespace=helm_release.info['namespace'])
-```
-
-## Props
-
-A dictionary of all the properties available for this resource. These are included as they are the same properties used when rendering templates, so if you've used them to configure identifying elements of an object, you will need them again to find it.
-
-For example, if in our `my-deployment.yaml` file we have deployed the following:
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: {{ system_properties.resource_subdomain }}
-  namespace: demo
-spec:
-    ...spec data...
-```
-
-Then you will need to use the same value to retrieve the object:
-
-```python
-def getOutputs(keg, props, resultBuilder, log, *args, **kwargs):
-    found, deployment = keg.objects.get('apps/v1', 'Deployment', props['system_properties']['resource_subdomain'], namespace='demo')
-```
-
-You may also return the properties as outputs. Normally this would seem odd as the properties were originally inputs to this request however it may be useful to return a generated `system_property` such as `resource_subdomain`, which may have been used as an identifier for an object. (See how to return this as an output later).
-
-Check out the full range of [available properties](properties.md) later in the user guide.
+The values of `keg`, `props` and `log` are the same ones used in [ready checks](ready-checks.md#writing-a-ready-check-script), so refer to that section of the user guide to recap them.
 
 ## Result Builder
 
@@ -267,19 +125,6 @@ When a failure is returned, the driver marks the transition/operation as failed 
 
 **What is this `f'Could not find Deployment...'` syntax?**: Python syntax to format a string with variables. Start a string with `f'` then reference a variable or function in the string to have it's value injected at runtime
 
-## Log
-
-Allows you to return string messages back to the driver, which may included in any log or error messages produced by the driver related to this script. There is no requirement to use the `log` but it might be useful for debugging unexpected errors during execution. 
-
-To add a new message to the log, use the `entry` function:
-
-```python
-def getOutputs(keg, props, resultBuilder, log, *args, **kwargs):
-    log.entry('Log something useful')
-```
-
-The log is limited to 100 entries, any message added after reaching this limit will lead to the earliest message being removed.
-
 ## Complete example
 
 Below is an academic example of using all of the arguments together to produce a output extraction script:
@@ -292,3 +137,89 @@ def getOutputs(keg, props, resultBuilder, log, *args, **kwargs):
     resultBuilder.setOutput('nodePort', service['spec']['nodePort'])
     resultBuilder.setOutput('uniqueName', props['system_properties']['resource_subdomain'])
 ```
+
+## Returning Keys
+
+If you create a key as part of your Keg (maybe in a Secret or through a Job) you can return them as outputs so they may be stored in Brent. They can then later be used in other transitions executed, even if that transition is handled by another drivers (maybe you need this key for an ansible playbook).
+
+To do this, you must return the name of the key, the public key and private key as a single value for the intended property (a property with `type: key` in the Resource descriptor). 
+
+The value must be formatted as one of the below options:
+```
+<key_name>#<private_key>#<public_key>
+
+#Return just a private key (note the trailing #)
+<key_name>#<private_key>#
+
+#Return just a public key (note the double #)
+<key_name>##<public_key>
+```
+
+As an example, if you have a Resource descriptor property, of type `key`, named `myKey` and you've deployed a Config Map with the key values as below (real public and private keys are not included to keep the code snippet short):
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mykey
+type: Opaque
+stringData:
+  keyName: someKey
+  privateKey: the private part
+  publicKey: the public part
+```
+
+You can find the ConfigMap and return the values as outputs like so:
+
+```python
+def getOutputs(keg, props, resultBuilder, log, *args, **kwargs):
+    found, configmap = keg.objects.get('v1', 'ConfigMap', 'mykey', namespace='demo')
+    if not found:
+        return resultBuilder.failed('Could not find config map named mykey')
+    data = configmap['data']
+    keyValue = data['keyName'] + '#' + data['privateKey'] + '#' + data['publicKey']
+    resultBuilder.setOutput('mykey', keyValue)
+```
+
+It's much safer to store sensitive values such as keys inside Secrets. When you do this, they will base64 encoded and you'll want to decode them before returning them as outputs. 
+
+The `resultBuilder` object includes a `decode` function to help base64 decode the values based on your chosen encoding (by default `'utf-8'`). For example, if you've deployed a Secret with the key values (real public and private keys are not included to keep the code snippet short):
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysecretkey
+type: Opaque
+stringData:
+  keyName: someKey
+  publicKey: the public part
+  privateKey: the private part
+```
+
+**Note:** `stringData` is a ["write-only convenience field"](https://kubernetes.io/docs/concepts/configuration/secret/#creating-a-secret-manually) you may use to pass non-encoded data to a Secret and it will be encoded for you. To read the values back you will need to use `data`.
+
+You can now find the Secret, decode the values and return them as outputs like so:
+
+```python
+def getOutputs(keg, props, resultBuilder, log, *args, **kwargs):
+    found, secret = keg.objects.get('v1', 'Secret', 'mysecretkey', namespace='demo')
+    if not found:
+        return resultBuilder.failed('Could not find secret named mysecretkey')
+    data = secret['data']
+    keyName = resultBuilder.decode(data['keyName'])
+    privateKey = resultBuilder.decode(data['privateKey'])
+    publicKey = resultBuilder.decode(data['publicKey'])
+    keyValue = keyName + '#' + privateKey + '#' + publicKey
+    resultBuilder.setOutput('mykey', keyValue)
+```
+
+**Note:** notice how the example decodes each part separately before concatenating them. This is important as if you decode them after they may not be correct.
+
+# Next Steps
+
+If you've followed the guide in order then you should now have an understanding of how to deploy objects and/or helm charts, check they are ready and return attributes from them as outputs. 
+
+You can read more about the syntax for output scripts in the [Kegd Reference](reference/kegd/index.md). 
+
+Otherwise, proceed with [Templating](templating.md) and [Available Properties](available-properties.md) to read more about using Resource properties in your deployment templates and scripts. 

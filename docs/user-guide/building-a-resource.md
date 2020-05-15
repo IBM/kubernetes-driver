@@ -153,7 +153,7 @@ compose:
 
 Eventually you will need to the remove objects deployed as part of a Resource. By default, the Kubernetes driver will automatically remove objects on the reverse transition they were created in, without any extra configuration required by the user. 
 
-For example, in our earlier case, we created some objects on Create: 
+For example, in our earlier case, you created some objects on Create: 
 
 ```
 compose:
@@ -271,7 +271,7 @@ However, to remain idempotent, if the driver finds an object already exists and 
 
 There is a side effect to this. The object will now be cleaned up on either the first transition’s cleanup rules or the second’s. 
 
-For example, if we deploy the same object on both Create and Start (so it is updated on Start), the object is set to be cleaned up on both Stop and Delete (so will usually be removed on Stop as this is called before Delete). This is ok, as the Delete call will not fail if the object has been removed previously, however this may not be your desired behaviour. 
+For example, if you deploy the same object on both Create and Start (so it is updated on Start), the object is set to be cleaned up on both Stop and Delete (so will usually be removed on Stop as this is called before Delete). This is ok, as the Delete call will not fail if the object has been removed previously, however this may not be your desired behaviour. 
 
 ## Deploy Helm Charts 
 
@@ -311,7 +311,7 @@ To remain idempotent, if the driver finds the helm release already exists and wa
 
 There is a side effect to this. The helm release will now be cleaned up on either the first transition’s cleanup rules or the second’s. 
 
-For example, if we deploy the same helm release on Create and Start (so it has been re-deployed on Start), the release is set to be cleaned up on both Stop and Delete so will usually be removed on Stop as this is called before Delete. This is ok, as the Delete call will not fail if the helm release has been removed previously, however this may not be your desired behaviour.
+For example, if you deploy the same helm release on Create and Start (so it has been re-deployed on Start), the release is set to be cleaned up on both Stop and Delete so will usually be removed on Stop as this is called before Delete. This is ok, as the Delete call will not fail if the helm release has been removed previously, however this may not be your desired behaviour.
 
 ## Removing Helm Releases
 

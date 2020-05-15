@@ -58,7 +58,7 @@ someKey: someValue
 anotherKey: {{ myInjectedProperty }}
 ```
 
-It makes use of a templated value (myInjectedProperty, we'll cover the syntax in more detail later) so it must be rendered first to produce valid YAML. Let's assume we have a property named `myInjectedProperty` with a value of `abc`. After rendering the above template, we expect it's contents to be:
+It makes use of a templated value (myInjectedProperty, we'll cover the syntax in more detail later) so it must be rendered first to produce valid YAML. Let's assume there is a property named `myInjectedProperty` with a value of `abc`. After rendering the above template, expect it's contents to be:
 
 ```
 someKey: someValue
@@ -104,7 +104,7 @@ When the Create transition is executed, the value of file is rendered individual
 my-{{ fileToUse }}
 ```
 
-This is rendered to a resulting string which is used as the real value. So assuming we have a property named `fileToUse` with a value of `deployment.yaml`. After rendering the above template, we expect it's contents to be:
+This is rendered to a resulting string which is used as the real value. So assuming there is a property named `fileToUse` with a value of `deployment.yaml`. After rendering the above template, expect it's contents to be:
 
 ```
 my-deployment.yaml

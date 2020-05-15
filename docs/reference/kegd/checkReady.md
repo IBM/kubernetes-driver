@@ -29,7 +29,7 @@ def checkReady(keg, props, resultBuilder, log, *args, **kwargs):
     pass 
 ```
 
-This function is the one called by the driver to perform the ready check. The arguments to this function are as follows:
+This function is called by the driver to perform the ready check. The arguments to this function are as follows:
 
 | Name | Description |
 | --- | --- |

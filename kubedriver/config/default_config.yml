@@ -21,4 +21,5 @@ kegd:
     max_timeout_seconds: 3600
 
 resource_driver:
-  keep_kegdrs: True
+  keep_files: False
+  keep_kegdrs: False

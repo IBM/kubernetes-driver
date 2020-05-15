@@ -1,7 +1,7 @@
 ## Docker Image for the Openstack VIM Driver
 docker:
   ## Make this the full path, including registry host and port if using one
-  image: kubedriver
+  image: accanto/kubedriver
   version: ${version}
   imagePullPolicy: IfNotPresent
 
@@ -48,12 +48,12 @@ app:
   livenessProbe:
     enabled: true
     failureThreshold: 3
-    initialDelaySeconds: 90
+    initialDelaySeconds: 15
     periodSeconds: 30
   readinessProbe:
     enabled: true
     failureThreshold: 3
-    initialDelaySeconds: 20
+    initialDelaySeconds: 25
     periodSeconds: 10
     
   ## Affinity for pod assignment

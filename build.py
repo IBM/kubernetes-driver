@@ -127,8 +127,6 @@ class Builder:
         if args.publish is True:
             if args.skip_docker is not True:
                 self.push_docker_image()
-            if args.skip_helm is not True:
-                self.push_helm_chart()
         self.report()
 
     def init_artifacts_directory(self):
@@ -237,15 +235,9 @@ class Builder:
 
     def _push_docker_image(self, title, current_docker_img_tag):
         with self.stage(title) as s:
-            new_tag = '10.220.216.164:5000/' + current_docker_img_tag
+            new_tag = 'accanto/' + current_docker_img_tag
             s.run_cmd('docker', 'tag', current_docker_img_tag, new_tag)
             s.run_cmd('docker', 'push', new_tag)
-
-    def push_helm_chart(self):
-        with self.stage('Push Helm Chart') as s:
-            chart_name = HELM_CHART_NAME_FORMAT.format(self.project_version)
-            chart_path = os.path.join(self.artifacts_path, chart_name)
-            s.run_cmd('curl', '--fail', '--data-binary', '@{0}'.format(chart_path), 'http://10.220.216.164:8080/accanto/stable/api/charts')
 
 def main():
   builder = Builder()

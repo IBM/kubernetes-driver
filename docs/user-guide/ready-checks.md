@@ -14,7 +14,7 @@ compose:
           file: my-service.yaml
 ```
 
-In `my-deployment.yaml` we have a extensions/v1beta1.Deployment or apps/v1.Deployment object and in `my-services.yaml` we have a v1.Service. On the `Create` transition for our Resource, the driver will deploy these objects to the target Kubernetes deployment location and complete successfully - but this doesn't mean our objects are ready for use. 
+In `my-deployment.yaml` there is a extensions/v1beta1.Deployment or apps/v1.Deployment object and in `my-services.yaml` there is a v1.Service. On the `Create` transition for our Resource, the driver will deploy these objects to the target Kubernetes deployment location and complete successfully - but this doesn't mean our objects are ready for use. 
 
 In Kubernetes, the act of deploying an object involves sending a desired configuration of an object, which the cluster API server will consume, validate and then persist in the cluster database (etcd) before returning a success response. In the background, a controller is notified of this new object and will attempt to update the cluster state to match your desired configuration.
 
@@ -55,7 +55,7 @@ Lifecycle/
     kegd.yaml
 ```
 
-We'll talk about the contents of this file later. For now, we'll configure our Create transition to use this script by modifying the `kegd.yaml` file. Add a `checkReady` field to the compose entry for Create and specify the name of your script.
+We'll talk about the contents of this file later. For now, configure the Create transition to use this script by modifying the `kegd.yaml` file. Add a `checkReady` field to the compose entry for Create and specify the name of your script.
 
 ```
 compose:
@@ -83,7 +83,7 @@ def checkReady(keg, props, resultBuilder, log, *args, **kwargs):
     pass 
 ```
 
-This function is the one called by the driver to perform the ready check. The arguments to this function are as follows:
+This function is called by the driver to perform the ready check. The arguments to this function are as follows:
 
 | Name | Description |
 | --- | --- |
@@ -101,7 +101,7 @@ The keg value can be used to retrieve objects (and helm releases) deployed as pa
 
 ### Objects
 
-Each object deployed directly (so without Helm) is retrievable by it's apiVersion (sometimes referred to as group), kind, name and namespace (if not a cluster wide type). For example, if in our `my-deployment.yaml` file we have deployed the following:
+Each object deployed directly (so without Helm) is retrievable by it's apiVersion (sometimes referred to as group), kind, name and namespace (if not a cluster wide type). For example, if in the `my-deployment.yaml` file you have deployed the following:
 
 ```yaml
 apiVersion: apps/v1
@@ -113,7 +113,7 @@ spec:
     ...spec data...
 ```
 
-We can retrieve this object like so:
+You can retrieve this object like so:
 
 ```python
 def checkReady(keg, props, resultBuilder, log, *args, **kwargs):
@@ -159,7 +159,7 @@ def checkReady(keg, props, resultBuilder, log, *args, **kwargs):
 
 Each Helm release deployed is retrievable by it's name and namespace (Releases are actually unique by their name in Helm2 but in future Helm versions they will be unique by namespace as well, so best to use both to avoid compatiblity issues).
 
-As an example, if we've deployed a Helm chart in our kegd.yaml file:
+As an example, if you've deployed a Helm chart in our kegd.yaml file:
 
 ```yaml
 compose:
@@ -209,9 +209,9 @@ def checkReady(keg, props, resultBuilder, log, *args, **kwargs):
 
 ## Props
 
-A dictionary of all the properties available for this Resource. These are included as they are the same properties used when rendering templates, so if you've used them to configure identifying elements of an object, you will need them again to find it.
+A dictionary of all the properties available for this Resource. These are included as they may be used when rendering templates, so if you've used them to configure identifying elements of an object, you will need them again to find it.
 
-For example, if in our `my-deployment.yaml` file we have deployed the following:
+For example, if in the `my-deployment.yaml` file you have deployed the following:
 
 ```yaml
 apiVersion: apps/v1
@@ -245,8 +245,8 @@ def checkReady(keg, props, resultBuilder, log, *args, **kwargs):
 ```
 
 There are 3 states a ready check may return:
-- Ready - all the objects are ok and we can continue with the transition/operation
-- Not Ready - one or more objects are not ready, so we should not continue and instead retry the ready check later (see more about retries later)
+- Ready - all the objects are ok and the transition/operation may continue
+- Not Ready - one or more objects are not ready, so do not continue and instead retry the ready check later (see more about retries later)
 - Failed - there is an error that you believe will prevent the objects from ever being ready so the transition/operation should be failed
 
 The `resultBuilder` includes functions to return each type:

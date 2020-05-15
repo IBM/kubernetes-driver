@@ -1,4 +1,3 @@
-
 # Available Properties
 
 Your templates (and ready check/output extraction scripts through the `props` variable) may make use of three groups of properties given to the driver on a create request: 
@@ -8,6 +7,14 @@ Your templates (and ready check/output extraction scripts through the `props` va
 - Deployment Location - a dictionary copy of the deployment location object
 
 The following sections cover each group in more detail. 
+
+**Table of Contents**:
+
+- [Resource Properties](#resource-properties)
+  - [Key Properties](#key-properties)
+- [System Properties](#system-properties)
+- [Deployment Location](#deployment-location)
+- [Using properties in scripts](#using-properties-in-scripts)
 
 ## Resource Properties
 
@@ -33,6 +40,21 @@ metadata:
 data:
   dataA: {{ propA }}
   dataB: {{ propB }}
+```
+
+### Key Properties
+
+For key properties (those with `type: key` in the Resource descriptor) you can reference the key name, private key and public key (if set). For example, if you had a `myKey` property in the descriptor, you can template the values as below:
+
+```
+apiVersion: v1
+kind: Secret
+metadata:
+  name: example-keys
+data:
+  keyName: {{ myKey.keyName }}
+  privateKey: {{ myKey.privateKey }}
+  publicKey: {{ myKey.publicKey }}
 ```
 
 ## System Properties
@@ -111,3 +133,14 @@ data:
 ```
 
 **Note:** although the properties on a Kubernetes deployment location may have been provided as `snake_case`, they must be referenced by `camelCase` in templates.
+
+## Using properties in scripts
+
+To access these properties in ready check/output scripts you should not use the Jinja templating syntax shown in the above examples. Instead, you can navigate through the `props` dictionary provided as an argument to the script:
+
+```python
+def getOutputs(keg, props, resultBuilder, log, *args, **kwargs):
+  propA = props['propA']
+  resourceId = props['system_properties']['resourceId']
+  storageNamespace = props['deployment_location']['properties']['defaultObjectNamespace']
+```

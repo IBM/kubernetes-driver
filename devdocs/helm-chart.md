@@ -21,13 +21,19 @@ The Helm chart for this driver includes the following features:
 
 To build the Helm chart you will need to install Helm and initialise it (e.g. `helm init --client-only` on your local machine).
 
-Build the chart with the package command:
+## Full Build
+
+Run the build script, the command will print the location of the generated `.tgz` Helm package.
 
 ```
-helm package helm/kubedriver
+python3 build.py 
 ```
 
-The command will print the location of the generated `.tgz` Helm package.
+This command will build the docker image as well, to avoid this use the skip option:
+
+```
+python3 build.py --skip-docker
+```
 
 # Deploy Helm Chart
 
