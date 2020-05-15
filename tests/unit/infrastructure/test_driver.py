@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 from kubedriver.infrastructure import InfrastructureDriver
 from kubedriver.location import KubeDeploymentLocation
 from kubedriver.kubeobjects import ObjectConfigurationDocument
-from kubedriver.kubegroup import EntityGroup
+from kubedriver.keg import EntityGroup
 from ignition.utils.propvaluemap import PropValueMap
 
 single_obj_template = '''

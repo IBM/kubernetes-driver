@@ -1,5 +1,7 @@
 from .defaults import DEFAULT_NAMESPACE, DEFAULT_CRD_API_VERSION
 from .exceptions import UnrecognisedObjectKindError
+from .error_reader import ErrorReader
+from kubernetes.client.rest import ApiException
 import kubernetes.client as kubernetes_client_mod
 
 class KubeApiController:
@@ -9,13 +11,24 @@ class KubeApiController:
         self.client_director = client_director
         self.crd_api_version = crd_api_version
         self.default_namespace = default_namespace
+        self.error_reader = ErrorReader()
 
     def create_object(self, object_config, default_namespace=None):
         create_method, is_namespaced, is_custom_object = self.client_director.determine_api_method_for_create_object(self.base_kube_client, object_config.api_version, object_config.kind)
         if default_namespace is None:
             default_namespace = self.default_namespace
         create_args = self.__build_create_arguments(object_config, is_namespaced, default_namespace, is_custom_object)
-        create_method(**create_args)
+        return create_method(**create_args)
+
+    def safe_read_object(self, api_version, kind, name, namespace=None):
+        try:
+            obj = self.read_object(api_version, kind, name, namespace=namespace)
+            return True, obj
+        except ApiException as e:
+            if self.error_reader.is_not_found_err(e):
+                return False, None
+            else:
+                raise
 
     def read_object(self, api_version, kind, name, namespace=None):
         read_method, is_namespaced, is_custom_object = self.client_director.determine_api_method_for_read_object(self.base_kube_client, api_version, kind)
@@ -33,18 +46,22 @@ class KubeApiController:
         elif namespace is None:
             namespace = self.default_namespace
         delete_args = self.__build_delete_arguments(api_version, kind, name, namespace, is_custom_object)
-        delete_method(**delete_args)
+        return delete_method(**delete_args)
 
     def update_object(self, object_config, default_namespace=None):
         update_method, is_namespaced, is_custom_object = self.client_director.determine_api_method_for_update_object(self.base_kube_client, object_config.api_version, object_config.kind)
         if default_namespace is None:
             default_namespace = self.default_namespace
         update_args = self.__build_update_arguments(object_config, is_namespaced, default_namespace, is_custom_object)
-        update_method(**update_args)
+        return update_method(**update_args)
 
     def is_object_namespaced(self, api_version, kind):
-        read_method, is_namespaced, is_custom_object = self.client_director.determine_api_method_for_read_object(self.base_kube_client, api_version, kind)
+        _, is_namespaced, _ = self.client_director.determine_api_method_for_read_object(self.base_kube_client, api_version, kind)
         return is_namespaced
+
+    def is_object_custom(self, api_version, kind):
+        _, _, is_custom_obj = self.client_director.determine_api_method_for_read_object(self.base_kube_client, api_version, kind)
+        return is_custom_obj
 
     def __build_create_arguments(self, object_config, is_namespaced, default_namespace, is_custom_object):
         if is_custom_object:

@@ -1,1 +1,1 @@
-from .helm_release_config import HelmReleaseConfiguration
+from .helm_release_details import HelmReleaseDetails

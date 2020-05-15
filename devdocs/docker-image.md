@@ -8,9 +8,21 @@ The Docker image for this driver includes the following features:
 - Supports configuring the exposed port for the driver at both build and runtime
 - Supports configuring the uWSGI container implementation used at both build and runtime (also includes configuring the number of processes and threads used by uWSGI container)
 
-## Build Docker Image
+## Automated
 
-This guide shows you how to build the Docker image for testing 
+```
+python3 build.py 
+```
+
+If you need to include a development version of Ignition you must specify the path to the whl for it:
+
+```
+python3 build.py --ignition-whl /path/to/ignition.whl
+```
+
+## Manual Build Docker Image
+
+This guide shows you how to build the Docker image without the build.py script
 
 ### 1. Build Python Wheel
 
@@ -37,6 +49,8 @@ rm -rf ./docker/whls
 mkdir ./docker/whls
 cp dist/kubedriver-<release version number>-py3-none-any.whl docker/whls/
 ```
+
+If you need a development version of Ignition, you must build the whl for it and copy it to this directory also.
 
 Navigate to the Docker directry and build the image. Tag with the release version number.
 

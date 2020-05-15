@@ -1,7 +1,7 @@
 ## Docker Image for the Openstack VIM Driver
 docker:
   ## Make this the full path, including registry host and port if using one
-  image: kubedriver
+  image: accanto/kubedriver
   version: ${version}
   imagePullPolicy: IfNotPresent
 
@@ -38,22 +38,22 @@ app:
         enabled: True
         secret:
           ## Name of the secret containing the SSL certificate for the non-host based access (the CN of the certificate should match commonName)
-          name: k8s-tls
+          name: kubedriver-tls
           ## If True, the Helm chart installation will generate a new SSL key with a self-signed certificate
           generate: True
           ## The Common Name used for the SSL certificate (do not change this)
-          commonName: k8s-driver
+          commonName: kubedriver
 
   ## Probe configuration for checking Application availability
   livenessProbe:
     enabled: true
     failureThreshold: 3
-    initialDelaySeconds: 90
+    initialDelaySeconds: 15
     periodSeconds: 30
   readinessProbe:
     enabled: true
     failureThreshold: 3
-    initialDelaySeconds: 20
+    initialDelaySeconds: 25
     periodSeconds: 10
     
   ## Affinity for pod assignment

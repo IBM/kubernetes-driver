@@ -75,7 +75,7 @@ class TestKubeClientDirector(unittest.TestCase):
     def test_determine_api_method_for_create_object_with_object_not_found_in_api(self):
         with self.assertRaises(ClientMethodNotFoundError) as context:
             self.director.determine_api_method_for_create_object(self.base_kube_client, 'v1', 'AnUnknownResourceToThisApi', return_api_client=True)
-        self.assertEqual(str(context.exception), 'Cannot determine method for action \'create\' of kind \'AnUnknownResourceToThisApi\' in Api client \'<class \'kubernetes.client.apis.core_v1_api.CoreV1Api\'>\'')
+        self.assertEqual(str(context.exception), 'Cannot determine method for action \'create\' of kind \'AnUnknownResourceToThisApi\' in Api client \'<class \'kubernetes.client.api.core_v1_api.CoreV1Api\'>\'')
 
     def test_determine_api_method_for_create_object_with_camel_case_name(self):
         method, is_namespaced, is_custom_object, api_client = self.director.determine_api_method_for_create_object(self.base_kube_client, 'v1', 'ConfigMap', return_api_client=True)
@@ -123,7 +123,7 @@ class TestKubeClientDirector(unittest.TestCase):
     def test_determine_api_method_for_update_object_with_object_not_found_in_api(self):
         with self.assertRaises(ClientMethodNotFoundError) as context:
             self.director.determine_api_method_for_update_object(self.base_kube_client, 'v1', 'AnUnknownResourceToThisApi', return_api_client=True)
-        self.assertEqual(str(context.exception), 'Cannot determine method for action \'replace\' of kind \'AnUnknownResourceToThisApi\' in Api client \'<class \'kubernetes.client.apis.core_v1_api.CoreV1Api\'>\'')
+        self.assertEqual(str(context.exception), 'Cannot determine method for action \'replace\' of kind \'AnUnknownResourceToThisApi\' in Api client \'<class \'kubernetes.client.api.core_v1_api.CoreV1Api\'>\'')
 
     def test_determine_api_method_for_update_object_with_camel_case_name(self):
         method, is_namespaced, is_custom_object, api_client = self.director.determine_api_method_for_update_object(self.base_kube_client, 'v1', 'ConfigMap', return_api_client=True)
@@ -171,7 +171,7 @@ class TestKubeClientDirector(unittest.TestCase):
     def test_determine_api_method_for_delete_object_with_object_not_found_in_api(self):
         with self.assertRaises(ClientMethodNotFoundError) as context:
             self.director.determine_api_method_for_delete_object(self.base_kube_client, 'v1', 'AnUnknownResourceToThisApi', return_api_client=True)
-        self.assertEqual(str(context.exception), 'Cannot determine method for action \'delete\' of kind \'AnUnknownResourceToThisApi\' in Api client \'<class \'kubernetes.client.apis.core_v1_api.CoreV1Api\'>\'')
+        self.assertEqual(str(context.exception), 'Cannot determine method for action \'delete\' of kind \'AnUnknownResourceToThisApi\' in Api client \'<class \'kubernetes.client.api.core_v1_api.CoreV1Api\'>\'')
 
     def test_determine_api_method_for_delete_object_with_camel_case_name(self):
         method, is_namespaced, is_custom_object, api_client = self.director.determine_api_method_for_delete_object(self.base_kube_client, 'v1', 'ConfigMap', return_api_client=True)
@@ -219,7 +219,7 @@ class TestKubeClientDirector(unittest.TestCase):
     def test_determine_api_method_for_read_object_with_object_not_found_in_api(self):
         with self.assertRaises(ClientMethodNotFoundError) as context:
             self.director.determine_api_method_for_read_object(self.base_kube_client, 'v1', 'AnUnknownResourceToThisApi', return_api_client=True)
-        self.assertEqual(str(context.exception), 'Cannot determine method for action \'read\' of kind \'AnUnknownResourceToThisApi\' in Api client \'<class \'kubernetes.client.apis.core_v1_api.CoreV1Api\'>\'')
+        self.assertEqual(str(context.exception), 'Cannot determine method for action \'read\' of kind \'AnUnknownResourceToThisApi\' in Api client \'<class \'kubernetes.client.api.core_v1_api.CoreV1Api\'>\'')
 
     def test_determine_api_method_for_read_object_with_camel_case_name(self):
         method, is_namespaced, is_custom_object, api_client = self.director.determine_api_method_for_read_object(self.base_kube_client, 'v1', 'ConfigMap', return_api_client=True)
@@ -267,7 +267,7 @@ class TestKubeClientDirector(unittest.TestCase):
     def test_determine_api_method_for_list_object_with_object_not_found_in_api(self):
         with self.assertRaises(ClientMethodNotFoundError) as context:
             self.director.determine_api_method_for_list_object(self.base_kube_client, 'v1', 'AnUnknownResourceToThisApi', return_api_client=True)
-        self.assertEqual(str(context.exception), 'Cannot determine method for action \'list\' of kind \'AnUnknownResourceToThisApi\' in Api client \'<class \'kubernetes.client.apis.core_v1_api.CoreV1Api\'>\'')
+        self.assertEqual(str(context.exception), 'Cannot determine method for action \'list\' of kind \'AnUnknownResourceToThisApi\' in Api client \'<class \'kubernetes.client.api.core_v1_api.CoreV1Api\'>\'')
 
     def test_determine_api_method_for_list_object_with_camel_case_name(self):
         method, is_namespaced, is_custom_object, api_client = self.director.determine_api_method_for_list_object(self.base_kube_client, 'v1', 'ConfigMap', return_api_client=True)

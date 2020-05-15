@@ -44,9 +44,9 @@ class TestKubeDeploymentLocation(unittest.TestCase):
         self.assertEqual(location.client_config, EXAMPLE_CONFIG)
 
     @patch('kubedriver.location.deployment_location.kubeconfig')
-    def test_build_client(self, mock_kube_config):
+    def test_client(self, mock_kube_config):
         location = KubeDeploymentLocation('TestKube', EXAMPLE_CONFIG)
-        client = location.build_client()
+        client = location.client
         self.assertEqual(client, mock_kube_config.new_client_from_config.return_value)
         new_client_args_list = mock_kube_config.new_client_from_config.call_args_list
         self.assertEqual(len(new_client_args_list), 1)

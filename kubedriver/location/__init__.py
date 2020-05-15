@@ -1,2 +1,1 @@
 from .deployment_location import KubeDeploymentLocation
-from .translator import KubeDeploymentLocationTranslator

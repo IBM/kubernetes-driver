@@ -12,3 +12,14 @@ bootstrap:
   templating:
     # Providing our own
     resource_context_service_enabled: False
+
+kegd:
+  ready_checks:
+    default_max_attempts: 10
+    default_timeout_seconds: 300
+    default_interval_seconds: 5
+    max_timeout_seconds: 3600
+
+resource_driver:
+  keep_files: False
+  keep_kegdrs: False

@@ -5,6 +5,7 @@ import ignition.locations.kubernetes as common_kube_dl
 from ignition.locations.exceptions import InvalidDeploymentLocationError
 from ignition.locations.utils import get_property_or_default
 from kubedriver.kubeclient import DEFAULT_NAMESPACE
+from kubedriver.helmclient import HelmClient
 
 KubeDeploymentLocationBase = common_kube_dl.KubernetesDeploymentLocation
 
@@ -61,7 +62,7 @@ class KubeDeploymentLocation(KubeDeploymentLocationBase):
         return KubeDeploymentLocation(name, client_config, **kwargs)
 
     def __init__(self, name, client_config, default_object_namespace=DEFAULT_NAMESPACE, crd_api_version=None, driver_namespace=None, \
-                    cm_api_version=None, cm_kind=None, cm_data_field=None, helm_version='2.8.2'):
+                    cm_api_version='v1', cm_kind='ConfigMap', cm_data_field='data', helm_version='2.8.2'):
         super().__init__(name, client_config, default_object_namespace=default_object_namespace)
         self.crd_api_version = crd_api_version
         self.cm_api_version = cm_api_version
@@ -71,16 +72,42 @@ class KubeDeploymentLocation(KubeDeploymentLocationBase):
         if self.driver_namespace is None:
             self.driver_namespace = self.default_object_namespace
         self.helm_version = helm_version
+        self._client = None
+        self._helm_client = None
 
-    def build_client(self):
-        config_file_path = super().write_config_file()
-        try:
-            client = kubeconfig.new_client_from_config(config_file_path, persist_config=False)            
-            return client
-        finally:
-            if os.path.exists(config_file_path):
-                os.remove(config_file_path)
+    @property
+    def client(self):
+        if self._client is None:
+            config_file_path = super().write_config_file()
+            try:
+                self._client = kubeconfig.new_client_from_config(config_file_path, persist_config=False)            
+            finally:
+                if os.path.exists(config_file_path):
+                    os.remove(config_file_path)
+        return self._client
 
+    @property
+    def helm_client(self):
+        if self._helm_client is None:
+            self._helm_client = HelmClient(self.client_config, self.helm_version)
+        return self._helm_client
+
+    def clean(self):
+        self.clear_config_files()
+        if self._helm_client is not None:
+            self._helm_client.close()
+            self._helm_client = None
+
+    def get_cm_persister_args(self):
+        args = {}
+        if self.cm_api_version is not None:
+            args['cm_api_version'] = self.cm_api_version
+        if self.cm_kind is not None:
+            args['cm_kind'] = self.cm_kind
+        if self.cm_data_field is not None:
+            args['cm_data_field'] = self.cm_data_field
+        return args
+        
     def to_dict(self):
         data = super().to_dict()
         data[KubeDeploymentLocationBase.PROPERTIES].update({

@@ -16,9 +16,10 @@ setup(
     packages=find_namespace_packages(include=['kubedriver*']),
     include_package_data=True,
     install_requires=[
-        'ignition-framework{0}'.format(_pkg_info['ignition-version']),
-        'kubernetes>=10.0.0,<11.0',
-        'uwsgi>=2.0.18,<3.0',
+        'ignition-framework=={0}'.format(_pkg_info['ignition-version']),
+        'kubernetes==11.0.0',
+        'python-dateutil==2.8.1',
+        'RestrictedPython==5.0.0',
         'gunicorn>=19.9.0,<20.0'
     ],
     entry_points='''
