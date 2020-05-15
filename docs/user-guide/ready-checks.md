@@ -26,7 +26,18 @@ Instead, the driver provides hooks for the Resource developer to plug-in scripts
 
 Each transition/operation may share or use different scripts or provide no script at all, in which case no ready checks are performed and the transition/operation is successful if the objects were accepted by Kubernetes.
 
-# Add a ready check
+**Table of Contents**:
+- [Add a Ready Check Script](#add-a-ready-check-script)
+- [Writing a Ready Check Script](#writing-a-ready-check-script)
+  - [Keg](#keg)
+  - [Props](#props)
+  - [Result Builder](#result-builder)
+  - [Log](#log)
+  - [Complete Example](#complete-example)
+  - [Return Key Properties](#return-key-properties)
+- [Configuring Retries](#configuring-retries)
+
+# Add a Ready Check Script
 
 To add a ready check to your Resource, you will need to create a `scripts` directory in the `kubernetes` directory of your Resource:
 
@@ -71,7 +82,7 @@ compose:
 
 Now, on a Create transition for this Resource, the driver will deploy the objects and then execute the `check-ready-on-create.py` script to inspect the objects.
 
-# Writing a ready check script
+# Writing a Ready Check Script
 
 Ready check scripts are written in Python syntax but it's worth noting that you will not have the full power of the language at your disposal. For example, you won't be able to import modules and perform API calls out to external systems.
 

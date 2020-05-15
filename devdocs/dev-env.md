@@ -68,6 +68,26 @@ Use setuptools to install the driver and it's dependencies. It's best to use `--
 python3 -m pip install --editable .
 ```
 
+## Setup Helm
+
+If you intend to run the driver locally and deploy Resources with Helm charts, you will need the Helm client libraries installed (this is because the driver will start subprocesses to call Helm on the command line). 
+
+On ubuntu, you can do this using the same script used by the Dockerfile to bundle Helm into the image:
+
+```
+./docker/setup-helm.sh 2.8.2 2.16.7
+```
+
+Include as many versions as you need separated by spaces. Ensure the versions exist on the [Helm Github releases page](https://github.com/helm/helm/releases).
+
+For other systems, look at the contents of the script to see the steps and adapt them for your OS. In pseudo terms, you need to:
+
+- Download the version of the Helm you want
+- Extract the archive 
+- Copy the `helm` binary included in the archive to any bin directory on your PATH
+- Rename the `helm` binary to `helm$version` e.g helm2.8.2
+- Run `helm2.8.2 --help` to verify this has worked
+
 ## Install the build dependencies
 
 If you want to use the `build.py` script to automate builds, you should install the requirements:

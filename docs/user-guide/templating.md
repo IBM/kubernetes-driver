@@ -9,6 +9,11 @@ There are various files in an Kubernetes driver based Resource which support tem
 
 This section describes the difference, how properties can be injected and the possible property values. It is important to understand how this works so you may build configurable templates which make use of the values passed down by the Lifecycle Manager (ALM).
 
+**Table of Contents**:
+- [Template Syntax](#template-syntax)
+- [Template Files](#template-files)
+- [Templated YAML values](#templated-yaml-value)
+
 # Template Syntax
 
 This driver uses the [Jinja2 template syntax](https://jinja.palletsprojects.com/en/2.10.x/templates) to inject property values from the resource:
@@ -47,7 +52,7 @@ data:
 
 We'll cover the full list of valid properties which may be used in templates later, in [Available Properties](properties.md).
 
-# Full Template Files
+# Template Files
 
 Some files are full templates, meaning they are rendered first (so property values are injected) before they are parsed and expected to be valid. 
 

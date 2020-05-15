@@ -2,6 +2,25 @@
 
 This section assumes you already have an understanding of how to build a package for a Resource managed by Brent (the Resource Manager included with ALM). If you do not, see the [official documentation](http://servicelifecyclemanager.com/2.1.0/user-guides/resource-engineering/resource-packages/brent/create-brent-resource-package/) on this subject. 
 
+**Table of Contents**:
+
+- [Kubernetes Driver Files](#kubernetes-driver-files)
+  - [Objects](#objects)
+  - [Helm Charts](#helm-charts)
+- [Kubernetes Entity Group Deployment](#kubernetes-entity-group-deployment) (kegd.yaml)
+  - [Deploying Objects](#deploying-objects)
+  - [Removing Objects](#removing-objects)
+    - [Created on Create/Install/Start](#created-on-create/install/start)
+    - [Created on Other Transitions](#created-on-other-transitions)
+    - [Matching Operation Calls](#matching-operation-transitions)
+    - [Remove Immediately](#remove-immediately)
+  - [Updating Objects](#updating-objects)
+  - [Deploying Helm Charts](#deploying-helm-charts)
+  - [Updating Helm Releases](#updating-helm-releases)
+  - [Removing Helm Releases](#deploying-helm-releases)
+  
+# Kubernetes Driver Files
+
 Once you have the skeleton for a Brent Resource, you can begin adding the files required to use this Kubernetes driver to implement any of the lifecycle transition or operations. 
 
 Initially you will need to create a `kubernetes` directory in the `Lifecycle` directory of your Resource:
@@ -28,7 +47,7 @@ The following files and directories should be included in `kubernetes`:
 | objects | Directory | Directory of Kubernetes object configuration files (Deployments, Services etc.) to be deployed at various stages of the Resource lifecycle| 
 | helm | Directory | Directory of Helm charts and values files to be deployed at various stages of the Resource lifecycle | 
 
-# Objects
+## Objects
 
 The Kubernetes driver can deploy any object managed by your target Kubernetes environments e.g. Deployments, Services, Config Maps... (Kubernetes documentation sometimes refer to these as "Resources" but we won't use that term in this documentation to avoid confusion with the ALM Resource)
 
@@ -77,9 +96,49 @@ data:
 
 The template is rendered as text before it is parsed as YAML, so there is no need to wrap the template syntax in quotes when it's the first item on a line.
 
-For full details on templates and the syntax used may be found in the [Templating](templating.md) section of this user guide.
+For full details on templates and the syntax used, check out the [Templating](templating.md) section of this user guide.
 
-# Kubernetes Entity Group Deployment (kegd.yaml)
+## Helm Charts
+
+The Kubernetes driver can deploy any helm charts to your target Kubernetes environments as long as Helm has been initialised on the environment (for Helm2 this means you have a running Tiller pod. Check out [helm init](https://v2.helm.sh/docs/helm/#helm-init)).
+
+The Helm charts must be compatible with Helm 2 (helm v.2.8.2 and v2.16.7 are included in the driver).
+
+The `helm` directory should include the packaged Helm charts you intend to install (`.tgz` files) and any values files you may use to configure the installation. We'll see how you install the charts and select your values file later.
+
+Example package:
+```
+Lifecycle/
+  kubernetes/
+    helm/
+      mychart-1.0.0.tgz
+      custom-values.yaml
+    kegd.yaml
+```
+
+Where `custom-values.yaml` includes:
+
+```
+# Example properties, the contents here depends on the values supported by your helm chart
+service:
+  nodePort: 32445
+```
+
+The template is rendered as text before it is sent to the Helm command, so there is no need to wrap the template syntax in quotes when it's the first item on a line.
+
+For full details on templates and the syntax used, check out the [Templating](templating.md) section of this user guide.
+
+### Templating Values Files
+
+The values files may make use of [Jinja2 template variables syntax](https://jinja.palletsprojects.com/en/2.10.x/templates/#variables) to inject property values from the Resource descriptor:
+
+```
+# Example properties, the contents here depends on the values supported by your helm chart
+service:
+  nodePort: {{ servicePort }}
+```
+
+# Kubernetes Entity Group Deployment
 
 The Kubernetes driver can deploy any number of Kubernetes objects as part of a Resource, at different stages of it's lifecycle. The driver keeps track of the objects it has deployed for a single Resource in a Kubernetes Entity Group, known as a Keg. 
 
@@ -167,7 +226,7 @@ compose:
 
 In this case the driver will assume these objects should be removed on the Delete transition. Similarly, objects deployed on Install are removed on Uninstall and objects deployed on Start are removed on Stop. 
 
-### Created on other transitions 
+### Created on Other Transitions 
 
 All other objects, created on Configure or custom operations, will be deleted when the group is deleted, which by default is on the Delete transition of the Resource. 
 

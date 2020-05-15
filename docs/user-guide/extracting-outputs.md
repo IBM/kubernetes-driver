@@ -14,7 +14,14 @@ Unlike the scripts used for ready checks, the output extraction script is only e
 
 Each transition/operation may share or use different scripts or provide no script at all, in which case no outputs are extracted.
 
-# Add an output extraction script
+**Table of Contents**:
+- [Add an Output Extraction Script](#add-an-output-extraction-script)
+- [Writing an Output Extraction Script](#writing-an-output-extraction-script)
+  - [Result Builder](#result-builder)
+  - [Complete Example](#complete-example)
+  - [Return Key Properties](#return-key-properties)
+
+# Add an Output Extraction Script
 
 To add an output extraction script to your resource, you will need to create a `scripts` directory in the `kubernetes` directory of your resource:
 
@@ -60,7 +67,7 @@ compose:
 
 Now, on a Create transition for this resource, the driver will deploy the objects, execute the `check-ready-on-create.py` script until it returns a "ready" result, then execute the `outputs-on-create.py` to extract outputs.
 
-# Writing an output extraction script
+# Writing an Output Extraction Script
 
 Output extraction scripts are written in Python syntax but it's worth noting that you will not have the full power of the language at your disposal. For example, you won't be able to import modules and perform API calls out to external systems.
 
@@ -138,7 +145,7 @@ def getOutputs(keg, props, resultBuilder, log, *args, **kwargs):
     resultBuilder.setOutput('uniqueName', props['system_properties']['resource_subdomain'])
 ```
 
-## Returning Keys
+## Return Key Properties
 
 If you create a key as part of your Keg (maybe in a Secret or through a Job) you can return them as outputs so they may be stored in Brent. They can then later be used in other transitions executed, even if that transition is handled by another drivers (maybe you need this key for an ansible playbook).
 
@@ -215,6 +222,11 @@ def getOutputs(keg, props, resultBuilder, log, *args, **kwargs):
 ```
 
 **Note:** notice how the example decodes each part separately before concatenating them. This is important as if you decode them after they may not be correct.
+
+Read more on keys in the ALM documentation: 
+
+- [Infrastructure Keys](http://servicelifecyclemanager.com/2.1.0/reference/lm-api/api-definition/resource-manager/infrastructure-keys/)
+- [Infrastructure Keys Example](http://servicelifecyclemanager.com/2.1.0/user-guides/resource-engineering/resource-packages/brent/infrastructure-keys-resource/get-started/)
 
 # Next Steps
 

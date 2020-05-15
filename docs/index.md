@@ -20,3 +20,4 @@ The following sections explain the functionality of this driver and the requirem
 # Reference
 
 - [Kegd](reference/kegd/index.md) - reference detail of the tasks available in a deployment strategy
+- [Kegd Scripting](reference/kegd/scripting/index.md) - reference detail of the classes and functions available to users writing ready check and output scripts

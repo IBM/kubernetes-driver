@@ -8,6 +8,8 @@ ARG NUM_THREADS
 ENV NUM_THREADS ${NUM_THREADS:-2}
 ARG WSGI_CONTAINER
 ENV WSGI_CONTAINER ${WSGI_CONTAINER:-gunicorn}
+ARG SUPPORTED_HELM_VERSIONS
+ENV SUPPORTED_HELM_VERSIONS ${SUPPORTED_HELM_VERSIONS:-2.8.2 2.16.7}
 
 COPY whls/*.whl /whls/
 
@@ -23,12 +25,8 @@ RUN addgroup -S kubedriver \
  && for i in /whls/*.whl; do pip install "$i"; done \
  && apk del .build-deps gcc musl-dev libffi-dev openssl-dev python3-dev make git
 
-COPY helm2.8.2 /usr/local/bin/helm2.8.2
-COPY helm2.11.0 /usr/local/bin/helm2.11.0
-
-RUN helm2.8.2 --help
-
-RUN helm2.11.0 --help
+COPY setup-helm.sh /setup-helm.sh 
+RUN chmod +x /setup-helm.sh && sh /setup-helm.sh
 
 USER kubedriver
 WORKDIR /home/kubedriver
