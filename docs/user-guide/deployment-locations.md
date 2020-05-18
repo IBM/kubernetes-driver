@@ -19,6 +19,8 @@ The following properties are supported by the driver:
 
 # Obtaining clientConfig
 
+## Kubeadm 
+
 The easiest way to obtain the client configuration for your Kubernetes cluster is to run the `config view` command from a machine with existing kubectl access:
 
 ```
@@ -57,3 +59,16 @@ clientConfig: |
 ```
 
 Only use this method if you are comfortable with the user in use and the permissions they have been granted through their role bindings.
+
+## Microk8s
+
+For microk8s, you may try `kubectl config view` but you may notice the server address as `127.0.0.1` which is not going to work for remote connections.
+
+Instead, try:
+
+```
+microk8s.config
+```
+
+If this commands fails with "unrecognised" but you know you have microk8s installed, make the sure your `snap` bin is on your `PATH` environment variable (usually `/snap/bin`).
+
