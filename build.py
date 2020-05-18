@@ -11,9 +11,13 @@ PKG_INFO = 'pkg_info.json'
 DIST_DIR = 'dist'
 WHL_FORMAT = 'kubedriver-{version}-py3-none-any.whl'
 
+DOCS_FORMAT = 'kubedriver-{version}-docs'
+DOCS_DIR = 'docs'
+
 DOCKER_WHLS_DIR = 'whls'
 DOCKER_PATH = 'docker'
 DOCKER_IMG_NAME = 'kubedriver'
+DOCKER_REGISTRY = 'accanto'
 
 HELM_CHART_PATH = os.path.join('helm', 'kubedriver')
 HELM_CHART_NAME = 'kubedriver'
@@ -120,6 +124,7 @@ class Builder:
             self.run_unit_tests()
         if args.skip_build is not True:
             self.build_python_wheel()
+            self.pkg_docs()
             if args.skip_docker is not True:
                 self.build_docker_image()
             if args.skip_helm is not True:
@@ -235,9 +240,17 @@ class Builder:
 
     def _push_docker_image(self, title, current_docker_img_tag):
         with self.stage(title) as s:
-            new_tag = 'accanto/' + current_docker_img_tag
+            new_tag = DOCKER_REGISTRY + '/' + current_docker_img_tag
             s.run_cmd('docker', 'tag', current_docker_img_tag, new_tag)
             s.run_cmd('docker', 'push', new_tag)
+
+    def pkg_docs(self):
+        with self.stage('Package Docs') as s:
+            print('Packaging docs at {0}'.format(DOCS_DIR))
+            docs_output = DOCS_FORMAT.format(version=self.project_version)
+            docs_output_file = docs_output + '.tgz'
+            transform_command = 's/{0}/{1}/'.format(DOCS_DIR, docs_output)
+            s.run_cmd('tar', '-cvzf', docs_output_file, DOCS_DIR+'/', '--transform', transform_command)
 
 def main():
   builder = Builder()
