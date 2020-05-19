@@ -5,9 +5,9 @@ import os
 import kubedriver.config as driverconfig
 from ignition.service.queue import JobQueueCapability
 from ignition.service.templating import TemplatingCapability, ResourceTemplateContextCapability 
-from kubedriver.kubeclient import KubeClientDirector
 from kubedriver.resourcedriver import (KubeResourceDriverHandler, AdditionalResourceDriverProperties, ExtendedResourceTemplateContext,
                                         NameManager)
+from kubedriver.kubeclient import KubeApiControllerFactory
 from kubedriver.keg import KegPersistenceFactory
 from kubedriver.kegd import KegdStrategyProcessor, KegdStrategyManager, KegDeploymentProperties, KegDeploymentStrategyProperties, KegdReportPersistenceFactory
 from kubedriver.kegd.model import DeploymentStrategyFileReader, DeploymentStrategyParser
@@ -24,15 +24,15 @@ def create_app():
     app_builder.include_file_config_properties('/var/kubedriver/kubedriver_config.yml', required=False)
     app_builder.include_environment_config_properties('KUBEDRIVER_CONFIG', required=False)
 
-    client_director = KubeClientDirector()
     app_builder.add_property_group(AdditionalResourceDriverProperties())
     app_builder.add_property_group(KegDeploymentProperties())
 
     app_builder.add_service(NameManager)
     app_builder.add_service(KegPersistenceFactory)
     app_builder.add_service(KegdReportPersistenceFactory)
+    app_builder.add_service(KubeApiControllerFactory)
     app_builder.add_service(LocationContextFactory, 
-            client_director, 
+            api_ctl_factory=KubeApiControllerFactory,
             kegd_persister_factory=KegdReportPersistenceFactory, 
             keg_persister_factory=KegPersistenceFactory
     )

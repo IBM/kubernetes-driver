@@ -1,4 +1,5 @@
 import re
+import kubernetes.client as kubernetes_client_mod
 from .api_version_parser import ApiVersionParser
 
 EXTENSIONS_GROUP_SUFFIX = '.k8s.io'
@@ -47,7 +48,6 @@ class KubeModDirector:
         return api_class(base_kube_client)
 
     def convert_kind_to_method_ready(self, kind):
-        if kind == ''
         # Lower case and split camel case to snake_case
         kind = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', kind)
         kind = re.sub('([a-z0-9])([A-Z])', r'\1_\2', kind).lower()
@@ -76,3 +76,6 @@ class KubeModDirector:
         if found:
             return found, getattr(api_client, method_name)
         return found, None
+
+    def is_custom_obj_api(self, api_client):
+        return api_client.__class__ == kubernetes_client_mod.CustomObjectsApi
