@@ -31,17 +31,16 @@ class KubeModDirector:
             api_client_name += part.capitalize()
         api_client_name += resource_version.capitalize()
         api_client_name += API_CLIENT_CLASS_SUFFIX
-        return api_client_name
+        if hasattr(kubernetes_client_mod, api_client_name):
+            return api_client_name
+        else:
+            return 'CustomObjectsApi'
 
     def get_api_client_class_for_version(self, api_version):
         api_client_name = self.get_api_client_class_name_for_version(api_version)
         # api_client_name = CoreV1Api -> api_class = kubernetes.client.CoreV1Api
         # api_client_name = ApiextensionsV1beta1Api -> api_class = kubernetes.client.ApiextensionsV1beta1Api
-        if hasattr(kubernetes_client_mod, api_client_name):
-            return getattr(kubernetes_client_mod, api_client_name)
-        else:
-            # Must be a custom resource
-            return kubernetes_client_mod.CustomObjectsApi
+        return getattr(kubernetes_client_mod, api_client_name)
 
     def build_api_client_for_version(self, api_version, base_kube_client):
         api_class = self.get_api_client_class_for_version(api_version)

@@ -43,9 +43,9 @@ class KubeClientDirector:
             return method, is_namespaced, False
 
     def __find_builtin_api_method(self, api_client, kind, action_type):
-        is_namespaced, method = self.try_namespaced_method(api_client, action_type, kind)
+        is_namespaced, method = self.mod_director.try_namespaced_method(api_client, action_type, kind)
         if not is_namespaced:
-            is_plain, method = self.try_plain_method(api_client, action_type, kind)
+            is_plain, method = self.mod_director.try_plain_method(api_client, action_type, kind)
             if not is_plain:
                 raise ClientMethodNotFoundError(f'Cannot determine method for action \'{action_type}\' of kind \'{kind}\' in Api client \'{api_client.__class__}\'')
         return method, is_namespaced
@@ -62,11 +62,11 @@ class KubeClientDirector:
         is_namespaced = False
         if scope == NAMESPACED_SCOPE:
             is_namespaced = True
-            found, method = self.try_namespaced_method(api_client, action_type, CUSTOM_OBJECT_KIND)
+            found, method = self.mod_director.try_namespaced_method(api_client, action_type, CUSTOM_OBJECT_KIND)
             if not found:
                 raise ClientMethodNotFoundError(f'Cannot determine method for action \'{action_type}\' of custom object kind \'{kind}\' in Api client \'{api_client.__class__}\' with namespace scope')
         else:
-            found, method = self.try_cluster_method(api_client, action_type, CUSTOM_OBJECT_KIND)
+            found, method = self.mod_director.try_cluster_method(api_client, action_type, CUSTOM_OBJECT_KIND)
             if not found:
                 raise ClientMethodNotFoundError(f'Cannot determine method for action \'{action_type}\' of custom object kind \'{kind}\' in Api client \'{api_client.__class__}\' with cluster scope')
         return method, is_namespaced

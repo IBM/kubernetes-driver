@@ -8,17 +8,14 @@ NAMESPACED_SCOPE = 'Namespaced'
 
 class CrdDirector:
 
-    def __init__(self, base_kube_client, crd_api_version=DEFAULT_CRD_API_VERSION, cache_capacity=100):
+    def __init__(self, base_kube_client, crd_api_version=DEFAULT_CRD_API_VERSION, cache_capacity=100, mod_director=None):
         self.base_kube_client = base_kube_client
-        self.mod_director = KubeModDirector()
+        self.mod_director = mod_director if mod_director is not None else KubeModDirector()
         self.crd_api_version = crd_api_version
         self.crd_api_client = self.mod_director.build_api_client_for_version(self.crd_api_version, self.base_kube_client)
         found, self._list_crds = self.mod_director.try_plain_method(self.crd_api_client, LIST_ACTION, 'custom_resource_definition')
         if not found:
             raise ClientMethodNotFoundError(f'Could not find list method for custom_resource_definitions at version {self.crd_api_version} (Client: {self.crd_api_client})')
-        found, self._read_crd = self.mod_director.try_plain_method(self.crd_api_client, READ_ACTION, 'custom_resource_definition')
-        if not found:
-            raise ClientMethodNotFoundError(f'Could not find read method for custom_resource_definitions at version {self.crd_api_version} (Client: {self.crd_api_client})')
         self._type_cache = LRUCache(capacity=cache_capacity)
 
     def get_crd_by_kind(self, group, kind):

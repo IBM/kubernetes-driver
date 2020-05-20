@@ -8,6 +8,9 @@ REMOVE_LABEL_INVALID_REGEX = re.compile('[^a-z0-9-]+')
 REPEATED_LABEL_SEPARATOR_REGEX = re.compile('(?P<sep>['+re.escape('-')+'])(?P=sep)')
 REMOVE_VOWEL_REGEX = re.compile('[aeiouAEIOU]')
 
+## Care should be taken when updating this class as any changes to name generation could mean we are left 
+## with instances that cannot be uninstalled (because we now generate a different name for it)
+
 class NameManager(Service, Capability):
 
     def __execute_attempts(self, attempts, validator, error_title):
@@ -56,7 +59,8 @@ class NameManager(Service, Capability):
         attempts = [
             lambda: self.__make_safe_label(f'{prefix}{resource_name}-{resource_id}'),
             lambda: self.__make_safe_label(f'{prefix}{self.__short_resource_name(resource_name)}-{resource_id}'),
-            lambda: self.__make_safe_label(f'{prefix}{self.__short_resource_name_reduced(resource_name)}-{resource_id}')
+            lambda: self.__make_safe_label(f'{prefix}{self.__short_resource_name_reduced(resource_name)}-{resource_id}'),
+            lambda: self.__make_safe_label(f'{prefix}-{resource_id}')
         ]
         return self.__execute_attempts(attempts, namehelper.is_valid_label_name, 'safe label name for Resource')
 
@@ -78,11 +82,10 @@ class NameManager(Service, Capability):
         attempts = [
             lambda: self.__make_safe_subdomain(f'{resource_name}-{resource_id}'),
             lambda: self.__make_safe_subdomain(f'{self.__short_resource_name(resource_name)}-{resource_id}'),
-            lambda: self.__make_safe_subdomain(f'{self.__short_resource_name_reduced(resource_name)}-{resource_id}')
+            lambda: self.__make_safe_subdomain(f'{self.__short_resource_name_reduced(resource_name)}-{resource_id}'),
+            lambda: self.__make_safe_label(f'{resource_id}')
         ]
         return self.__execute_attempts(attempts, namehelper.is_valid_subdomain_name, 'safe subdomain name for Resource')
-
-
 
     def __short_resource_name(self, resource_name):
         ##Build name with first and last parts
@@ -100,29 +103,40 @@ class NameManager(Service, Capability):
         if len(split_parts) > 1:
             last_part = split_parts[-1]
         ##Reduce
-        first_part_reduced = self.__remove_vowels_or_reduce(first_part)
+        first_part_reduced = self.__remove_vowels_or_reduce_to_three_chars(first_part)
         if last_part is not None:
-            last_part_reduced = self.__remove_vowels_or_reduce(last_part)
+            last_part_reduced = self.__remove_vowels_or_reduce_to_three_chars(last_part)
             return f'{first_part_reduced}-{last_part_reduced}'
         else:
             return first_part_reduced
 
-    def __remove_vowels_or_reduce(self, input_str):
+    def __remove_vowels(self, input_str):
         reduced_input = REMOVE_VOWEL_REGEX.sub('', input_str)
-        if len(reduced_input) == 0 or len(reduced_input) == len(input_str):
-            #Only contained vowels or we didn't reduce the string at all - either way lets try picking 3 characters instead
-            if len(input_str) > 3:
-                first_char = input_str[0]
-                #Exact for odd length strings, rough middle for even length
-                middle_char = input_str[int(len(input_str)/2)]
-                last_char = input_str[-1]
-                reduced_input = first_char + middle_char + last_char
-                return reduced_input
-            else:
-                #Return the original
-                return input_str
+        # Only contained vowels, don't let this be used
+        if len(reduced_input) == 0:
+            return False, input_str
+        # No vowels
+        if len(reduced_input) == len(input_str):
+            return False, input_str
+        return True, reduced_input
+
+    def __reduce_to_three_chars(self, input_str):
+        if len(input_str) > 3:
+            first_char = input_str[0]
+            #Exact for odd length strings, rough middle for even length
+            middle_char = input_str[int(len(input_str)/2)]
+            last_char = input_str[-1]
+            reduced_input = first_char + middle_char + last_char
+            return True, reduced_input
         else:
-            return reduced_input
+            #Return the original
+            return False, input_str
+
+    def __remove_vowels_or_reduce_to_three_chars(self, input_str):
+        has_reduced, reduced_input = self.__remove_vowels(input_str)
+        if not has_reduced:
+            _, reduced_input = self.__reduce_to_three_chars(input_str)
+        return reduced_input
 
     def __make_safe_subdomain(self, input_name):
         if input_name is None:
