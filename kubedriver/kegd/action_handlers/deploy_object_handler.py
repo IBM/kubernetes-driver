@@ -22,10 +22,13 @@ class DeployObjectHandler:
                                                 name=action.name)
             keg_status.composition.objects.append(obj_status)
             obj_status.state = EntityStates.CREATE_PENDING
-        else:
+        if obj_status.state not in [EntityStates.CREATE_FAILED, EntityStates.CREATE_PENDING]:
             obj_status.state = EntityStates.UPDATE_PENDING
+        else:
+            obj_status.state = EntityStates.CREATE_PENDING
         obj_status.error = None
         self.__add_tags(obj_status, action.tags, script_name)
+        return obj_status
 
     def handle(self, action, parent_task_settings, script_name, keg_name, keg_status, context, delta_capture):
         api_ctl = context.api_ctl

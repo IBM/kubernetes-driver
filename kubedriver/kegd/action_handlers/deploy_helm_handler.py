@@ -23,10 +23,13 @@ class DeployHelmHandler:
             helm_status = V1alpha1HelmReleaseStatus(namespace=action.namespace, name=action.name)
             keg_status.composition.helm_releases.append(helm_status)
             helm_status.state = EntityStates.CREATE_PENDING
-        else:
+        if helm_status.state not in [EntityStates.CREATE_FAILED, EntityStates.CREATE_PENDING]:
             helm_status.state = EntityStates.UPDATE_PENDING
+        else:
+            helm_status.state = EntityStates.CREATE_PENDING
         helm_status.error = None
         self.__add_tags(helm_status, action.tags, script_name)
+        return helm_status
 
     def handle(self, action, parent_task_settings, script_name, keg_name, keg_status, context, delta_capture):
         helm_client = context.kube_location.helm_client
@@ -34,9 +37,8 @@ class DeployHelmHandler:
         helm_status = self.__find_helm_status(action, keg_status)
         if helm_status == None:
             helm_status = self.__do_decorate(helm_status, action, parent_task_settings, script_name, keg_name, keg_status)
-
         tmp_dir = None
-        action_type = 'Upgrade' if helm_status.state == EntityStates.UPDATE_PENDING else 'Install'
+        action_type = self.__install_or_upgrade(helm_client, helm_status)
         try:
             tmp_dir, chart_path, values_path = self.__write_chart(action)
             captured_objects = []
@@ -59,6 +61,15 @@ class DeployHelmHandler:
                 shutil.rmtree(tmp_dir)
 
         return task_errors
+
+    def __install_or_upgrade(self, helm_client, helm_status):
+        exists, _ = helm_client.safe_get(helm_status.name, helm_status.namespace)
+        if exists:
+            helm_status.state = EntityStates.UPDATE_PENDING
+            return 'Upgrade'
+        else:
+            helm_status.state = EntityStates.CREATE_PENDING
+            return 'Install'
 
     def __find_helm_status(self, action, keg_status):
         if keg_status.composition != None and keg_status.composition.helm_releases != None:
@@ -132,7 +143,6 @@ class DeployHelmHandler:
             removed_objects = None
             deployed_objects = [self.__dict_to_obj_status(obj) for obj in loaded_objects]
         delta_capture.deployed_helm_release(helm_status, objects_only=objects_only, deployed_objects=deployed_objects, removed_objects=removed_objects)
-        print(delta_capture.delta)
 
     def __delta_snapshot_of_lists(self, before, after):
         removed = []

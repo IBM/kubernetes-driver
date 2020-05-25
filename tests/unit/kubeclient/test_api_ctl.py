@@ -17,7 +17,7 @@ class TestKubeApiController(unittest.TestCase):
         self.base_kube_client = MagicMock()
         self.crd_director = MagicMock()
         self.client_director = MagicMock()
-        self.api_ctl = KubeApiController(self.client_director, self.crd_director)
+        self.api_ctl = KubeApiController(self.base_kube_client, self.client_director, self.crd_director)
         self._set_up_crd_director()
 
     def _set_up_crd_director(self):
@@ -29,7 +29,7 @@ class TestKubeApiController(unittest.TestCase):
         self.crd_director.get_crd_by_kind.side_effect = get_crd_by_kind
 
     def __reconfigure_with_namespace(self, namespace):
-        self.api_ctl = KubeApiController(self.client_director, self.crd_director, default_namespace=namespace)
+        self.api_ctl = KubeApiController(self.base_kube_client, self.client_director, self.crd_director, default_namespace=namespace)
 
     #Create
     def __mock_create_namespaced_object(self):

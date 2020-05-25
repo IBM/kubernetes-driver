@@ -7,6 +7,7 @@ import shutil
 import stat
 import uuid
 from .exceptions import HelmError
+from .tls import HelmTls
 from kubedriver.kubeobjects import ObjectConfigurationDocument
 from kubedriver.helmobjects import HelmReleaseDetails
 
@@ -22,8 +23,9 @@ MANIFEST_PREFIX = 'MANIFEST:'
 
 class HelmClient:
     
-    def __init__(self, kube_config, helm_version):
+    def __init__(self, kube_config, helm_version, tls=None):
         self.tmp_dir = tempfile.mkdtemp()
+        self.tls = tls if tls is not None else HelmTls(enabled=False)
         self.__configure_helm(kube_config)
         self.helm = f'helm{helm_version}'
 
@@ -36,6 +38,20 @@ class HelmClient:
         with open(self.kube_conf_path, 'w') as f:
             yaml.dump(kube_config, f)
         self.helm_home_path = os.path.join(self.tmp_dir, 'helm-home')
+        os.makedirs(self.helm_home_path)
+        if self.tls.enabled == True:
+            if self.tls.ca_cert != None:
+                ca_cert_path = os.path.join(self.helm_home_path, 'ca.pem')
+                with open(ca_cert_path, 'w') as f:
+                    f.write(self.tls.ca_cert)
+            if self.tls.cert != None:
+                cert_path = os.path.join(self.helm_home_path, 'cert.pem')
+                with open(cert_path, 'w') as f:
+                    f.write(self.tls.cert)
+            if self.tls.key != None:
+                key_path = os.path.join(self.helm_home_path, 'key.pem')
+                with open(key_path, 'w') as f:
+                    f.write(self.tls.key)
 
     def __helm_cmd(self, *args):
         tmp_script = '#!/bin/sh'
@@ -44,6 +60,8 @@ class HelmClient:
         tmp_script += f'\n{self.helm}'
         for arg in args:
             tmp_script += f' {arg}'
+        if self.tls.enabled is True:
+            tmp_script += ' --tls'
         script_path = os.path.join(self.tmp_dir, f'script-{uuid.uuid4()}.sh')
         with open(script_path, 'w') as w:
             w.write(tmp_script)

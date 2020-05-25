@@ -5,7 +5,7 @@ import ignition.locations.kubernetes as common_kube_dl
 from ignition.locations.exceptions import InvalidDeploymentLocationError
 from ignition.locations.utils import get_property_or_default
 from kubedriver.kubeclient import DEFAULT_NAMESPACE
-from kubedriver.helmclient import HelmClient
+from kubedriver.helmclient import HelmClient, HelmTls
 
 KubeDeploymentLocationBase = common_kube_dl.KubernetesDeploymentLocation
 
@@ -25,6 +25,12 @@ class KubeDeploymentLocation(KubeDeploymentLocationBase):
     #Helm
     HELM_VERSION_PROP = 'helmVersion'
     HELM_VERSION_ALT2_PROP = 'helm_version'
+    HELM_VERSION_ALT3_PROP = 'helm.version'
+    HELM_TLS_ENABLED_PROP = 'helm.tls.enabled'
+    HELM_TLS_CA_CERT_PROP = 'helm.tls.cacert'
+    HELM_TLS_CA_CERT_ALT2_PROP = 'helm.tls.ca_cert'
+    HELM_TLS_CERT_PROP = 'helm.tls.cert'
+    HELM_TLS_KEY_PROP = 'helm.tls.key'
 
     @staticmethod
     def from_dict(dl_data):
@@ -56,13 +62,22 @@ class KubeDeploymentLocation(KubeDeploymentLocationBase):
         default_object_namespace = get_property_or_default(properties, KubeDeploymentLocationBase.DEFAULT_OBJECT_NAMESPACE_PROP, KubeDeploymentLocationBase.DEFAULT_OBJECT_NAMESPACE_ALT2_PROP)
         if default_object_namespace is not None:
             kwargs['default_object_namespace'] = default_object_namespace
-        helm_version = get_property_or_default(properties, KubeDeploymentLocation.HELM_VERSION_PROP, KubeDeploymentLocation.HELM_VERSION_ALT2_PROP)
+        helm_version = get_property_or_default(properties, KubeDeploymentLocation.HELM_VERSION_PROP, KubeDeploymentLocation.HELM_VERSION_ALT2_PROP, KubeDeploymentLocation.HELM_VERSION_ALT3_PROP)
         if helm_version is not None:
             kwargs['helm_version'] = helm_version
+        helm_tls_enabled = get_property_or_default(properties, KubeDeploymentLocation.HELM_TLS_ENABLED_PROP)
+        if helm_tls_enabled is not None:
+            if type(helm_tls_enabled) == str:
+                helm_tls_enabled = helm_tls_enabled.lower() in ['True', 'true', 'yes', 't', 'y']
+            if helm_tls_enabled:
+                kwargs['helm_tls'] = HelmTls(enabled=True)
+                kwargs['helm_tls'].ca_cert = get_property_or_default(properties, KubeDeploymentLocation.HELM_TLS_CA_CERT_PROP, KubeDeploymentLocation.HELM_TLS_CA_CERT_ALT2_PROP)
+                kwargs['helm_tls'].cert = get_property_or_default(properties, KubeDeploymentLocation.HELM_TLS_CERT_PROP)
+                kwargs['helm_tls'].key = get_property_or_default(properties, KubeDeploymentLocation.HELM_TLS_KEY_PROP)
         return KubeDeploymentLocation(name, client_config, **kwargs)
 
     def __init__(self, name, client_config, default_object_namespace=DEFAULT_NAMESPACE, crd_api_version=None, driver_namespace=None, \
-                    cm_api_version='v1', cm_kind='ConfigMap', cm_data_field='data', helm_version='2.8.2'):
+                    cm_api_version='v1', cm_kind='ConfigMap', cm_data_field='data', helm_version='2.8.2', helm_tls=None):
         super().__init__(name, client_config, default_object_namespace=default_object_namespace)
         self.crd_api_version = crd_api_version
         self.cm_api_version = cm_api_version
@@ -72,6 +87,7 @@ class KubeDeploymentLocation(KubeDeploymentLocationBase):
         if self.driver_namespace is None:
             self.driver_namespace = self.default_object_namespace
         self.helm_version = helm_version
+        self.helm_tls = helm_tls
         self._client = None
         self._helm_client = None
 
@@ -89,7 +105,7 @@ class KubeDeploymentLocation(KubeDeploymentLocationBase):
     @property
     def helm_client(self):
         if self._helm_client is None:
-            self._helm_client = HelmClient(self.client_config, self.helm_version)
+            self._helm_client = HelmClient(self.client_config, self.helm_version, tls=self.helm_tls)
         return self._helm_client
 
     def clean(self):
@@ -115,6 +131,11 @@ class KubeDeploymentLocation(KubeDeploymentLocationBase):
             KubeDeploymentLocation.DRIVER_NAMESPACE_PROP: self.driver_namespace,
             KubeDeploymentLocation.CM_API_VERSION_PROP: self.cm_api_version,
             KubeDeploymentLocation.CM_KIND_PROP: self.cm_kind,
-            KubeDeploymentLocation.CM_DATA_FIELD_PROP: self.cm_data_field
+            KubeDeploymentLocation.CM_DATA_FIELD_PROP: self.cm_data_field,
+            KubeDeploymentLocation.HELM_VERSION_PROP: self.helm_version,
+            KubeDeploymentLocation.HELM_TLS_ENABLED_PROP: self.helm_tls.enabled if self.helm_tls is not None else None,
+            KubeDeploymentLocation.HELM_TLS_CA_CERT_PROP: self.helm_tls.ca_cert if self.helm_tls is not None else None,
+            KubeDeploymentLocation.HELM_TLS_CERT_PROP: self.helm_tls.cert if self.helm_tls is not None else None,
+            KubeDeploymentLocation.HELM_TLS_KEY_PROP: self.helm_tls.key if self.helm_tls is not None else None
         })
         return data

@@ -7,7 +7,8 @@ import kubernetes.client as kubernetes_client_mod
 
 class KubeApiController:
 
-    def __init__(self, client_director, crd_director, default_namespace=DEFAULT_NAMESPACE):
+    def __init__(self, base_kube_client, client_director, crd_director, default_namespace=DEFAULT_NAMESPACE):
+        self.base_kube_client = base_kube_client
         self.client_director = client_director
         self.crd_director = crd_director
         self.default_namespace = default_namespace
