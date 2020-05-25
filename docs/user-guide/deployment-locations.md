@@ -46,7 +46,7 @@ clientConfig: |
   clusters:
   - cluster:
       certificate-authority-data: <sensitive data removed from docs>
-      server: https://1.2.3.4:6443
+      server: https://203.0.113.254:6443
     name: kubernetes
   contexts:
   - context:
