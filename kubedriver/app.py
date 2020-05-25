@@ -7,7 +7,7 @@ from ignition.service.queue import JobQueueCapability
 from ignition.service.templating import TemplatingCapability, ResourceTemplateContextCapability 
 from kubedriver.resourcedriver import (KubeResourceDriverHandler, AdditionalResourceDriverProperties, ExtendedResourceTemplateContext,
                                         NameManager)
-from kubedriver.kubeclient import KubeApiControllerFactory
+from kubedriver.kubeclient import OpenshiftApiControllerFactory
 from kubedriver.keg import KegPersistenceFactory
 from kubedriver.kegd import KegdStrategyProcessor, KegdStrategyManager, KegDeploymentProperties, KegDeploymentStrategyProperties, KegdReportPersistenceFactory
 from kubedriver.kegd.model import DeploymentStrategyFileReader, DeploymentStrategyParser
@@ -30,9 +30,9 @@ def create_app():
     app_builder.add_service(NameManager)
     app_builder.add_service(KegPersistenceFactory)
     app_builder.add_service(KegdReportPersistenceFactory)
-    app_builder.add_service(KubeApiControllerFactory)
+    app_builder.add_service(OpenshiftApiControllerFactory)
     app_builder.add_service(LocationContextFactory, 
-            api_ctl_factory=KubeApiControllerFactory,
+            api_ctl_factory=OpenshiftApiControllerFactory,
             kegd_persister_factory=KegdReportPersistenceFactory, 
             keg_persister_factory=KegPersistenceFactory
     )

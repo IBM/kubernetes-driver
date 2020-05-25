@@ -19,7 +19,7 @@ class CompositionLoader:
                 for object_status in keg_status.composition.objects:
                     found, obj = self.api_ctl.safe_read_object(object_status.group, object_status.kind, object_status.name, namespace=object_status.namespace)
                     if found:
-                        as_dict = self.api_ctl.base_kube_client.sanitize_for_serialization(obj)
+                        as_dict = obj.to_dict()
                         result.append(as_dict)
         return result
 
@@ -51,6 +51,6 @@ class CompositionLoader:
                     namespace = None
                 found, obj = self.api_ctl.safe_read_object(object_config.api_version, object_config.kind, object_config.name, namespace=namespace)
                 if found:
-                    as_dict = self.api_ctl.base_kube_client.sanitize_for_serialization(obj)
+                    as_dict = obj.to_dict()
                     result.append(as_dict)
         return result

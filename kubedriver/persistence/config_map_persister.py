@@ -1,11 +1,11 @@
 from kubernetes.client.rest import ApiException
-from kubedriver.kubeclient import ErrorReader
 from kubedriver.kubeobjects import ObjectConfiguration, ObjectAttributes
 from .exceptions import RecordNotFoundError, PersistenceError, InvalidRecordError
+from openshift.dynamic.exceptions import DynamicApiError, NotFoundError, BadRequestError
 
 class ConfigMapPersister:
 
-    def __init__(self, stored_type_name, kube_api_ctl, storage_namespace, record_builder, cm_api_version='v1', cm_kind='ConfigMap', cm_data_field='data', error_reader=None):
+    def __init__(self, stored_type_name, kube_api_ctl, storage_namespace, record_builder, cm_api_version='v1', cm_kind='ConfigMap', cm_data_field='data'):
         self.stored_type_name = stored_type_name
         self.kube_api_ctl = kube_api_ctl
         self.storage_namespace = storage_namespace
@@ -13,13 +13,16 @@ class ConfigMapPersister:
         self.cm_api_version = cm_api_version
         self.cm_kind = cm_kind
         self.cm_data_field = cm_data_field
-        self.error_reader = error_reader if error_reader is not None else ErrorReader()
 
     def __raise_error(self, operation, exception, config_map_name):
-        message = f'Failed to {operation} record for {self.stored_type_name} \'{config_map_name}\' as an error occurred: {self.error_reader.summarise_error(exception)}'
-        if self.error_reader.is_not_found_err(exception):
+        if isinstance(exception, DynamicApiError):
+            summary = exception.summary()
+        else:
+            summary = str(exception)
+        message = f'Failed to {operation} record for {self.stored_type_name} \'{config_map_name}\' as an error occurred: {summary}'
+        if isinstance(exception, NotFoundError):
             raise RecordNotFoundError(message) from exception
-        elif self.error_reader.is_client_error(exception):
+        elif isinstance(exception, BadRequestError):
             raise InvalidRecordError(message) from exception
         else:
             raise PersistenceError(message) from exception
@@ -74,7 +77,7 @@ class ConfigMapPersister:
     def __build_config_map_for_record(self, record_name, record_data, labels=None, existing_cm=None):
         if labels == None: 
             labels = {}
-        if existing_cm != None and existing_cm.metadata != None and existing_cm.metadata.labels != None:
+        if existing_cm is not None and existing_cm.metadata is not None and existing_cm.metadata.labels is not None:
             merged_labels = {}
             merged_labels.update(existing_cm.metadata.labels)
             merged_labels.update(labels)

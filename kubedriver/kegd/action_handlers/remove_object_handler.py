@@ -2,14 +2,14 @@ import logging
 from kubernetes.client.rest import ApiException
 from kubedriver.keg.model import EntityStates, V1alpha1ObjectStatus, V1alpha1KegCompositionStatus
 from kubedriver.kubeobjects import ObjectReference
-from kubedriver.kubeclient import ErrorReader
+from openshift.dynamic.exceptions import NotFoundError, DynamicApiError
 
 logger = logging.getLogger(__name__)
 
 class RemoveObjectHandler:
 
     def __init__(self):
-        self.error_reader = ErrorReader()
+        pass
 
     def decorate(self, action, parent_task_settings, script_name, keg_name, keg_status):
         obj_status = self.__find_object(action, keg_status)
@@ -32,21 +32,20 @@ class RemoveObjectHandler:
                 api_ctl.delete_object(action.group, action.kind, action.name, namespace=action.namespace)
                 obj_status.state = EntityStates.DELETED
                 obj_status.error = None
+            except NotFoundError:
+                # Object not found, assume it is already deleted
+                obj_status.state = EntityStates.DELETED
+                obj_status.error = None
             except Exception as e:
-                if self.error_reader.is_api_exception(e) and self.error_reader.is_not_found_err(e):
-                    # Object not found, assume it is already deleted
-                    obj_status.state = EntityStates.DELETED
-                    obj_status.error = None
+                reference = ObjectReference(action.group, action.kind, action.name, namespace=action.namespace)
+                logger.exception(f'Delete attempt of object ({reference}) in group \'{keg_name}\' failed')
+                if isinstance(e, DynamicApiError):
+                    error_msg = e.summary()
                 else:
-                    reference = ObjectReference(action.group, action.kind, action.name, namespace=action.namespace)
-                    logger.exception(f'Delete attempt of object ({reference}) in group \'{keg_name}\' failed')
-                    if self.error_reader.is_api_exception(e):
-                        error_msg = self.error_reader.summarise_error(e)
-                    else:
-                        error_msg = f'{e}'
-                    task_errors.append(error_msg)
-                    obj_status.state = EntityStates.DELETE_FAILED
-                    obj_status.error = error_msg
+                    error_msg = f'{e}'
+                task_errors.append(error_msg)
+                obj_status.state = EntityStates.DELETE_FAILED
+                obj_status.error = error_msg
             if obj_status.state == EntityStates.DELETED:
                 self.__capture_deltas(delta_capture, obj_status)
                 self.__remove_object_from_composition(action, keg_status)

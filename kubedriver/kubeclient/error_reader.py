@@ -5,12 +5,11 @@ class ErrorReader:
 
     def is_api_exception(self, error):
         return isinstance(error, ApiException)
-
     def __load_body(self, error):
         try:
             body = json.loads(error.body)
             return True, body
-        except Exception as e:
+        except Exception:
             pass
         return False, None
 

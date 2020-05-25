@@ -18,6 +18,7 @@ setup(
     install_requires=[
         'ignition-framework=={0}'.format(_pkg_info['ignition-version']),
         'kubernetes==11.0.0',
+        'openshift==0.11.1',
         'python-dateutil==2.8.1',
         'RestrictedPython==5.0.0',
         'gunicorn>=19.9.0,<20.0'

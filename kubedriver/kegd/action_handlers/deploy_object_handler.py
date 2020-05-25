@@ -1,15 +1,14 @@
 import logging
 from kubedriver.keg.model import EntityStates, V1alpha1ObjectStatus, V1alpha1KegCompositionStatus
 from kubedriver.kegd.model import Tags, Labels, LabelValues, RemoveObjectAction, RemovalTask, RemovalTaskSettings
-from kubedriver.kubeclient import ErrorReader
 from kubedriver.kubeobjects import ObjectConfiguration, ObjectConfigUtils
+from openshift.dynamic.exceptions import DynamicApiError
 
 logger = logging.getLogger(__name__)
 
 class DeployObjectHandler:
 
     def __init__(self):
-        self.error_reader = ErrorReader()
         self.config_utils = ObjectConfigUtils()
 
     def decorate(self, action, parent_task_settings, script_name, keg_name, keg_status):
@@ -51,8 +50,8 @@ class DeployObjectHandler:
                 self.__capture_deltas(delta_capture, obj_status)
         except Exception as e:
             logger.exception(f'Create attempt of object ({object_config.reference}) in group \'{keg_name}\' failed')
-            if self.error_reader.is_api_exception(e):
-                error_msg = self.error_reader.summarise_error(e)
+            if isinstance(e, DynamicApiError):
+                error_msg = e.summary()
             else:
                 error_msg = f'{e}'
             task_errors.append(error_msg)
@@ -70,17 +69,6 @@ class DeployObjectHandler:
 
     def build_cleanup(self, action, parent_task_settings):
         return RemovalTask(RemovalTaskSettings(), RemoveObjectAction(action.group, action.kind, action.name, namespace=action.namespace))
-
-    def __check_exists(self, keg_name, api_ctl, object_config):
-        try:
-            existing = api_ctl.read_object(object_config.api_version, object_config.kind, object_config.name, namespace=object_config.namespace)
-            return None, True
-        except Exception as e:
-            if self.error_reader.is_not_found_err(e):
-                return None, False
-            else:
-                logger.exception(f'Checking existence of object ({object_config.reference}) in group \'{keg_name}\' failed')
-                return None, e
 
     def __find_object(self, action, keg_status):
         if keg_status.composition != None and keg_status.composition.objects != None:
