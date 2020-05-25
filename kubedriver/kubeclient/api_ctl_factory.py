@@ -1,4 +1,7 @@
 from ignition.service.framework import Service, Capability
+from .crd_director import CrdDirector
+from .client_director import KubeClientDirector
+from .api_ctl import KubeApiController
 
 class KubeApiControllerFactory(Service, Capability):
 

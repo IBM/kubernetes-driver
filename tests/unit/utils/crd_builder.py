@@ -4,7 +4,7 @@ from kubernetes.client.models import (V1beta1CustomResourceDefinition, V1beta1Cu
                                         V1beta1CustomResourceDefinitionVersion, V1beta1CustomResourceDefinitionNames)
 
 
-def build_crd( kind='MyCustom', singular='mycustom', plural='mycustoms', group='example.com', scope='Namespaced', versions=['v1']):
+def build_crd(kind='MyCustom', singular='mycustom', plural='mycustoms', group='example.com', scope='Namespaced', versions=['v1']):
     versions_list = []
     for idx, version in enumerate(versions):
         served = False if idx != 0 else True
