@@ -10,7 +10,6 @@ The following properties are supported by the driver:
 | Name            | Default | Required                           | Detail                                                                                                                     |
 | --------------- | ------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | clientConfig      | -       | Y                                  | A multiline string version of the kubectl config file used to access the target cluster (see more details [below](#obtaining-clientconfig)) |
-| crdApiVersion | apiextensions.k8s.io/v1beta1    | N                                  | To deploy custom resource types in Kubernetes the CRD API version is required. Only update this if a later release of Kubernetes upgrades the API version |
 | defaultObjectNamespace | default | N | Sets the default namespace used when deploying Kubernetes objects on a create request. This value is only used when the object does not have a specified namespace in the metadata section of it's configuration |
 | driverNamespace     | Value of defaultObjectNamepsace/default_object_namespace      | N | Sets the namespace to be used by the driver for any Kubernetes objects it creates for management purposes |
 | helm.version     | 2.8.2      | N | Determines the helm client version to use when deploying helm charts (allowed values: 2.8.2, 2.16.7) |
