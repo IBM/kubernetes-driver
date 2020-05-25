@@ -119,7 +119,7 @@ helm.tls.cert: |
 Repeat for the key file (`key.pem`) and CA cert (`ca.pem`), to build a full set of tls properties:
 
 ```
-helm.tls.enabled: True
+helm.tls.enabled: "true"
 helm.tls.cacert: |
   -----BEGIN CERTIFICATE-----
   MIIFxzCCA6+gAwIBAgIJANSZZeXuZLszMA0GCSqGSIb3DQEBCwUAMHoxCzAJBgNV
