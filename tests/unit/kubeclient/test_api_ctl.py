@@ -606,7 +606,7 @@ class TestKubeApiController(unittest.TestCase):
         self.api_ctl.update_object(object_config)
         self.client_director.determine_api_method_for_update_object.assert_called_once_with('example.com/v1', 'MyCustom')
         self.crd_director.get_crd_by_kind.assert_called_once_with('example.com', 'MyCustom')
-        self.update_method.assert_called_once_with(group='example.com', version='v1', plural='mycustoms', body=object_config.data)
+        self.update_method.assert_called_once_with(group='example.com', version='v1', plural='mycustoms', name='Testing', body=object_config.data)
 
     def test_update_object_with_cluster_custom_object_plural_not_found(self):
         self.__mock_update_cluster_custom_object(kind='MyOtherCustom')
