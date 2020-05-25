@@ -64,7 +64,7 @@ You can confirm the driver is working by accessing the Swagger UI included to re
 
 Access the UI at `https://your_host:31684/api/resourcedriver/ui` e.g. [`http://localhost:31684/api/resourcedriver/ui`](http://localhost:31684/api/resourcedriver/ui)
 
-Onboard the driver with [LMCTL](http://servicelifecyclemanager.com/2.1.0/reference/lmctl):
+Onboard the driver with [LMCTL v2.5.0+](http://servicelifecyclemanager.com/2.1.0/reference/lmctl):
 ```
 kubectl get secret kubedriver-tls -o 'go-template={{index .data "tls.crt"}}' | base64 -d > kubedriver-tls.pem
 
