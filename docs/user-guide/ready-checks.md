@@ -300,26 +300,27 @@ The log is limited to 100 entries, any message added after reaching this limit w
 
 ## Complete example
 
-Below is an academic example of using all of the arguments together to produce a ready check script:
+Below is an academic example using all of the arguments together to produce a ready check script:
 
 ```python
 def checkReady(keg, props, resultBuilder, log, *args, **kwargs):
-    found, deployment = keg.objects.get('apps/v1', 'Deployment', props['system_properties']['resource_subdomain'], namespace='demo')
+    deployment_name = props['system_properties']['resource_subdomain']
+    found, deployment = keg.objects.get('apps/v1', 'Deployment', deployment_name, namespace='demo')
 
     if not found:
-        return resultBuilder.failed(f'Could not find Deployment "{props['system_properties']['resource_subdomain']}"')
+        return resultBuilder.failed(f'Could not find Deployment "{deployment_name}"')
 
     if 'status' not in deployment:
-        log.entry(f'Waiting for status to be set on Deployment "{props['system_properties']['resource_subdomain']}"')
+        log.entry(f'Waiting for status to be set on Deployment "{deployment_name}"')
         return resultBuilder.notReady()
     
     deployment_status = deployment['status']
     if 'availableReplicas' not in deployment_status:
-        log.entry(f'Waiting for availableReplicas to be set on Deployment "{props['system_properties']['resource_subdomain']}"')
+        log.entry(f'Waiting for availableReplicas to be set on Deployment "{deployment_name}"')
         return resultBuilder.notReady()
 
     if deployment_status['availableReplicas'] <= 0:
-        log.entry(f'Waiting for Deployment "{props['system_properties']['resource_subdomain']}" to have available replicas')
+        log.entry(f'Waiting for Deployment "{deployment_name}" to have available replicas')
         return resultBuilder.notReady()
     
     # availableReplicas is above 0, we are ready

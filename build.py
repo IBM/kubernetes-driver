@@ -248,7 +248,7 @@ class Builder:
         with self.stage('Package Docs') as s:
             print('Packaging docs at {0}'.format(DOCS_DIR))
             docs_output = DOCS_FORMAT.format(version=self.project_version)
-            docs_output_file = docs_output + '.tgz'
+            docs_output_file = os.path.join(self.artifacts_path, docs_output + '.tgz')
             transform_command = 's/{0}/{1}/'.format(DOCS_DIR, docs_output)
             s.run_cmd('tar', '-cvzf', docs_output_file, DOCS_DIR+'/', '--transform', transform_command)
 

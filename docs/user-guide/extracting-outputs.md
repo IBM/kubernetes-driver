@@ -123,9 +123,10 @@ In addition to returning outputs, the resultBuilder can be used to exit with an 
 
 ```python
 def getOutputs(keg, props, resultBuilder, log, *args, **kwargs):
-    found, service = keg.objects.get('v1', 'Service', props['system_properties']['resource_subdomain'], namespace='demo')
+    name = props['system_properties']['resource_subdomain']
+    found, service = keg.objects.get('v1', 'Service', name, namespace='demo')
     if not found:
-        return resultBuilder.failed(f'Could not find service "{props['system_properties']['resource_subdomain']}"')
+        return resultBuilder.failed(f'Could not find service "{name}"')
 ```
 
 When a failure is returned, the driver marks the transition/operation as failed and does not return any outputs.
@@ -134,15 +135,16 @@ When a failure is returned, the driver marks the transition/operation as failed 
 
 ## Complete example
 
-Below is an academic example of using all of the arguments together to produce a output extraction script:
+Below is an academic example using all of the arguments together to produce an output extraction script:
 
 ```python
 def getOutputs(keg, props, resultBuilder, log, *args, **kwargs):
-    found, service = keg.objects.get('v1', 'Service', props['system_properties']['resource_subdomain'], namespace='demo')
+    name = props['system_properties']['resource_subdomain']
+    found, service = keg.objects.get('v1', 'Service', name, namespace='demo')
     if not found:
-        return resultBuilder.failed(f'Could not find service "{props['system_properties']['resource_subdomain']}"')
+        return resultBuilder.failed(f'Could not find service "{name}"')
     resultBuilder.setOutput('nodePort', service['spec']['nodePort'])
-    resultBuilder.setOutput('uniqueName', props['system_properties']['resource_subdomain'])
+    resultBuilder.setOutput('uniqueName', name)
 ```
 
 ## Return Key Properties
