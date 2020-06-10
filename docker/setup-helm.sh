@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 rm -rf helmtmp
 mkdir helmtmp
 cd helmtmp
