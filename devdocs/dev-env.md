@@ -76,7 +76,7 @@ On ubuntu, you can do this using the same script used by the Dockerfile to bundl
 
 ```
 chmod u+x ./docker/setup-helm.sh
-./docker/setup-helm.sh 2.8.2 2.16.7
+./docker/setup-helm.sh 2.8.2 2.16.7 3.2.4
 ```
 
 Include as many versions as you need separated by spaces. Ensure the versions exist on the [Helm Github releases page](https://github.com/helm/helm/releases).
