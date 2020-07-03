@@ -70,6 +70,7 @@ class HelmClient:
         if self.tls.enabled is True:
             tmp_script += ' --tls'
         script_path = os.path.join(self.tmp_dir, f'script-{uuid.uuid4()}.sh')
+        logger.info("Running command: %s", tmp_script)
         with open(script_path, 'w') as w:
             w.write(tmp_script)
         cmd = ['sh', script_path]
@@ -84,7 +85,6 @@ class HelmClient:
             args.append('-f')
             args.append(values)
         cmd = self.__helm_cmd(*args)
-        logger.info("Running install command: %s", cmd)
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         if process_result.returncode != 0:
             raise HelmError(f'Helm install failed: {process_result.stdout}')
@@ -108,7 +108,6 @@ class HelmClient:
             cmd = self.__helm_cmd('get', "all", name, '--namespace', namespace)
         else:
             cmd = self.__helm_cmd('get', name, '--namespace', namespace)
-        logger.info("Running get command: %s", cmd)
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         if process_result.returncode != 0:
             raise HelmError(f'Helm get failed: {process_result.stdout}')
@@ -123,8 +122,12 @@ class HelmClient:
             release = self.get(name, namespace)
             return True, release
         except HelmError as e:
-            if f'Error: release: "{name}" not found' in str(e):
-                return False, None
+            if self.helm_version.startswith("3"):
+                if f'Error: release: not found' in str(e):
+                    return False, None
+            else:
+                if f'Error: release: "{name}" not found' in str(e):
+                    return False, None
             raise e from None
 
     def delete(self, name, namespace):
