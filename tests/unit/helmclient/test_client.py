@@ -36,6 +36,45 @@ data:
   someValue: 10
 '''
 
+EXAMPLE_HELM_3_MANIFEST = b'''
+NAME: myhelm
+LAST DEPLOYED: Thu Jul  2 13:09:17 2020
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+USER-SUPPLIED VALUES:
+valueA:
+  mapKeyA: mapValueA
+
+COMPUTED VALUES:
+affinity: {}
+image:
+  pullPolicy: IfNotPresent
+tolerations: []
+
+HOOKS:
+MANIFEST:
+---
+# Source: mychart/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myhelm-mychart
+  labels:
+    app: mychart
+spec:
+  type: ClusterIP
+---
+# Source: mychart/templates/deployment.yaml
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: myhelm-mychart
+spec:
+  replicas: 1
+'''
+
 class TestHelmClient(unittest.TestCase):
 
     def setUp(self):
@@ -84,6 +123,55 @@ class TestHelmClient(unittest.TestCase):
                 'data': {
                     'someValue': 10
                 }
+            }
+        ])
+
+    @patch('kubedriver.helmclient.client.subprocess')
+    def test_get_helm_3(self, mock_subprocess):
+        self.client = HelmClient('kubeconfig', '3.4.2')
+        self.__mock_subprocess_reponse(mock_subprocess, 0, EXAMPLE_HELM_3_MANIFEST)
+        helm_release = self.client.get('myhelm', 'default')
+        self.assertIsInstance(helm_release, HelmReleaseDetails)
+        self.assertEqual(helm_release.name, 'myhelm')
+        self.assertEqual(helm_release.last_deployed, 'Thu Jul  2 13:09:17 2020')
+        self.assertEqual(helm_release.namespace, 'default')
+        self.assertEqual(helm_release.status, 'deployed')
+        self.assertEqual(helm_release.revision, 1)
+        self.assertEqual(helm_release.user_supplied_values, {
+            'valueA': {
+                'mapKeyA': 'mapValueA'
+            }
+        })
+        self.assertEqual(helm_release.computed_values, {
+            'affinity': {},
+            'image': {
+              'pullPolicy': 'IfNotPresent'
+            },
+            'tolerations': []
+        })
+        self.assertEqual(helm_release.manifest, [
+            {
+                'apiVersion': 'v1',
+                'kind': 'Service',
+                'metadata': {
+                    'name': 'myhelm-mychart',
+                    'labels': {
+                        'app': 'mychart',
+                    }
+                },
+                'spec': {
+                    'type': 'ClusterIP'
+                }
+            },
+            {
+              "apiVersion": "apps/v1beta2",
+              "kind": "Deployment",
+              "metadata": {
+                "name": "myhelm-mychart"
+              },
+              "spec": {
+                "replicas": 1
+              }
             }
         ])
 

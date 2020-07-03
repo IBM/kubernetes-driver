@@ -26,7 +26,7 @@ RUN addgroup -S kubedriver \
  && apk del .build-deps gcc musl-dev libffi-dev openssl-dev python3-dev make git
 
 COPY setup-helm.sh /setup-helm.sh 
-RUN chmod +x /setup-helm.sh && sh /setup-helm.sh $SUPPORTED_HELM_VERSIONS
+RUN chmod +x /setup-helm.sh && sh /setup-helm.sh "$SUPPORTED_HELM_VERSIONS"
 
 USER kubedriver
 WORKDIR /home/kubedriver

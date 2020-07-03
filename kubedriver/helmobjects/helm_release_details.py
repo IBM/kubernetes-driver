@@ -10,7 +10,9 @@ class HelmReleaseDetails:
         'chart': 'str',
         'user_supplied_values': 'dict',
         'computed_values': 'dict',
-        'manifest': 'dict', 
+        'manifest': 'dict',
+        'last_deployed': 'str',
+        'status': 'str'
     }
 
     attribute_map = {
@@ -21,9 +23,11 @@ class HelmReleaseDetails:
         'chart': 'chart',
         'user_supplied_values': 'userSuppliedValues',
         'computed_values': 'computedValues',
-        'manifest': 'manifest'
+        'manifest': 'manifest',
+        'last_deployed': 'lastDeployed',
+        'status': 'status'
     }
-    def __init__(self, name=None, namespace=None, revision=None, released=None, chart=None, user_supplied_values=None, computed_values=None, manifest=None):
+    def __init__(self, name=None, namespace=None, revision=None, released=None, chart=None, user_supplied_values=None, computed_values=None, manifest=None, last_deployed=None, status=None):
         self._name = name
         self._namespace = namespace
         self._revision = revision
@@ -32,6 +36,9 @@ class HelmReleaseDetails:
         self._user_supplied_values = user_supplied_values
         self._computed_values = computed_values
         self._manifest = manifest
+        self._last_deployed = last_deployed
+        self._status = status
+
 
     @property
     def name(self):
@@ -96,6 +103,22 @@ class HelmReleaseDetails:
     @manifest.setter
     def manifest(self, manifest):
         self._manifest = manifest
+
+    @property
+    def last_deployed(self):
+        return self._last_deployed
+
+    @last_deployed.setter
+    def last_deployed(self, last_deployed):
+        self._last_deployed = last_deployed
+
+    @property
+    def status(self):
+        return self._status
+
+    @status.setter
+    def status(self, status):
+        self._status = status
 
     def to_dict(self):
         return to_dict(self)

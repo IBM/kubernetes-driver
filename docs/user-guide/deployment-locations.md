@@ -13,7 +13,7 @@ The following properties are supported by the driver:
 | defaultObjectNamespace | default | N | Sets the default namespace used when deploying Kubernetes objects on a create request. This value is only used when the object does not have a specified namespace in the metadata section of it's configuration |
 | driverNamespace     | Value of defaultObjectNamepsace/default_object_namespace      | N | Sets the namespace to be used by the driver for any Kubernetes objects it creates for management purposes |
 | helm.version     | 2.8.2      | N | Determines the helm client version to use when deploying helm charts (allowed values: 2.8.2, 2.16.7, 3.2.4) |
-| helm.tls.enabled | False | N | Enable `--tls` option on the helm client. You will need to provide the cert/key pair (see [Helm TLS](#helm-tls)) |
+| helm.tls.enabled | False | N | Enable `--tls` option on the helm client. You will need to provide the cert/key pair (see [Helm TLS](#helm-tls)). **This is no longer required for Helm 3 environments.** |
 | helm.tls.cacert | - | N | Contents of the CA certificate (if used) |
 | helm.tls.cert | - | N | Contents of the helm client certificate |
 | helm.tls.key | - | N | Contents of the helm client key |
