@@ -78,9 +78,15 @@ class HelmClient:
 
     def install(self, chart, name, namespace, values=None):
         if self.helm_version.startswith("3"):
-            args = ['install', name, chart, '--namespace', namespace]
+            if namespace is not None:
+                args = ['install', name, chart, '--namespace', namespace]
+            else:
+                args = ['install', name, chart]
         else:
-            args = ['install', chart, '--name', name, '--namespace', namespace]
+            if namespace is not None:
+                args = ['install', chart, '--name', name, '--namespace', namespace]
+            else:
+                args = ['install', chart, '--name', name]
         if values != None:
             args.append('-f')
             args.append(values)
@@ -91,7 +97,10 @@ class HelmClient:
         return name
 
     def upgrade(self, chart, name, namespace, values=None, reuse_values=False):
-        args = ['upgrade', name, chart, '--namespace', namespace]
+        if namespace is not None:
+            args = ['upgrade', name, chart, '--namespace', namespace]
+        else:
+            args = ['upgrade', name, chart]
         if values != None:
             args.append('-f')
             args.append(values)
@@ -105,9 +114,15 @@ class HelmClient:
 
     def get(self, name, namespace):
         if self.helm_version.startswith("3"):
-            cmd = self.__helm_cmd('get', "all", name, '--namespace', namespace)
+            if namespace is not None:
+                cmd = self.__helm_cmd('get', "all", name, '--namespace', namespace)
+            else:
+                cmd = self.__helm_cmd('get', "all", name)
         else:
-            cmd = self.__helm_cmd('get', name, '--namespace', namespace)
+            if namespace is not None:
+                cmd = self.__helm_cmd('get', name, '--namespace', namespace)
+            else:
+                cmd = self.__helm_cmd('get', name)
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         if process_result.returncode != 0:
             raise HelmError(f'Helm get failed: {process_result.stdout}')
@@ -132,7 +147,10 @@ class HelmClient:
 
     def delete(self, name, namespace):
         if self.helm_version.startswith("3"):
-            cmd = self.__helm_cmd('delete', name, '--keep-history', '--namespace', namespace)
+            if namespace is not None:
+                cmd = self.__helm_cmd('delete', name, '--keep-history', '--namespace', namespace)
+            else:
+                cmd = self.__helm_cmd('delete', name, '--keep-history')
         else:
             cmd = self.__helm_cmd('delete', name)
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -141,7 +159,10 @@ class HelmClient:
 
     def purge(self, name, namespace):
         if self.helm_version.startswith("3"):
-            cmd = self.__helm_cmd('delete', name, '--namespace', namespace)
+            if namespace is not None:
+                cmd = self.__helm_cmd('delete', name, '--namespace', namespace)
+            else:
+                cmd = self.__helm_cmd('delete')
         else:
             cmd = self.__helm_cmd('delete', name, '--purge')
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
