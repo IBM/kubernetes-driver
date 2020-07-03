@@ -26,6 +26,7 @@ NAME_PREFIX = 'NAME:'
 LAST_DEPLOYED_PREFIX = 'LAST DEPLOYED:' # Replaces RELEASED_PREFIX
 NAMESPACE_PREFIX = 'NAMESPACE:'
 STATUS_PREFIX = 'STATUS:'
+NOTES_PREFIX = 'NOTES:'
 
 class HelmClient:
     
@@ -70,7 +71,6 @@ class HelmClient:
         if self.tls.enabled is True:
             tmp_script += ' --tls'
         script_path = os.path.join(self.tmp_dir, f'script-{uuid.uuid4()}.sh')
-        logger.info("Running command: %s", tmp_script)
         with open(script_path, 'w') as w:
             w.write(tmp_script)
         cmd = ['sh', script_path]
@@ -148,9 +148,9 @@ class HelmClient:
     def delete(self, name, namespace):
         if self.helm_version.startswith("3"):
             if namespace is not None:
-                cmd = self.__helm_cmd('delete', name, '--keep-history', '--namespace', namespace)
+                cmd = self.__helm_cmd('uninstall', name, '--keep-history', '--namespace', namespace)
             else:
-                cmd = self.__helm_cmd('delete', name, '--keep-history')
+                cmd = self.__helm_cmd('uninstall', name, '--keep-history')
         else:
             cmd = self.__helm_cmd('delete', name)
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -160,9 +160,9 @@ class HelmClient:
     def purge(self, name, namespace):
         if self.helm_version.startswith("3"):
             if namespace is not None:
-                cmd = self.__helm_cmd('delete', name, '--namespace', namespace)
+                cmd = self.__helm_cmd('uninstall', name, '--namespace', namespace)
             else:
-                cmd = self.__helm_cmd('delete')
+                cmd = self.__helm_cmd('uninstall')
         else:
             cmd = self.__helm_cmd('delete', name, '--purge')
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -242,7 +242,7 @@ class HelmClient:
                 status.computed_values = yaml.safe_load(captured_cv)
             elif line.startswith(MANIFEST_PREFIX) and status.manifest == None:
                 captured_manifest = ''
-                while idx+1 < total_lines:
+                while idx+1 < total_lines and not split_lines[idx+1].startswith(NOTES_PREFIX):
                     idx += 1
                     captured_manifest += f'\n{split_lines[idx]}'
                 loaded_manifest = yaml.safe_load_all(captured_manifest)
