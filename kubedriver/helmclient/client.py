@@ -27,8 +27,6 @@ LAST_DEPLOYED_PREFIX = 'LAST DEPLOYED:' # Replaces RELEASED_PREFIX
 NAMESPACE_PREFIX = 'NAMESPACE:'
 STATUS_PREFIX = 'STATUS:'
 
-
-
 class HelmClient:
     
     def __init__(self, kube_config, helm_version, tls=None):
@@ -86,6 +84,7 @@ class HelmClient:
             args.append('-f')
             args.append(values)
         cmd = self.__helm_cmd(*args)
+        logger.info("Running install command: %s", cmd)
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         if process_result.returncode != 0:
             raise HelmError(f'Helm install failed: {process_result.stdout}')
@@ -109,6 +108,7 @@ class HelmClient:
             cmd = self.__helm_cmd('get', "all", name, '--namespace', namespace)
         else:
             cmd = self.__helm_cmd('get', name, '--namespace', namespace)
+        logger.info("Running get command: %s", cmd)
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         if process_result.returncode != 0:
             raise HelmError(f'Helm get failed: {process_result.stdout}')
