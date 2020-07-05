@@ -46,7 +46,7 @@ class DeployHelmHandler:
                 helm_client.install(chart_path, action.name, helm_status.namespace, values=values_path)
             else:
                 captured_objects = self.__pre_capture_objects(context.api_ctl, helm_client, helm_status)
-                helm_client.upgrade(chart_path, action.name, helm_status.namespace, values=values_path, reuse_values=True)
+                helm_client.upgrade(chart_path, action.name, action.namespace, values=values_path, reuse_values=True)
             helm_status.state = EntityStates.CREATED if action_type == 'Install' else EntityStates.UPDATED
             helm_status.error = None
             self.__capture_deltas(delta_capture, context.api_ctl, helm_client, helm_status, captured_objects, is_upgrade=helm_status.state==EntityStates.UPDATED)

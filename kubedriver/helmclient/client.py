@@ -162,7 +162,7 @@ class HelmClient:
             if namespace is not None:
                 cmd = self.__helm_cmd('uninstall', name, '--namespace', namespace)
             else:
-                cmd = self.__helm_cmd('uninstall')
+                cmd = self.__helm_cmd('uninstall', name)
         else:
             cmd = self.__helm_cmd('delete', name, '--purge')
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
