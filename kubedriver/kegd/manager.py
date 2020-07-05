@@ -214,8 +214,10 @@ class KegdStrategyLocationManager:
                 deploy_action.chart_encoded = True
         if deploy_action.name != None:
             deploy_action.name = self.templating.render(deploy_action.name, render_context)
+        namespace = self.kube_location.default_object_namespace
         if deploy_action.namespace != None:
-            deploy_action.namespace = self.templating.render(deploy_action.namespace, render_context)
+            namespace = self.templating.render(deploy_action.namespace, render_context)
+        deploy_action.namespace = namespace
         if deploy_action.values != None:
             deploy_action.values = self.templating.render(deploy_action.values, render_context)
             values_file_path = kegd_files.get_helm_file(deploy_action.values)
