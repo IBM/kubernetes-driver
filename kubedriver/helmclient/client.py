@@ -97,7 +97,7 @@ class HelmClient:
 
         if process_result.returncode == 127:
             raise CommandError(f'Helm install command not found: {process_result.stdout}')
-        else if process_result.returncode != 0:
+        elif process_result.returncode != 0:
             raise HelmError(f'Helm install failed: {process_result.stdout}')
         else:
             return name
@@ -116,7 +116,7 @@ class HelmClient:
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         if process_result.returncode == 127:
             raise CommandError(f'Helm upgrade command not found: {process_result.stdout}')
-        else if process_result.returncode != 0:
+        elif process_result.returncode != 0:
             raise HelmError(f'Helm upgrade failed: {process_result.stdout}')
         else:
             return name
@@ -135,7 +135,7 @@ class HelmClient:
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         if process_result.returncode == 127:
             raise CommandError(f'Helm install command not found: {process_result.stdout}')
-        else if process_result.returncode != 0:
+        elif process_result.returncode != 0:
             raise HelmError(f'Helm get failed: {process_result.stdout}')
         else:
             if self.helm_version.startswith("3"):
@@ -167,7 +167,7 @@ class HelmClient:
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         if process_result.returncode == 127:
             raise CommandError(f'Helm delete command not found: {process_result.stdout}')
-        else if process_result.returncode != 0:
+        elif process_result.returncode != 0:
             raise HelmError(f'Helm delete failed: {process_result.stdout}')
 
     def purge(self, name, namespace):
@@ -181,7 +181,7 @@ class HelmClient:
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         if process_result.returncode == 127:
             raise CommandError(f'Helm delete (with purge) command not found: {process_result.stdout}')
-        else if process_result.returncode != 0:
+        elif process_result.returncode != 0:
             raise HelmError(f'Helm purge failed: {process_result.stdout}')
 
     def __parse_to_helm_release(self, output, name, namespace):
