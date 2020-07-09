@@ -4,36 +4,48 @@ from kubedriver.helmclient import HelmClient
 from kubedriver.helmobjects import HelmReleaseDetails
 
 EXAMPLE_MANIFEST = b'''
+NAME: myhelmchart
+LAST DEPLOYED: Fri Jul  3 13:48:31 2020
+NAMESPACE: default
+STATUS: deployed
 REVISION: 1
-RELEASED: Wed May 13 13:03:30 2020
-CHART: example-chart-0.9.0
+TEST SUITE: None
 USER-SUPPLIED VALUES:
 valueA:
   mapKeyA: mapValueA
 
 COMPUTED VALUES:
-valueA:
-  mapKeyA: mapValueA
-valueB: {}
-valueC: 10
+affinity: {}
+image:
+  pullPolicy: IfNotPresent
+tolerations: []
 
 HOOKS:
 MANIFEST:
+---
+# Source: mychart/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: myhelm-mychart
+  labels:
+    app: mychart
+spec:
+  type: ClusterIP
+---
+# Source: mychart/templates/deployment.yaml
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: myhelm-mychart
+spec:
+  replicas: 1
 
----
-# Source: example/templates/serviceaccount.yaml
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: example
----
-# Source: example/templates/configmap.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: example
-data:
-  someValue: 10
+NOTES:
+1. Get the application URL by running these commands:
+  export POD_NAME=$(kubectl get pods --namespace default -l "app=mychart,release=myhelmchart" -o jsonpath="{.items[0].metadata.name}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl port-forward $POD_NAME 8080:80
 '''
 
 class TestHelmClient2(unittest.TestCase):
@@ -42,7 +54,7 @@ class TestHelmClient2(unittest.TestCase):
     """
 
     def setUp(self):
-        self.client = HelmClient('kubeconfig', '2.16.6')
+        self.client = HelmClient('kubeconfig', '3.2.4')
 
     def tearDown(self):
         self.client.close()
@@ -57,12 +69,12 @@ class TestHelmClient2(unittest.TestCase):
         self.assertEqual(name, 'name')
 
     @patch('kubedriver.helmclient.client.subprocess')
-    def test_install_failure(self, mock_subprocess):
+    def test_install_helm_failure(self, mock_subprocess):
         self.__mock_subprocess_response(mock_subprocess, 1, EXAMPLE_MANIFEST)
         self.assertRaises(HelmError, client.install, 'chart', 'name', 'namespace')
 
     @patch('kubedriver.helmclient.client.subprocess')
-    def test_install_failure(self, mock_subprocess):
+    def test_install_no_command(self, mock_subprocess):
         self.__mock_subprocess_response(mock_subprocess, 127, EXAMPLE_MANIFEST)
         self.assertRaises(CommandError, client.install, 'chart', 'name', 'namespace')
 
@@ -80,6 +92,7 @@ class TestHelmClient2(unittest.TestCase):
 
     @patch('kubedriver.helmclient.client.subprocess')
     def test_purge(self, mock_subprocess):
+        self.client = HelmClient('kubeconfig', '3.2.4')
         self.__mock_subprocess_response(mock_subprocess, 0, EXAMPLE_MANIFEST)
         result = self.client.purge('name', 'namespace')
         self.assertEqual(result, None)
@@ -95,42 +108,50 @@ class TestHelmClient2(unittest.TestCase):
         self.assertEqual(helm_release.chart, 'example-chart-0.9.0')
 
     @patch('kubedriver.helmclient.client.subprocess')
-    def test_get(self, mock_subprocess):
-        self.__mock_subprocess_response(mock_subprocess, 0, EXAMPLE_MANIFEST)
-        helm_release = self.client.get('example', 'namespace')
+    def test_get_helm_3(self, mock_subprocess):
+        self.__mock_subprocess_reponse(mock_subprocess, 0, EXAMPLE_MANIFEST)
+        helm_release = self.client.get('myhelm', 'default')
         self.assertIsInstance(helm_release, HelmReleaseDetails)
+        self.assertEqual(helm_release.name, 'myhelm')
+        self.assertEqual(helm_release.last_deployed, 'Fri Jul  3 13:48:31 2020')
+        self.assertEqual(helm_release.namespace, 'default')
+        self.assertEqual(helm_release.status, 'deployed')
         self.assertEqual(helm_release.revision, 1)
-        self.assertEqual(helm_release.released, 'Wed May 13 13:03:30 2020')
-        self.assertEqual(helm_release.chart, 'example-chart-0.9.0')
         self.assertEqual(helm_release.user_supplied_values, {
             'valueA': {
                 'mapKeyA': 'mapValueA'
             }
         })
         self.assertEqual(helm_release.computed_values, {
-            'valueA': {
-                'mapKeyA': 'mapValueA'
+            'affinity': {},
+            'image': {
+              'pullPolicy': 'IfNotPresent'
             },
-            'valueB': {},
-            'valueC': 10
+            'tolerations': []
         })
         self.assertEqual(helm_release.manifest, [
             {
                 'apiVersion': 'v1',
-                'kind': 'ServiceAccount',
+                'kind': 'Service',
                 'metadata': {
-                    'name': 'example'
+                    'name': 'myhelm-mychart',
+                    'labels': {
+                        'app': 'mychart',
+                    }
+                },
+                'spec': {
+                    'type': 'ClusterIP'
                 }
             },
             {
-                'apiVersion': 'v1',
-                'kind': 'ConfigMap',
-                'metadata': {
-                    'name': 'example'
-                },
-                'data': {
-                    'someValue': 10
-                }
+              "apiVersion": "apps/v1beta2",
+              "kind": "Deployment",
+              "metadata": {
+                "name": "myhelm-mychart"
+              },
+              "spec": {
+                "replicas": 1
+              }
             }
         ])
 
