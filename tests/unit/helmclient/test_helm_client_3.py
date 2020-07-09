@@ -2,6 +2,8 @@ import unittest
 from unittest.mock import patch, MagicMock
 from kubedriver.helmclient import HelmClient
 from kubedriver.helmobjects import HelmReleaseDetails
+from kubedriver.helmclient import HelmError
+from kubedriver.helmclient import CommandError
 
 EXAMPLE_MANIFEST = b'''
 NAME: myhelmchart
@@ -48,7 +50,7 @@ NOTES:
   kubectl port-forward $POD_NAME 8080:80
 '''
 
-class TestHelmClient2(unittest.TestCase):
+class TestHelmClient3(unittest.TestCase):
     """
         The kubernetes driver supports multiple versions of helm that have different syntax for the helm commands. This class is to test actions using the Helm 2 syntax.
     """
@@ -71,12 +73,12 @@ class TestHelmClient2(unittest.TestCase):
     @patch('kubedriver.helmclient.client.subprocess')
     def test_install_helm_failure(self, mock_subprocess):
         self.__mock_subprocess_response(mock_subprocess, 1, EXAMPLE_MANIFEST)
-        self.assertRaises(HelmError, client.install, 'chart', 'name', 'namespace')
+        self.assertRaises(HelmError, self.client.install, 'chart', 'name', 'namespace')
 
     @patch('kubedriver.helmclient.client.subprocess')
     def test_install_no_command(self, mock_subprocess):
         self.__mock_subprocess_response(mock_subprocess, 127, EXAMPLE_MANIFEST)
-        self.assertRaises(CommandError, client.install, 'chart', 'name', 'namespace')
+        self.assertRaises(CommandError, self.client.install, 'chart', 'name', 'namespace')
 
     @patch('kubedriver.helmclient.client.subprocess')
     def test_upgrade(self, mock_subprocess):
@@ -104,12 +106,12 @@ class TestHelmClient2(unittest.TestCase):
         self.assertEqual(success, True)
         self.assertIsInstance(helm_release, HelmReleaseDetails)
         self.assertEqual(helm_release.revision, 1)
-        self.assertEqual(helm_release.released, 'Wed May 13 13:03:30 2020')
-        self.assertEqual(helm_release.chart, 'example-chart-0.9.0')
+        self.assertEqual(helm_release.last_deployed, 'Fri Jul  3 13:48:31 2020')
+        self.assertEqual(helm_release.chart, None)
 
     @patch('kubedriver.helmclient.client.subprocess')
     def test_get_helm_3(self, mock_subprocess):
-        self.__mock_subprocess_reponse(mock_subprocess, 0, EXAMPLE_MANIFEST)
+        self.__mock_subprocess_response(mock_subprocess, 0, EXAMPLE_MANIFEST)
         helm_release = self.client.get('myhelm', 'default')
         self.assertIsInstance(helm_release, HelmReleaseDetails)
         self.assertEqual(helm_release.name, 'myhelm')

@@ -2,6 +2,8 @@ import unittest
 from unittest.mock import patch, MagicMock
 from kubedriver.helmclient import HelmClient
 from kubedriver.helmobjects import HelmReleaseDetails
+from kubedriver.helmclient import HelmError
+from kubedriver.helmclient import CommandError
 
 EXAMPLE_MANIFEST = b'''
 REVISION: 1
@@ -59,12 +61,12 @@ class TestHelmClient2(unittest.TestCase):
     @patch('kubedriver.helmclient.client.subprocess')
     def test_install_failure(self, mock_subprocess):
         self.__mock_subprocess_response(mock_subprocess, 1, EXAMPLE_MANIFEST)
-        self.assertRaises(HelmError, client.install, 'chart', 'name', 'namespace')
+        self.assertRaises(HelmError, self.client.install, 'chart', 'name', 'namespace')
 
     @patch('kubedriver.helmclient.client.subprocess')
     def test_install_failure(self, mock_subprocess):
         self.__mock_subprocess_response(mock_subprocess, 127, EXAMPLE_MANIFEST)
-        self.assertRaises(CommandError, client.install, 'chart', 'name', 'namespace')
+        self.assertRaises(CommandError, self.client.install, 'chart', 'name', 'namespace')
 
     @patch('kubedriver.helmclient.client.subprocess')
     def test_upgrade(self, mock_subprocess):
