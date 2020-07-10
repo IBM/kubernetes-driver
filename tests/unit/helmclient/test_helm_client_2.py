@@ -59,12 +59,12 @@ class TestHelmClient2(unittest.TestCase):
         self.assertEqual(name, 'name')
 
     @patch('kubedriver.helmclient.client.subprocess')
-    def test_install_failure(self, mock_subprocess):
+    def test_install_helm_error(self, mock_subprocess):
         self.__mock_subprocess_response(mock_subprocess, 1, EXAMPLE_MANIFEST)
         self.assertRaises(HelmError, self.client.install, 'chart', 'name', 'namespace')
 
     @patch('kubedriver.helmclient.client.subprocess')
-    def test_install_failure(self, mock_subprocess):
+    def test_install_command_error(self, mock_subprocess):
         self.__mock_subprocess_response(mock_subprocess, 127, EXAMPLE_MANIFEST)
         self.assertRaises(CommandError, self.client.install, 'chart', 'name', 'namespace')
 
@@ -75,16 +75,46 @@ class TestHelmClient2(unittest.TestCase):
         self.assertEqual(name, 'name')
 
     @patch('kubedriver.helmclient.client.subprocess')
+    def test_upgrade_helm_error(self, mock_subprocess):
+        self.__mock_subprocess_response(mock_subprocess, 1, EXAMPLE_MANIFEST)
+        self.assertRaises(HelmError, self.client.upgrade, 'chart', 'name', 'namespace')
+
+    @patch('kubedriver.helmclient.client.subprocess')
+    def test_upgrade_command_error(self, mock_subprocess):
+        self.__mock_subprocess_response(mock_subprocess, 127, EXAMPLE_MANIFEST)
+        self.assertRaises(CommandError, self.client.upgrade, 'chart', 'name', 'namespace')
+
+    @patch('kubedriver.helmclient.client.subprocess')
     def test_delete(self, mock_subprocess):
         self.__mock_subprocess_response(mock_subprocess, 0, EXAMPLE_MANIFEST)
         result = self.client.delete('name', 'namespace')
         self.assertEqual(result, None)
 
     @patch('kubedriver.helmclient.client.subprocess')
+    def test_delete_helm_error(self, mock_subprocess):
+        self.__mock_subprocess_response(mock_subprocess, 1, EXAMPLE_MANIFEST)
+        self.assertRaises(HelmError, self.client.delete, 'name', 'namespace')
+
+    @patch('kubedriver.helmclient.client.subprocess')
+    def test_delete_command_error(self, mock_subprocess):
+        self.__mock_subprocess_response(mock_subprocess, 127, EXAMPLE_MANIFEST)
+        self.assertRaises(CommandError, self.client.delete, 'name', 'namespace')
+
+    @patch('kubedriver.helmclient.client.subprocess')
     def test_purge(self, mock_subprocess):
         self.__mock_subprocess_response(mock_subprocess, 0, EXAMPLE_MANIFEST)
         result = self.client.purge('name', 'namespace')
         self.assertEqual(result, None)
+
+    @patch('kubedriver.helmclient.client.subprocess')
+    def test_purge_helm_error(self, mock_subprocess):
+        self.__mock_subprocess_response(mock_subprocess, 1, EXAMPLE_MANIFEST)
+        self.assertRaises(HelmError, self.client.purge, 'name', 'namespace')
+
+    @patch('kubedriver.helmclient.client.subprocess')
+    def test_purge_command_error(self, mock_subprocess):
+        self.__mock_subprocess_response(mock_subprocess, 127, EXAMPLE_MANIFEST)
+        self.assertRaises(CommandError, self.client.purge, 'name', 'namespace')
 
     @patch('kubedriver.helmclient.client.subprocess')
     def test_safe_get(self, mock_subprocess):
@@ -95,6 +125,16 @@ class TestHelmClient2(unittest.TestCase):
         self.assertEqual(helm_release.revision, 1)
         self.assertEqual(helm_release.released, 'Wed May 13 13:03:30 2020')
         self.assertEqual(helm_release.chart, 'example-chart-0.9.0')
+
+    @patch('kubedriver.helmclient.client.subprocess')
+    def test_safe_get_helm_error(self, mock_subprocess):
+        self.__mock_subprocess_response(mock_subprocess, 1, EXAMPLE_MANIFEST)
+        self.assertRaises(HelmError, self.client.safe_get, 'name', 'namespace')
+
+    @patch('kubedriver.helmclient.client.subprocess')
+    def test_safe_get_command_error(self, mock_subprocess):
+        self.__mock_subprocess_response(mock_subprocess, 127, EXAMPLE_MANIFEST)
+        self.assertRaises(CommandError, self.client.safe_get, 'name', 'namespace')
 
     @patch('kubedriver.helmclient.client.subprocess')
     def test_get(self, mock_subprocess):
@@ -135,4 +175,14 @@ class TestHelmClient2(unittest.TestCase):
                 }
             }
         ])
+
+    @patch('kubedriver.helmclient.client.subprocess')
+    def test_get_helm_error(self, mock_subprocess):
+        self.__mock_subprocess_response(mock_subprocess, 1, EXAMPLE_MANIFEST)
+        self.assertRaises(HelmError, self.client.get, 'name', 'namespace')
+
+    @patch('kubedriver.helmclient.client.subprocess')
+    def test_get_command_error(self, mock_subprocess):
+        self.__mock_subprocess_response(mock_subprocess, 127, EXAMPLE_MANIFEST)
+        self.assertRaises(CommandError, self.client.get, 'name', 'namespace')
 
