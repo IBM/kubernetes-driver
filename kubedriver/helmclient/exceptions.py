@@ -2,5 +2,5 @@
 class HelmError(Exception):
     pass
 
-class CommandError(Exception):
+class HelmCommandNotFoundError(HelmError):
     pass

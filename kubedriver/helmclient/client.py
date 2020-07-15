@@ -7,7 +7,7 @@ import shutil
 import stat
 import uuid
 from .exceptions import HelmError
-from .exceptions import CommandError
+from .exceptions import HelmCommandNotFoundError
 from .tls import HelmTls
 from kubedriver.kubeobjects import ObjectConfigurationDocument
 from kubedriver.helmobjects import HelmReleaseDetails
@@ -36,7 +36,7 @@ class HelmClient:
         self.tls = tls if tls is not None else HelmTls(enabled=False)
         self.__configure_helm(kube_config)
         self.helm = f'helm{helm_version}'
-        self.helm_version = helm_version
+        self.helm_version = str(helm_version)
 
     def close(self):
         if os.path.exists(self.tmp_dir):
@@ -96,7 +96,7 @@ class HelmClient:
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
         if process_result.returncode == 127:
-            raise CommandError(f'Helm install command not found: {process_result.stdout}')
+            raise HelmCommandNotFoundError(f'Helm install command not found: {process_result.stdout}')
         elif process_result.returncode != 0:
             raise HelmError(f'Helm install failed: {process_result.stdout}')
         else:
@@ -115,7 +115,7 @@ class HelmClient:
         cmd = self.__helm_cmd(*args)
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         if process_result.returncode == 127:
-            raise CommandError(f'Helm upgrade command not found: {process_result.stdout}')
+            raise HelmCommandNotFoundError(f'Helm upgrade command not found: {process_result.stdout}')
         elif process_result.returncode != 0:
             raise HelmError(f'Helm upgrade failed: {process_result.stdout}')
         else:
@@ -134,7 +134,7 @@ class HelmClient:
                 cmd = self.__helm_cmd('get', name)
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         if process_result.returncode == 127:
-            raise CommandError(f'Helm install command not found: {process_result.stdout}')
+            raise HelmCommandNotFoundError(f'Helm install command not found: {process_result.stdout}')
         elif process_result.returncode != 0:
             raise HelmError(f'Helm get failed: {process_result.stdout}')
         else:
@@ -166,7 +166,7 @@ class HelmClient:
             cmd = self.__helm_cmd('delete', name)
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         if process_result.returncode == 127:
-            raise CommandError(f'Helm delete command not found: {process_result.stdout}')
+            raise HelmCommandNotFoundError(f'Helm delete command not found: {process_result.stdout}')
         elif process_result.returncode != 0:
             raise HelmError(f'Helm delete failed: {process_result.stdout}')
 
@@ -180,7 +180,7 @@ class HelmClient:
             cmd = self.__helm_cmd('delete', name, '--purge')
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         if process_result.returncode == 127:
-            raise CommandError(f'Helm delete (with purge) command not found: {process_result.stdout}')
+            raise HelmCommandNotFoundError(f'Helm delete (with purge) command not found: {process_result.stdout}')
         elif process_result.returncode != 0:
             raise HelmError(f'Helm purge failed: {process_result.stdout}')
 

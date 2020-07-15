@@ -3,7 +3,7 @@ from unittest.mock import patch, MagicMock
 from kubedriver.helmclient import HelmClient
 from kubedriver.helmobjects import HelmReleaseDetails
 from kubedriver.helmclient import HelmError
-from kubedriver.helmclient import CommandError
+from kubedriver.helmclient import HelmCommandNotFoundError
 
 EXAMPLE_MANIFEST = b'''
 REVISION: 1
@@ -66,7 +66,7 @@ class TestHelmClient2(unittest.TestCase):
     @patch('kubedriver.helmclient.client.subprocess')
     def test_install_command_error(self, mock_subprocess):
         self.__mock_subprocess_response(mock_subprocess, 127, EXAMPLE_MANIFEST)
-        self.assertRaises(CommandError, self.client.install, 'chart', 'name', 'namespace')
+        self.assertRaises(HelmCommandNotFoundError, self.client.install, 'chart', 'name', 'namespace')
 
     @patch('kubedriver.helmclient.client.subprocess')
     def test_upgrade(self, mock_subprocess):
@@ -82,7 +82,7 @@ class TestHelmClient2(unittest.TestCase):
     @patch('kubedriver.helmclient.client.subprocess')
     def test_upgrade_command_error(self, mock_subprocess):
         self.__mock_subprocess_response(mock_subprocess, 127, EXAMPLE_MANIFEST)
-        self.assertRaises(CommandError, self.client.upgrade, 'chart', 'name', 'namespace')
+        self.assertRaises(HelmCommandNotFoundError, self.client.upgrade, 'chart', 'name', 'namespace')
 
     @patch('kubedriver.helmclient.client.subprocess')
     def test_delete(self, mock_subprocess):
@@ -98,7 +98,7 @@ class TestHelmClient2(unittest.TestCase):
     @patch('kubedriver.helmclient.client.subprocess')
     def test_delete_command_error(self, mock_subprocess):
         self.__mock_subprocess_response(mock_subprocess, 127, EXAMPLE_MANIFEST)
-        self.assertRaises(CommandError, self.client.delete, 'name', 'namespace')
+        self.assertRaises(HelmCommandNotFoundError, self.client.delete, 'name', 'namespace')
 
     @patch('kubedriver.helmclient.client.subprocess')
     def test_purge(self, mock_subprocess):
@@ -114,7 +114,7 @@ class TestHelmClient2(unittest.TestCase):
     @patch('kubedriver.helmclient.client.subprocess')
     def test_purge_command_error(self, mock_subprocess):
         self.__mock_subprocess_response(mock_subprocess, 127, EXAMPLE_MANIFEST)
-        self.assertRaises(CommandError, self.client.purge, 'name', 'namespace')
+        self.assertRaises(HelmCommandNotFoundError, self.client.purge, 'name', 'namespace')
 
     @patch('kubedriver.helmclient.client.subprocess')
     def test_safe_get(self, mock_subprocess):
@@ -134,7 +134,7 @@ class TestHelmClient2(unittest.TestCase):
     @patch('kubedriver.helmclient.client.subprocess')
     def test_safe_get_command_error(self, mock_subprocess):
         self.__mock_subprocess_response(mock_subprocess, 127, EXAMPLE_MANIFEST)
-        self.assertRaises(CommandError, self.client.safe_get, 'name', 'namespace')
+        self.assertRaises(HelmCommandNotFoundError, self.client.safe_get, 'name', 'namespace')
 
     @patch('kubedriver.helmclient.client.subprocess')
     def test_get(self, mock_subprocess):
@@ -184,5 +184,5 @@ class TestHelmClient2(unittest.TestCase):
     @patch('kubedriver.helmclient.client.subprocess')
     def test_get_command_error(self, mock_subprocess):
         self.__mock_subprocess_response(mock_subprocess, 127, EXAMPLE_MANIFEST)
-        self.assertRaises(CommandError, self.client.get, 'name', 'namespace')
+        self.assertRaises(HelmCommandNotFoundError, self.client.get, 'name', 'namespace')
 
