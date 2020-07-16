@@ -20,7 +20,7 @@ class DeployHelmHandler:
 
     def __do_decorate(self, helm_status, action, parent_task_settings, script_name, keg_name, keg_status):
         if helm_status == None:
-            helm_status = V1alpha1HelmReleaseStatus(namespace=action.namespace, name=action.name)
+            helm_status = V1alpha1HelmReleaseStatus(name=action.name, namespace=action.namespace)
             keg_status.composition.helm_releases.append(helm_status)
             helm_status.state = EntityStates.CREATE_PENDING
         if helm_status.state not in [EntityStates.CREATE_FAILED, EntityStates.CREATE_PENDING]:
@@ -46,7 +46,7 @@ class DeployHelmHandler:
                 helm_client.install(chart_path, action.name, action.namespace, values=values_path)
             else:
                 captured_objects = self.__pre_capture_objects(context.api_ctl, helm_client, helm_status)
-                helm_client.upgrade(chart_path, action.name, values=values_path, reuse_values=True)
+                helm_client.upgrade(chart_path, action.name, action.namespace, values=values_path, reuse_values=True)
             helm_status.state = EntityStates.CREATED if action_type == 'Install' else EntityStates.UPDATED
             helm_status.error = None
             self.__capture_deltas(delta_capture, context.api_ctl, helm_client, helm_status, captured_objects, is_upgrade=helm_status.state==EntityStates.UPDATED)

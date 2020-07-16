@@ -39,7 +39,7 @@ class RemoveHelmHandler:
                 if should_delete:
                     try:
                         captured_objects = self.__pre_capture_objects(context.api_ctl, helm_client, helm_status)
-                        helm_client.purge(action.name)
+                        helm_client.purge(action.name, action.namespace)
                         helm_status.state = EntityStates.DELETED
                         helm_status.error = None
                         self.__capture_deltas(delta_capture, helm_status, captured_objects)
