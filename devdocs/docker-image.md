@@ -52,7 +52,7 @@ cp dist/kubedriver-<release version number>-py3-none-any.whl docker/whls/
 
 If you need a development version of Ignition, you must build the whl for it and copy it to this directory also.
 
-Navigate to the Docker directry and build the image. Tag with the release version number.
+Navigate to the Docker directory and build the image. Tag with the release version number.
 
 ```
 cd docker

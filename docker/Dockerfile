@@ -9,7 +9,7 @@ ENV NUM_THREADS ${NUM_THREADS:-2}
 ARG WSGI_CONTAINER
 ENV WSGI_CONTAINER ${WSGI_CONTAINER:-gunicorn}
 ARG SUPPORTED_HELM_VERSIONS
-ENV SUPPORTED_HELM_VERSIONS ${SUPPORTED_HELM_VERSIONS:-2.8.2 2.16.7}
+ENV SUPPORTED_HELM_VERSIONS ${SUPPORTED_HELM_VERSIONS:-2.16.9 3.2.4}
 
 COPY whls/*.whl /whls/
 
@@ -30,7 +30,7 @@ RUN addgroup -S kubedriver \
 
 COPY setup-helm.sh /setup-helm.sh 
 RUN chown -R kubedriver:0 /setup-helm.sh \
- && chmod +x /setup-helm.sh && sh /setup-helm.sh $SUPPORTED_HELM_VERSIONS
+ && chmod +x /setup-helm.sh && sh /setup-helm.sh "$SUPPORTED_HELM_VERSIONS"
 
 USER kubedriver
 WORKDIR /home/kubedriver
