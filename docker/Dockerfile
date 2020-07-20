@@ -16,7 +16,10 @@ COPY whls/*.whl /whls/
 RUN addgroup -S kubedriver \
  && adduser -S kubedriver -G kubedriver -u 100 \
  && mkdir -p /var/kubedriver \
- && chown -R kubedriver:kubedriver /var/kubedriver \
+ && chown -R kubedriver:0 /var/kubedriver \
+ && chmod -R 775 /var/kubedriver \
+ && chown -R kubedriver:0 /home/kubedriver \
+ && chmod -R 775 /home/kubedriver \
  && apk add --no-cache bash binutils libc-dev \
  # These packages need to be installed so that we can install the Python dependencies.
  # We make this virtual so that we can remove them later
@@ -26,7 +29,8 @@ RUN addgroup -S kubedriver \
  && apk del .build-deps gcc musl-dev libffi-dev openssl-dev python3-dev make git
 
 COPY setup-helm.sh /setup-helm.sh 
-RUN chmod +x /setup-helm.sh && sh /setup-helm.sh $SUPPORTED_HELM_VERSIONS
+RUN chown -R kubedriver:0 /setup-helm.sh \
+ && chmod +x /setup-helm.sh && sh /setup-helm.sh $SUPPORTED_HELM_VERSIONS
 
 USER kubedriver
 WORKDIR /home/kubedriver
