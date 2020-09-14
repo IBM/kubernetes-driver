@@ -23,9 +23,11 @@ spec:
           image: {{ .Values.docker.image }}:{{ .Values.docker.version }}
           imagePullPolicy: {{ .Values.docker.imagePullPolicy }}
           securityContext:
-            # run as kubedriver user created in docker image
-            runAsUser: 100
-          ports:
+            {{- if or (not (.Capabilities.APIVersions.Has "security.openshift.io/v1")) (eq .Release.Namespace "kube-system") (ne (toString .Values.global.arbitraryUids) "true") }}
+            securityContent:
+              runAsUser: 100
+            {{- end }}
+         ports:
           - containerPort: 8294
             protocol: TCP
           {{- if .Values.app.livenessProbe.enabled }}
