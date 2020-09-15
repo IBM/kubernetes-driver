@@ -29,7 +29,7 @@ spec:
           securityContent:
             runAsUser: 100
           {{- end }}
-         ports:
+          ports:
           - containerPort: 8294
             protocol: TCP
           {{- if .Values.app.livenessProbe.enabled }}
