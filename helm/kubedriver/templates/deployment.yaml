@@ -1,9 +1,12 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kubedriver
 spec:
   replicas: {{ .Values.app.replicas }}
+  selector:
+    matchLabels:
+      app: kubedriver
   template:
     metadata:
       labels:
@@ -22,11 +25,10 @@ spec:
         - name: kubedriver
           image: {{ .Values.docker.image }}:{{ .Values.docker.version }}
           imagePullPolicy: {{ .Values.docker.imagePullPolicy }}
-          securityContext:
-            {{- if or (not (.Capabilities.APIVersions.Has "security.openshift.io/v1")) (eq .Release.Namespace "kube-system") (ne (toString .Values.global.arbitraryUids) "true") }}
-            securityContent:
-              runAsUser: 100
-            {{- end }}
+          {{- if or (not (.Capabilities.APIVersions.Has "security.openshift.io/v1")) (eq .Release.Namespace "kube-system") (ne (toString .Values.global.arbitraryUids) "true") }}
+          securityContent:
+            runAsUser: 100
+          {{- end }}
          ports:
           - containerPort: 8294
             protocol: TCP
