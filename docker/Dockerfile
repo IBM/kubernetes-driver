@@ -16,6 +16,7 @@ COPY whls/*.whl /whls/
 RUN addgroup -S kubedriver \
  && adduser -S kubedriver -G kubedriver -u 100 \
  && mkdir -p /var/kubedriver \
+ # set group to 0 to allow arbitrary users in OCP to write to these directories
  && chown -R kubedriver:0 /var/kubedriver \
  && chmod -R 775 /var/kubedriver \
  && chown -R kubedriver:0 /home/kubedriver \
