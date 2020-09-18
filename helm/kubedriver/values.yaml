@@ -1,3 +1,10 @@
+global:
+  # While the driver pod can run within Openshift's restricted SCC, if
+  # another SCC is applied to the pod via a service account that doesn't support
+  # the correct runAsUser type (i.e. MustRunAsNonRoot), arbitraryUids can be
+  # disabled. Otherwise, the default value (true) shouldn't need to be updated.
+  arbitraryUids: true
+
 ## Docker Image for the Openstack VIM Driver
 docker:
   ## Make this the full path, including registry host and port if using one
@@ -35,6 +42,21 @@ app:
         # timeout waiting for initial version check on Kafka producer/consumer initialisation
         # 5000ms is usually sufficient, increase if problems with NoBrokersAvailable occur
         api_version_auto_timeout_ms: 5000
+        topics:
+          lifecycle_execution_events:
+            name: lm_vnfc_lifecycle_execution_events
+            auto_create: True
+            num_partitions: 1
+            replication_factor: 1
+          job_queue:
+            auto_create: True
+            num_partitions: 100
+            replication_factor: 1
+            config:
+              retention.ms: 60000
+              message.timestamp.difference.max.ms: 60000
+              file.delete.delay.ms: 60000
+#              api_version_auto_timeout_ms: 10000
 
     security:
       ssl:
