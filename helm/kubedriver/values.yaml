@@ -8,7 +8,7 @@ global:
 ## Docker Image for the Openstack VIM Driver
 docker:
   ## Make this the full path, including registry host and port if using one
-  image: accanto/kubedriver
+  image: alm-docker-local.artifactory.swg-devops.com/kubedriver
   version: ${version}
   imagePullPolicy: IfNotPresent
 
@@ -39,9 +39,10 @@ app:
       messaging:
         # Kafka connection url
         connection_address: foundation-kafka:9092
-        # timeout waiting for initial version check on Kafka producer/consumer initialisation
-        # 5000ms is usually sufficient, increase if problems with NoBrokersAvailable occur
-        api_version_auto_timeout_ms: 5000
+        config:
+          # timeout waiting for initial version check on Kafka producer/consumer initialisation
+          # 5000ms is usually sufficient, increase if problems with NoBrokersAvailable occur
+          api_version_auto_timeout_ms: 5000
         topics:
           lifecycle_execution_events:
             name: lm_vnfc_lifecycle_execution_events
@@ -56,7 +57,6 @@ app:
               retention.ms: 60000
               message.timestamp.difference.max.ms: 60000
               file.delete.delay.ms: 60000
-#              api_version_auto_timeout_ms: 10000
 
     security:
       ssl:
