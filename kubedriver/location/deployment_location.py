@@ -30,7 +30,8 @@ class KubeDeploymentLocation(KubeDeploymentLocationBase):
     HELM_TLS_CA_CERT_PROP = 'helm.tls.cacert'
     HELM_TLS_CA_CERT_ALT2_PROP = 'helm.tls.ca_cert'
     HELM_TLS_CERT_PROP = 'helm.tls.cert'
-    HELM_TLS_KEY_PROP = 'helm.tls.key'
+    HELM_TLS_KEY_PROP = 'helm.tls.key' 
+    TILLER_NAMESPACE_PROP = 'tillerNamespace'
 
     @staticmethod
     def from_dict(dl_data):
@@ -74,10 +75,13 @@ class KubeDeploymentLocation(KubeDeploymentLocationBase):
                 kwargs['helm_tls'].ca_cert = get_property_or_default(properties, KubeDeploymentLocation.HELM_TLS_CA_CERT_PROP, KubeDeploymentLocation.HELM_TLS_CA_CERT_ALT2_PROP)
                 kwargs['helm_tls'].cert = get_property_or_default(properties, KubeDeploymentLocation.HELM_TLS_CERT_PROP)
                 kwargs['helm_tls'].key = get_property_or_default(properties, KubeDeploymentLocation.HELM_TLS_KEY_PROP)
+        tiller_namespace = get_property_or_default(properties, KubeDeploymentLocation.TILLER_NAMESPACE_PROP)
+        if tiller_namespace is not None:
+            kwargs['tiller_namespace'] = tiller_namespace
         return KubeDeploymentLocation(name, client_config, **kwargs)
 
     def __init__(self, name, client_config, default_object_namespace=DEFAULT_NAMESPACE, crd_api_version=None, driver_namespace=None, \
-                    cm_api_version='v1', cm_kind='ConfigMap', cm_data_field='data', helm_version='2.16.9', helm_tls=None):
+                    cm_api_version='v1', cm_kind='ConfigMap', cm_data_field='data', helm_version='2.16.9', helm_tls=None, tiller_namespace=None):
         super().__init__(name, client_config, default_object_namespace=default_object_namespace)
         self.crd_api_version = crd_api_version
         self.cm_api_version = cm_api_version
@@ -90,6 +94,7 @@ class KubeDeploymentLocation(KubeDeploymentLocationBase):
         self.helm_tls = helm_tls
         self._client = None
         self._helm_client = None
+        self.tiller_namespace = tiller_namespace
 
     @property
     def client(self):
@@ -105,7 +110,7 @@ class KubeDeploymentLocation(KubeDeploymentLocationBase):
     @property
     def helm_client(self):
         if self._helm_client is None:
-            self._helm_client = HelmClient(self.client_config, self.helm_version, tls=self.helm_tls)
+            self._helm_client = HelmClient(self.client_config, self.helm_version, tls=self.helm_tls, tiller_namespace=self.tiller_namespace)
         return self._helm_client
 
     def clean(self):
@@ -136,6 +141,7 @@ class KubeDeploymentLocation(KubeDeploymentLocationBase):
             KubeDeploymentLocation.HELM_TLS_ENABLED_PROP: self.helm_tls.enabled if self.helm_tls is not None else None,
             KubeDeploymentLocation.HELM_TLS_CA_CERT_PROP: self.helm_tls.ca_cert if self.helm_tls is not None else None,
             KubeDeploymentLocation.HELM_TLS_CERT_PROP: self.helm_tls.cert if self.helm_tls is not None else None,
-            KubeDeploymentLocation.HELM_TLS_KEY_PROP: self.helm_tls.key if self.helm_tls is not None else None
+            KubeDeploymentLocation.HELM_TLS_KEY_PROP: self.helm_tls.key if self.helm_tls is not None else None,
+            KubeDeploymentLocation.TILLER_NAMESPACE_PROP: self.tiller_namespace if self.tiller_namespace is not None else None,
         })
         return data
