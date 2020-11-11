@@ -14,7 +14,7 @@ You will also need a controller machine (can be one of the Kubernetes cluster no
 
 ### Obtain Helm Chart
 
-Download the Helm chart from your usual release channel e.g. [Github](https://github.com/accanto-systems/kubernetes-driver/releases).
+Download the Helm chart from your usual release channel e.g. [Github](https://github.com/IBM/kubernetes-driver/releases).
 
 ### Configure
 
@@ -28,7 +28,7 @@ A list of the most common configuration options has also been included as an [ap
 
 The driver has a dependency on Kafka, which it uses to send response messages back to LM. Therefore it must be installed with access to the same shared Kafka cluster as your Lifecycle Manager. 
 
-By default, the driver will attempt to connect to Kafka with the address `foundation-kafka:9092`. This is suitable if the driver is being installed into the same namespace as a standard installation of the Lifecycle Manager since its foundation services include Kafka.
+By default, the driver will attempt to connect to Kafka with the address `foundation-kafka:9092`.  For [IBM Telco Network Cloud Manager - Orchestration](https://www.ibm.com/support/knowledgecenter/SSDSDC_1.3/welcome_page/kc_welcome-444.html) it should be set to `alm-kafka:9092`.
 
 If you need to set a different address (or configure any of the other values of the Helm chart) you may do so by creating a custom values file.
 
@@ -64,7 +64,7 @@ You can confirm the driver is working by accessing the Swagger UI included to re
 
 Access the UI at `https://your_host:31684/api/resourcedriver/ui` e.g. [`http://localhost:31684/api/resourcedriver/ui`](http://localhost:31684/api/resourcedriver/ui)
 
-Onboard the driver with [LMCTL v2.5.0+](http://servicelifecyclemanager.com/2.1.0/reference/lmctl):
+Onboard the driver with [LMCTL v2.5.0+](https://github.com/IBM/lmctl):
 ```
 kubectl get secret kubedriver-tls -o 'go-template={{index .data "tls.crt"}}' | base64 -d > kubedriver-tls.pem
 
