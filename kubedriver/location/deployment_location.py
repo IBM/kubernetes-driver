@@ -32,6 +32,7 @@ class KubeDeploymentLocation(KubeDeploymentLocationBase):
     HELM_TLS_CERT_PROP = 'helm.tls.cert'
     HELM_TLS_KEY_PROP = 'helm.tls.key' 
     TILLER_NAMESPACE_PROP = 'tillerNamespace'
+    TILLER_NAMESPACE_ALT_PROP = 'tiller_namespace'
 
     @staticmethod
     def from_dict(dl_data):
@@ -75,7 +76,7 @@ class KubeDeploymentLocation(KubeDeploymentLocationBase):
                 kwargs['helm_tls'].ca_cert = get_property_or_default(properties, KubeDeploymentLocation.HELM_TLS_CA_CERT_PROP, KubeDeploymentLocation.HELM_TLS_CA_CERT_ALT2_PROP)
                 kwargs['helm_tls'].cert = get_property_or_default(properties, KubeDeploymentLocation.HELM_TLS_CERT_PROP)
                 kwargs['helm_tls'].key = get_property_or_default(properties, KubeDeploymentLocation.HELM_TLS_KEY_PROP)
-        tiller_namespace = get_property_or_default(properties, KubeDeploymentLocation.TILLER_NAMESPACE_PROP)
+        tiller_namespace = get_property_or_default(properties, KubeDeploymentLocation.TILLER_NAMESPACE_PROP, KubeDeploymentLocation.TILLER_NAMESPACE_ALT_PROP)
         if tiller_namespace is not None:
             kwargs['tiller_namespace'] = tiller_namespace
         return KubeDeploymentLocation(name, client_config, **kwargs)
