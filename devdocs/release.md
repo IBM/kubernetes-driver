@@ -62,7 +62,10 @@ python3 setup.py bdist_wheel
 ```
 tar -cvzf kubedriver-<release version number>-docs.tgz docs/ --transform s/docs/kubedriver-<release version number>-docs/
 ```
-
+On a Mac:
+```
+tar -cvz -s '/docs/kubedriver-<release version number>-docs/' -f kubedriver-<release version number>-docs.tgz docs/
+```
 The TAR will be created in the root directory of the project
 
 ## 4. Build Docker Image
