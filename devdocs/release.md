@@ -84,7 +84,11 @@ cp dist/kubedriver-<release version number>-py3-none-any.whl docker/whls/
 
 ```
 cd docker
-docker build -t kubedriver:<release version number>
+docker build -t ibmcom/kubernetes-driver:<release version number> .
+```
+Push to dockerhub
+```
+docker push ibmcom/kubernetes-driver:<release version number>
 ```
 
 ## 5. Build Helm Chart
