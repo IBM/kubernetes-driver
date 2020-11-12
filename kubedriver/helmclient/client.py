@@ -31,12 +31,13 @@ NOTES_PREFIX = 'NOTES:'
 
 class HelmClient:
     
-    def __init__(self, kube_config, helm_version, tls=None):
+    def __init__(self, kube_config, helm_version, tls=None, tiller_namespace=None):
         self.tmp_dir = tempfile.mkdtemp()
         self.tls = tls if tls is not None else HelmTls(enabled=False)
         self.__configure_helm(kube_config)
         self.helm = f'helm{helm_version}'
         self.helm_version = str(helm_version)
+        self.tiller_namespace = tiller_namespace
 
     def close(self):
         if os.path.exists(self.tmp_dir):
@@ -66,6 +67,8 @@ class HelmClient:
         tmp_script = '#!/bin/sh'
         tmp_script += f'\nexport KUBECONFIG={self.kube_conf_path}'
         tmp_script += f'\nexport HELM_HOME={self.helm_home_path}'
+        if self.tiller_namespace is not None:
+            tmp_script += f'\nexport TILLER_NAMESPACE={self.tiller_namespace}'
         tmp_script += f'\n{self.helm}'
         for arg in args:
             tmp_script += f' {arg}'
@@ -128,10 +131,7 @@ class HelmClient:
             else:
                 cmd = self.__helm_cmd('get', "all", name)
         else:
-            if namespace is not None:
-                cmd = self.__helm_cmd('get', name, '--namespace', namespace)
-            else:
-                cmd = self.__helm_cmd('get', name)
+            cmd = self.__helm_cmd('get', name)
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         if process_result.returncode == 127:
             raise HelmCommandNotFoundError(f'Helm install command not found: {process_result.stdout}')
