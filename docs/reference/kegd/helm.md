@@ -28,7 +28,7 @@ The helm chart to install. This should either be the name of a file, from the `L
 | --- | --- | --- | 
 | Y | - | Y (see [templating values](#templating-values)) |
 
-THe name given to the Helm release (`helm install --name <name>`). This needs to be unique, so it's recommended you use a unique property from the Resource (such as it's ID). Bare in mind that Helm release names must be no more than 63 characters and a in the DNS-1035 label format (must consist of lower case alphanumeric characters or '-', start with an alphabetic character, end with an alphanumeric character)
+The name given to the Helm release (`helm install --name <name>`). This needs to be unique, so it's recommended you use a unique property from the Resource (such as it's ID). Bare in mind that Helm release names must be no more than 63 characters and a in the DNS-1035 label format (must consist of lower case alphanumeric characters or '-', start with an alphabetic character, end with an alphanumeric character)
 
 ### namespace
 

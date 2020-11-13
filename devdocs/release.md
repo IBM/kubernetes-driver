@@ -62,7 +62,10 @@ python3 setup.py bdist_wheel
 ```
 tar -cvzf kubedriver-<release version number>-docs.tgz docs/ --transform s/docs/kubedriver-<release version number>-docs/
 ```
-
+On a Mac:
+```
+tar -cvz -s '/docs/kubedriver-<release version number>-docs/' -f kubedriver-<release version number>-docs.tgz docs/
+```
 The TAR will be created in the root directory of the project
 
 ## 4. Build Docker Image
@@ -81,7 +84,11 @@ cp dist/kubedriver-<release version number>-py3-none-any.whl docker/whls/
 
 ```
 cd docker
-docker build -t kubedriver:<release version number>
+docker build -t ibmcom/kubernetes-driver:<release version number> .
+```
+Push to dockerhub
+```
+docker push ibmcom/kubernetes-driver:<release version number>
 ```
 
 ## 5. Build Helm Chart
