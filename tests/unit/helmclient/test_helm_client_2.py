@@ -59,6 +59,12 @@ class TestHelmClient2(unittest.TestCase):
         self.assertEqual(name, 'name')
 
     @patch('kubedriver.helmclient.client.subprocess')
+    def test_install_wait(self, mock_subprocess):
+        self.__mock_subprocess_response(mock_subprocess, 0, EXAMPLE_MANIFEST)
+        name = self.client.install(chart='chart', name='name', namespace='namespace', wait=True, timeout=30)
+        self.assertEqual(name, 'name')
+
+    @patch('kubedriver.helmclient.client.subprocess')
     def test_install_helm_error(self, mock_subprocess):
         self.__mock_subprocess_response(mock_subprocess, 1, EXAMPLE_MANIFEST)
         self.assertRaises(HelmError, self.client.install, 'chart', 'name', 'namespace')
@@ -72,6 +78,12 @@ class TestHelmClient2(unittest.TestCase):
     def test_upgrade(self, mock_subprocess):
         self.__mock_subprocess_response(mock_subprocess, 0, EXAMPLE_MANIFEST)
         name = self.client.upgrade('chart', 'name', 'namespace')
+        self.assertEqual(name, 'name')
+
+    @patch('kubedriver.helmclient.client.subprocess')
+    def test_upgrade_wait(self, mock_subprocess):
+        self.__mock_subprocess_response(mock_subprocess, 0, EXAMPLE_MANIFEST)
+        name = self.client.upgrade(chart='chart', name='name', namespace='namespace', wait=True, timeout=30)
         self.assertEqual(name, 'name')
 
     @patch('kubedriver.helmclient.client.subprocess')

@@ -95,7 +95,11 @@ class HelmClient:
             args.append('--wait')
             if timeout != None:
                 args.append('--timeout')
-                args.append(timeout)        
+                if self.helm_version.startswith("3"):
+                    args.append(str(timeout) + 's')
+                else:
+                    args.append(str(timeout))
+                    
         cmd = self.__helm_cmd(*args)
 
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -121,7 +125,10 @@ class HelmClient:
             args.append('--wait')
             if timeout != None:
                 args.append('--timeout')
-                args.append(timeout) 
+                if self.helm_version.startswith("3"):
+                    args.append(str(timeout) + 's')
+                else:
+                    args.append(str(timeout)) 
         cmd = self.__helm_cmd(*args)
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         if process_result.returncode == 127:
