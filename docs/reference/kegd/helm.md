@@ -71,6 +71,22 @@ A transition is considered "complete" enough to run immediate cleanup after the 
 
 If a failure occurs during the immediate cleanup, the transition/operation will be marked as failed.
 
+### wait
+
+| Mandatory | Default | Templated Value |
+| --- | --- | --- | 
+| N | false | N |
+
+If set, will wait until all Pods, PVCs, Services, and minimum number of Pods of a Deployment, StatefulSet, or ReplicaSet are in a ready state before marking the release as successful. It will wait for as long as timeout
+
+### timeout
+
+| Mandatory | Default | Templated Value |
+| --- | --- | --- | 
+| N | 300 | N |
+
+Time (in seconds) to wait for any individual Kubernetes operation (like Jobs for hooks)
+
 ## Templating Values
 
 Example kegd.yaml which uses the value of a `resource_id_sd` system property to build a unique Helm release name:

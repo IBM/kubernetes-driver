@@ -80,7 +80,7 @@ class HelmClient:
         cmd = ['sh', script_path]
         return cmd
 
-    def install(self, chart, name, namespace, values=None):
+    def install(self, chart, name, namespace, values=None, wait=None, timeout=None):
         if self.helm_version.startswith("3"):
             if namespace is not None:
                 args = ['install', name, chart, '--namespace', namespace]
@@ -94,6 +94,15 @@ class HelmClient:
         if values != None:
             args.append('-f')
             args.append(values)
+        if wait != None:
+            args.append('--wait')
+            if timeout != None:
+                args.append('--timeout')
+                if self.helm_version.startswith("3"):
+                    args.append(str(timeout) + 's')
+                else:
+                    args.append(str(timeout))
+                    
         cmd = self.__helm_cmd(*args)
 
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -105,7 +114,7 @@ class HelmClient:
         else:
             return name
 
-    def upgrade(self, chart, name, namespace, values=None, reuse_values=False):
+    def upgrade(self, chart, name, namespace, values=None, reuse_values=False, wait=None, timeout=None):
         if namespace is not None:
             args = ['upgrade', name, chart, '--namespace', namespace]
         else:
@@ -115,6 +124,14 @@ class HelmClient:
             args.append(values)
         if reuse_values is True:
             args.append('--reuse-values')
+        if wait != None:
+            args.append('--wait')
+            if timeout != None:
+                args.append('--timeout')
+                if self.helm_version.startswith("3"):
+                    args.append(str(timeout) + 's')
+                else:
+                    args.append(str(timeout)) 
         cmd = self.__helm_cmd(*args)
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         if process_result.returncode == 127:

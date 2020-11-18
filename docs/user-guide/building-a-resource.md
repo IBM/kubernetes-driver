@@ -349,7 +349,9 @@ The value of `chart` must be either a file in the `helm` directory of your Resou
 
 A value must be set to give the release a name and you may optionally set the namespace to use (otherwise the default on the deployment location is used). 
 
-You may also include the `values` option with the name of a file (also found in the helm directory) to customise the installation values. This file will be rendered as a template so you may inject Resource and/or system properties before it is used. 
+You may also include the `values` option with the name of a file (also found in the helm directory) to customise the installation values. This file will be rendered as a template so you may inject Resource and/or system properties before it is used.
+
+You may also include the `wait` and `timeout` options in order to leverage the Helm wait functionality. See [helm reference](/docs/reference/kegd/helm.md#wait) for more information.
 
 In addition, the values of chart, name, namespace and values are also rendered as templated strings, so you may inject Resource and/or system properties:
 
