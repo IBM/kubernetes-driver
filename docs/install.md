@@ -62,7 +62,7 @@ The driver runs with SSL enabled by default. The installation will generate a se
 
 You can confirm the driver is working by accessing the Swagger UI included to render the API definitions.
 
-Access the UI at `https://your_host:31684/api/resourcedriver/ui` e.g. [`http://localhost:31684/api/resourcedriver/ui`](http://localhost:31684/api/resourcedriver/ui)
+Access the UI at `https://your_host:31684/api/driver/ui` e.g. [`http://localhost:31684/api/driver/ui`](http://localhost:31684/api/driver/ui)
 
 Onboard the driver with [LMCTL v2.5.0+](https://github.com/IBM/lmctl):
 ```
