@@ -23,7 +23,6 @@ class V1alpha1Keg(object):
         self._api_version = None
         self._kind = None
         self._metadata = None
-        self._Status = None
         self._status = None
         if api_version is not None:
             self.api_version = api_version
@@ -63,8 +62,8 @@ class V1alpha1Keg(object):
         return self._status
 
     @status.setter
-    def status(self, Status):
-        self._Status = Status
+    def status(self, status):
+        self._status = status
     
     def to_dict(self):
         return to_dict(self)

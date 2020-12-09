@@ -43,7 +43,7 @@ class OutputExtractionHandler:
             #Make a copy of the outputs so they are clean (in case the holder has been contaminated)
             outputs = {}
             for k, v in result_holder.outputs.items():
-                outputs[k] = str(v)
+                outputs[k] = v
             return OutputExtractionResult.success(outputs)
 
     def __load_composition(self, keg_status, api_ctl, helm_client):

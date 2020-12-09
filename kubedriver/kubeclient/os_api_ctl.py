@@ -11,7 +11,7 @@ class OpenshiftApiController:
         self.default_namespace = default_namespace
 
     def __get_resource_client(self, api_version, kind):
-        return  self.dynamic_client.resources.get(api_version=api_version, kind=kind)
+        return self.dynamic_client.resources.get(api_version=api_version, kind=kind)
     
     def create_object(self, object_config, default_namespace=None):
         resource_client = self.__get_resource_client(object_config.api_version, object_config.kind)

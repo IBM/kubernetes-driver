@@ -25,20 +25,6 @@ data:
   dataValue: A
 '''
 
-class ObjectConfigurationMatcher:
-
-    def __init__(self, expected_conf):
-        self.expected_conf = expected_conf
-
-    def __eq__(self, other):
-        return other.conf == self.expected_conf
-
-    def __str__(self):
-        return str(self.expected_conf)
-
-    def __repr__(self):
-        return f'{self.__class__.__name__}({self.expected_conf!r})'
-
 
 class TestInfrastructureDriver():#unittest.TestCase):
 

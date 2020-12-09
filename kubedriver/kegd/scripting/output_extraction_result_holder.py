@@ -21,7 +21,7 @@ class OutputExtractionResultHolder:
         self.set_output(output_name, output_value)
 
     def set_output(self, output_name, output_value):
-        self.outputs[output_name] = str(output_value)
+        self.outputs[output_name] = output_value
 
     def decode(self, encoded_value, encoding='utf-8'):
         if encoded_value == None:
