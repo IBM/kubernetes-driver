@@ -61,6 +61,8 @@ class TestInfrastructureDriver():#unittest.TestCase):
         properties['propA'] = {'type': 'string', 'value': 'A'}
         properties['propB'] = {'type': 'string', 'value': 'B'}
         properties['propC'] = {'type': 'string', 'value': 'C'}
+        properties['propD'] = {'type': 'integer', 'value': 1}
+        properties['propE'] = {'type': 'map', 'value': {'A': 'ValueA'}}
         properties_map = PropValueMap(properties)
         system_properties = {}
         system_properties['resourceId'] = {'type': 'string', 'value': '123'}
@@ -106,6 +108,10 @@ class TestInfrastructureDriver():#unittest.TestCase):
             'propA': 'A',
             'propB': 'B', 
             'propC': 'C',
+            'propD': '1',
+            'propE': {
+                'A': 'ValueA'
+            },
             'systemProperties': {
                 'resourceId': '123',
                 'resourceName': 'Resource-A',
