@@ -116,7 +116,7 @@ class TestKegdStrategyLocationProcessor(unittest.TestCase):
             })
         )
     
-    def test_get_outputs(self):
+    def test_property_inputs_to_scripts(self):
         render_context = generate_base_render_context()
         render_context['string_input'] = 'A string input'
         render_context['integer_input'] = 27
@@ -156,7 +156,7 @@ class TestKegdStrategyLocationProcessor(unittest.TestCase):
         })
 
     
-    def test_property_inputs_to_scripts(self):
+    def test_return_outputs(self):
         render_context = generate_base_render_context()
         keg_name = render_context['system_properties']['resourceName']
         kegd_files = get_kegd_files('return-outputs')
