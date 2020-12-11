@@ -34,7 +34,7 @@ def parse_strategy(strategy_file):
 
 render_context_builder = ExtendedResourceTemplateContext(NameManager())
 
-def generate_render_context():
+def generate_base_render_context():
     system_properties = {
         'resourceId': '123',
         'resourceName': 'just-testing',
@@ -60,7 +60,7 @@ class TestKegdStrategyLocationProcessor(unittest.TestCase):
         self.manager = KegdStrategyLocationManager(KegDeploymentProperties(), self.context, self.templating)
 
     def test_deploy_object(self):
-        render_context = generate_render_context()
+        render_context = generate_base_render_context()
         keg_name = render_context['system_properties']['resourceName']
         kegd_files = get_kegd_files('simple-deploy-objects')
         kegd_strategy = parse_strategy(kegd_files.get_strategy_file())
@@ -117,7 +117,7 @@ class TestKegdStrategyLocationProcessor(unittest.TestCase):
         )
     
     def test_get_outputs(self):
-        render_context = generate_render_context()
+        render_context = generate_base_render_context()
         render_context['string_input'] = 'A string input'
         render_context['integer_input'] = 27
         render_context['float_input'] = 2.7
@@ -157,7 +157,7 @@ class TestKegdStrategyLocationProcessor(unittest.TestCase):
 
     
     def test_property_inputs_to_scripts(self):
-        render_context = generate_render_context()
+        render_context = generate_base_render_context()
         keg_name = render_context['system_properties']['resourceName']
         kegd_files = get_kegd_files('return-outputs')
         kegd_strategy = parse_strategy(kegd_files.get_strategy_file())
