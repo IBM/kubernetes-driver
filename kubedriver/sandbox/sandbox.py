@@ -1,6 +1,6 @@
 import logging
 from RestrictedPython import compile_restricted_exec, safe_builtins
-from RestrictedPython.Guards import guarded_unpack_sequence
+from RestrictedPython.Guards import guarded_unpack_sequence, guarded_iter_unpack_sequence
 from RestrictedPython.Eval import default_guarded_getiter
 from RestrictedPython.PrintCollector import PrintCollector
 from .exceptions import CompileError, ExecuteError
@@ -54,6 +54,7 @@ class Sandbox:
     def __build_builtins(self):
         builtins = safe_builtins.copy()
         builtins['_unpack_sequence_'] = guarded_unpack_sequence
+        builtins['_iter_unpack_sequence_'] = guarded_iter_unpack_sequence
         builtins['_getiter_'] = default_guarded_getiter
         builtins['_getitem_'] = safer_getitem
         return builtins

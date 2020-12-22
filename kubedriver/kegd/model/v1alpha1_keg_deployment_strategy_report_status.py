@@ -12,7 +12,7 @@ class V1alpha1KegdStrategyReportStatus(object):
         'state': 'str',
         'phase': 'str',
         'errors': 'list[str]', 
-        'outputs': 'dict(str, str)',
+        'outputs': 'dict(str, object)',
         'delta': 'V1alpha1KegdCompositionDelta'
     }
 

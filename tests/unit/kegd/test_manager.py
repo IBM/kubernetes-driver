@@ -35,7 +35,8 @@ def generate_render_context():
         'resourceName': 'just-testing',
     }
     resource_properties = {
-        'propertyA': 'A property'
+        'propertyA': 'A property',
+        'propertyB': 123
     }
     request_properties = {}
     deployment_location = {}

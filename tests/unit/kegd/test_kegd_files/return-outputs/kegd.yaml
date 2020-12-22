@@ -1,0 +1,6 @@
+compose:
+  - name: Create
+    deploy:
+      - objects:
+          file: simple.yaml
+    getOutputs: outputs.py

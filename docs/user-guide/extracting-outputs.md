@@ -101,8 +101,6 @@ To set the value of an output, use the `setOutput` (or `set_output`) function on
 resultBuilder.setOutput('propertyName', 'propertyValue')
 ```
 
-Any value passed to `setOutput` will be converted to a string (using the `str()` method).
-
 To return a field from an object, first retrieve the object and then set the output:
 
 ```python
