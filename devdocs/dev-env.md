@@ -103,5 +103,4 @@ Check the help option for build.py to see what it can do:
 python3 build.py --help
 ```
 
-`--publish` is reserved for maintainers capable of building a release.
-
+`--release` is reserved for maintainers capable of building a release.
