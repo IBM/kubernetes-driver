@@ -10,7 +10,7 @@ Ensure there is a milestone created for the release at: [https://github.com/IBM/
 
 Also ensure all issues going into this release are assigned to this milestone. **Move any issues from unreleased milestones into this release if the code has been merged**
 
-## 2. Update CHANGLOG (on develop)
+## 2. Update CHANGELOG (on develop)
 
 Update the `CHANGELOG.md` file with a list of issues fixed by this release (see other items in this file to get an idea of the desired format).
 
