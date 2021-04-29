@@ -1,135 +1,72 @@
 # Releasing the Driver
 
-This section describes a recommended method for building and releasing the driver artifacts. 
+The following guide details the steps for releasing the Kubernetes Driver. This may only be performed by a user with admin rights to this Git repository and the ibmcom docker registry.
 
-## 1. Set Versions
+**Ensure you've followed the steps in [configure your development environment](dev-env.md) as there are libraries required to complete the release.**
 
-1.1 Start by setting the version of the release in `kubedriver/pkg_info.json`:
+## 1. Ensure Milestone
+
+Ensure there is a milestone created for the release at: [https://github.com/IBM/kubernetes-driver/milestones](https://github.com/IBM/kubernetes-driver/milestones).
+
+Also ensure all issues going into this release are assigned to this milestone. **Move any issues from unreleased milestones into this release if the code has been merged**
+
+## 2. Update CHANGLOG (on develop)
+
+Update the `CHANGELOG.md` file with a list of issues fixed by this release (see other items in this file to get an idea of the desired format).
+
+Commit and push these changes.
+
+## 3. Merge Develop to Master
+
+Development work is normally carried out on the `develop` branch. Merge this branch to `master`, by creating a PR.
+
+Then perform the release from the `master` branch. This ensures the `master` branch is tagged correctly. 
+
+> Note: do NOT delete the `develop` branch
+ 
+## 4. Build and Release (on master)
+
+The `build.py` script automates the following steps: 
+
+- Update the release version in pkg_info.json
+- Build the Python whl for the driver library
+- Build and Tag Docker Image
+- Build Helm Chart
+- Package Documentation
+- Push Docker Image to ibmcom group on Dockerhub
+- Create a tagged commit in the git repository to mark this release
+
+To perform a release, run `build.py` and set the following options:
 
 ```
-{
-    "version": "<release version number>"
-}
+python3 build.py --release --version <THE VERSION TO BE RELEASED> --post-version <VERSION TO BE USED AFTER THE RELEASE> --ignition-version <VERSION OF IGNITION TO BE USED>
 ```
+
+> Note: check the `ignition-version` in `pkg_info.json`, if it's already at the correct version then you do not need to include `--ignition-version`
 
 For example:
-
 ```
-{
-    "version": "1.0.0"
-}
+python3 build.py --release --version 1.0.0 --post-version 1.0.1.dev0
 ```
 
-1.2 Ensure the `docker.version` in `helm/kubedriver/values.yaml` includes the correct version number
+## 5. Release artifacts
 
-1.3 Ensure the `version` and `appVersion` in `helm/kubedriver/Chart.yaml` includes the correct version number
+The Docker image has been pushed by the `build.py` script but the documentation and Helm chart packages must be uploaded manually to Github.
 
-1.4 Push all version number changes to Github
+Complete the following:
 
-```
-git add kubedriver/pkg_info.json
-git add helm/kubedriver/values.yaml
-git add helm/kubedriver/Chart.yaml
-git commit -m "Set version numbers for release"
-git push origin
-```
+- Visit the [releases](https://github.com/IBM/kubernetes-driver/releases) section of the driver repository
+- Click `Draft a new release`
+- Input the version the `--version` option earlier as the tag e.g. 1.0.0
+- Use the same value for the `Release title` e.g. 1.0.0
+- Add release notes in the description of the release. Look at previous releases to see the format. Usually, we will list the issues fixed. This is essentially the same content you have already added to `CHANGELOG.md` so just copy and paste the entry for this release, edit the header to say `Release Notes`.
+- Attach the Helm chart `tgz` file produced by `build.py` in the `release-artifacts` directory
+- Attach the documentation `tgz` file produced by `build.py` in the `release-artifacts` directory
 
-1.5 Tag the commit with the new version 
+## 6. Cleanup
 
-```
-git tag <release version number>
-git push origin <release version number>
-```
+Complete the following steps to ensure development can continue as normal:
 
-## 2. Build Python Wheel
-
-This requires `setuptools` and `wheel` to be installed:
-
-```
-python3 -m pip install --user --upgrade setuptools wheel
-```
-
-2.1 Run the `setup.py` script at the root of the project to produce a whl (found in `dist/`):
-
-```
-python3 setup.py bdist_wheel
-```
-
-## 3. Package Docs
-
-3.1 Create a TAR version of the docs directory:
-
-```
-tar -cvzf kubedriver-<release version number>-docs.tgz docs/ --transform s/docs/kubedriver-<release version number>-docs/
-```
-On a Mac:
-```
-tar -cvz -s '/docs/kubedriver-<release version number>-docs/' -f kubedriver-<release version number>-docs.tgz docs/
-```
-The TAR will be created in the root directory of the project
-
-## 4. Build Docker Image
-
-This requires `docker` to be installed and running on your local machine.
-
-4.1 Move the whl now in `dist` to the `docker/whls` directory (create the `whls` directory if it does not exist. Ensure no additional whls are in this directory if it does)
-
-```
-rm -rf ./docker/whls
-mkdir ./docker/whls
-cp dist/kubedriver-<release version number>-py3-none-any.whl docker/whls/
-```
-
-4.2 Navigate to the Docker directry and build the image. Tag with the release version number. Ensure the name of the image is the default name expected in `helm/values.yaml`
-
-```
-cd docker
-docker build -t ibmcom/kubernetes-driver:<release version number> .
-```
-Push to dockerhub
-```
-docker push ibmcom/kubernetes-driver:<release version number>
-```
-
-## 5. Build Helm Chart
-
-This requires the Helm CLI tool to be installed on your machine
-
-5.1 Package the helm chart
-
-```
-helm package helm/kubedriver
-```
-
-## 6. Release artifacts
-
-Release the artifacts through your normal release channels. We recommend:
-
-- Creating a release on Github and attach the:
-    - helm chart tgz
-    - docs TAR file
-- Push the docker image to a registry or docker hub if open source (alternatively build a TAR of your image with `docker save` and attach it to the Github release)
-
-## 7. Set next development version
-
-7.1 Set the version of the next development version in `kubedriver/pkg_info.json`:
-
-```
-{
-  "version": "<next development version number>"
-}
-```
-
-7.2. Update the `docker.version` in `helm/kubedriver/values.yaml` to the next development version number.
-
-7.3. Update the `version` and `appVersion` in `helm/kubedriver/Chart.yaml` to the next development version number.
-
-7.4 Push version number changes to Github
-
-```
-git add kubedriver/pkg_info.json
-git add helm/kubedriver/values.yaml
-git add helm/kubedriver/Chart.yaml
-git commit -m "Set next development version"
-git push origin
-```
+- Merge `master` to `develop` (so any release updates and the post-version are copied over from master)
+- Close the Milestone for this release on [Github](https://github.com/IBM/kubernetes-driver/milestones)
+- Create a new Milestone for next release (if one does not exist). Use the value of the `--post-version` option from earlier

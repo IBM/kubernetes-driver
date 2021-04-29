@@ -4,4 +4,3 @@ metadata:
   name: {{ system_properties.resource_subdomain }}-a
 data:
   propertyA: {{ propertyA }} 
-  propertyB: "Include a number - {{ propertyB }}"

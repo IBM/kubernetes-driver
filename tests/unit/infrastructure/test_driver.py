@@ -25,20 +25,6 @@ data:
   dataValue: A
 '''
 
-class ObjectConfigurationMatcher:
-
-    def __init__(self, expected_conf):
-        self.expected_conf = expected_conf
-
-    def __eq__(self, other):
-        return other.conf == self.expected_conf
-
-    def __str__(self):
-        return str(self.expected_conf)
-
-    def __repr__(self):
-        return f'{self.__class__.__name__}({self.expected_conf!r})'
-
 
 class TestInfrastructureDriver():#unittest.TestCase):
 
@@ -61,6 +47,8 @@ class TestInfrastructureDriver():#unittest.TestCase):
         properties['propA'] = {'type': 'string', 'value': 'A'}
         properties['propB'] = {'type': 'string', 'value': 'B'}
         properties['propC'] = {'type': 'string', 'value': 'C'}
+        properties['propD'] = {'type': 'integer', 'value': 1}
+        properties['propE'] = {'type': 'map', 'value': {'A': 'ValueA'}}
         properties_map = PropValueMap(properties)
         system_properties = {}
         system_properties['resourceId'] = {'type': 'string', 'value': '123'}
@@ -106,6 +94,10 @@ class TestInfrastructureDriver():#unittest.TestCase):
             'propA': 'A',
             'propB': 'B', 
             'propC': 'C',
+            'propD': '1',
+            'propE': {
+                'A': 'ValueA'
+            },
             'systemProperties': {
                 'resourceId': '123',
                 'resourceName': 'Resource-A',
