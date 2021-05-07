@@ -60,6 +60,16 @@ For windows:
 env\Scripts\activate.bat
 ```
 
+## Install Ignition
+
+You may need a development version of [Ignition](https://github.com/IBM/ignition), (check `ansibledriver/pkg_info.json`. If `ignition-version` includes a `.devX` version, then you do). You should install the development version of Ignition into your environment before installing the driver.
+
+Clone the [Ignition](https://github.com/IBM/ignition) project and install it into your virtualenv:
+
+```
+python3 -m pip install --editable ~/my-git-repos/ignition
+```
+
 ## Install the driver
 
 Use setuptools to install the driver and it's dependencies. It's best to use `--editable` so changes you make to the driver are picked up (note: if you add new dependencies you will need to re-install):
