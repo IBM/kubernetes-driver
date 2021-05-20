@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 import shutil
+import git
 import json
 import argparse
 import platform
@@ -17,7 +18,7 @@ DOCS_DIR = 'docs'
 
 DOCKER_WHLS_DIR = 'whls'
 DOCKER_PATH = 'docker'
-DOCKER_IMG_NAME = 'kubedriver'
+DOCKER_IMG_NAME = 'kubernetes-driver'
 DOCKER_REGISTRY = 'ibmcom'
 
 HELM_CHART_PATH = os.path.join('helm', 'kubedriver')
