@@ -1,5 +1,12 @@
 # Change Log
 
+## [1.0.1](https://github.com/IBM/kubernetes-driver/tree/1.0.1) (2021-05-20)
+[Full Changelog](https://github.com/IBM/kubernetes-driver/compare/1.0.0...1.0.1)
+
+**Bug Fixes:**
+
+- Kubedriver generating invalid label names [\#35](https://github.com/IBM/kubernetes-driver/issues/35)
+
 ## [1.0.0](https://github.com/IBM/kubernetes-driver/tree/1.0.0) (2021-04-29)
 [Full Changelog](https://github.com/IBM/kubernetes-driver/compare/0.0.5...1.0.0)
 
