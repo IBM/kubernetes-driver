@@ -60,7 +60,7 @@ class NameManager(Service, Capability):
             lambda: self.__make_safe_label(f'{prefix}{resource_name}-{resource_id}'),
             lambda: self.__make_safe_label(f'{prefix}{self.__short_resource_name(resource_name)}-{resource_id}'),
             lambda: self.__make_safe_label(f'{prefix}{self.__short_resource_name_reduced(resource_name)}-{resource_id}'),
-            lambda: self.__make_safe_label(f'{prefix}-{resource_id}')
+            lambda: self.__make_safe_label(f'{prefix}{resource_id}')
         ]
         return self.__execute_attempts(attempts, namehelper.is_valid_label_name, 'safe label name for Resource')
 
