@@ -368,7 +368,7 @@ compose:
 
 ## Updating Helm Releases
 
-To remain idempotent, if the driver finds the helm release already exists and was deployed as part of the same resource it will be removed and re-deployed.
+To remain idempotent, if the driver finds the helm release already exists and was deployed as part of the same resource it will be upgraded.
 
 There is a side effect to this. The helm release will now be cleaned up on either the first transition’s cleanup rules or the second’s. 
 
