@@ -17,15 +17,14 @@ setup(
     include_package_data=True,
     install_requires=[
         'ignition-framework=={0}'.format(_pkg_info['ignition-version']),
-        'kubernetes==11.0.0',
-        'openshift==0.11.1',
+        'openshift==0.12.0',
         'python-dateutil==2.8.1',
-        'RestrictedPython==5.0.0',
-        'gunicorn>=19.9.0,<20.0'
+        'RestrictedPython==5.1',
+        'gunicorn==20.1.0'
     ],
     entry_points='''
         [console_scripts]
         kubedriver-dev=kubedriver.__main__:main
     ''',
-    scripts=['kubedriver/bin/kubedriver-uwsgi', 'kubedriver/bin/kubedriver-gunicorn', 'kubedriver/bin/kubedriver']
+    scripts=['kubedriver/bin/kubedriver-gunicorn', 'kubedriver/bin/kubedriver']
 )

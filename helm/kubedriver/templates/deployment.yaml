@@ -27,7 +27,7 @@ spec:
           imagePullPolicy: {{ .Values.docker.imagePullPolicy }}
           {{- if or (not (.Capabilities.APIVersions.Has "security.openshift.io/v1")) (eq .Release.Namespace "kube-system") (ne (toString .Values.global.arbitraryUids) "true") }}
           securityContext:
-            runAsUser: 100
+            runAsUser: 101
           {{- end }}
           ports:
           - containerPort: 8294
