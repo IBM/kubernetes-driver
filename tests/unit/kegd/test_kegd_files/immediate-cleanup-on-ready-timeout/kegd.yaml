@@ -1,0 +1,13 @@
+compose:
+  - name: Create
+    deploy:
+      - objects:
+          file: simple.yaml
+        immediateCleanupOn: Failure
+    checkReady:
+      script: check-ready.py
+      maxAttempts: 100
+      timeoutSeconds: 0.01
+      intervalSeconds: 0.1
+
+    
