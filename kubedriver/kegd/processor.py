@@ -94,42 +94,66 @@ class KegdStrategyLocationProcessor:
             # Finished
             return True
 
-        # This point forward we must make best efforts to update the request if there is an error
-        if not cancel_process:
-            self.__mark_as_running(report_status)
-            phase_result = None
-            try:
-                if report_status.phase == None:
+        run_phases = True
+        try:
+            if cancel_process:
+                logger.debug(f'Cancelling process \'{process_strategy_job.request_id}\' due to retry timeout')
+                run_phases = False
+                # Even when we cancel the process for a retry timeout error, we may need to cleanup
+                if len(errors) > 0:
+                    self.__move_to_next_phase(report_status, strategy_execution, errors)
+                    errors = [] #Errors persisted on kegdr after moving phase
+
+                    # Only reverse the cancel if the phase has actually changed to cleanup and we're not at the end
+                    if report_status.phase in [StrategyExecutionPhases.IMMEDIATE_CLEANUP, StrategyExecutionPhases.IMMEDIATE_CLEANUP_ON_FAILURE, StrategyExecutionPhases.CLEANUP]:
+                        self.__clear_retry_status(process_strategy_job)
+                        logger.debug(f'Cancelled process \'{process_strategy_job.request_id}\' moving to \'{report_status.phase}\' phase')
+                        run_phases = True
+                    else:
+                        logger.debug(f'Phase on cancelled process \'{process_strategy_job.request_id}\' did not change or reached the end ({report_status.phase}) so was not requeued')
+            
+            if run_phases:
+                self.__mark_as_running(report_status)
+                phase_result = None
+            
+                # This point forward we must make best efforts to update the request if there is an error
+                if report_status.phase is None:
                     report_status.phase = StrategyExecutionPhases.TASKS
                 keg_name = process_strategy_job.keg_name
-                phase_result = self.__process_next_phases(report_status, keg_name, strategy_execution, process_strategy_job.resource_context_properties)
-                if phase_result.requeue != None:
-                    self.__update_retry_status(timeutil.utc_to_string(timeutil.get_utc_datetime()), process_strategy_job, phase_result.requeue)
-                    if self.__has_exceeded_max_attempts(process_strategy_job.retry_status):
-                        errors.append(f'Retryable task {process_strategy_job.retry_status.current_task} has exceeded max attempts of {process_strategy_job.retry_status.settings.max_attempts} (attempts {process_strategy_job.retry_status.attempts})')
+                while run_phases:
+                    phase_result = self.__process_next_phases(report_status, keg_name, strategy_execution, process_strategy_job.resource_context_properties)
+                    run_phases = False # Assume we can stop
+                    errors.extend(phase_result.errors)
+                    if phase_result.requeue is not None:
+                        self.__update_retry_status(timeutil.utc_to_string(timeutil.get_utc_datetime()), process_strategy_job, phase_result.requeue)
+                        if self.__has_exceeded_max_attempts(process_strategy_job.retry_status):
+                            errors.append(f'Retryable task {process_strategy_job.retry_status.current_task} has exceeded max attempts of {process_strategy_job.retry_status.settings.max_attempts} (attempts {process_strategy_job.retry_status.attempts})')
+                            # Even on retry exceeded, we may move to the Immediate cleanup stage on failure
+                            self.__move_to_next_phase(report_status, strategy_execution, errors)
+                            if report_status.phase in [StrategyExecutionPhases.IMMEDIATE_CLEANUP, StrategyExecutionPhases.IMMEDIATE_CLEANUP_ON_FAILURE, StrategyExecutionPhases.CLEANUP]:
+                                self.__clear_retry_status(process_strategy_job)
+                                run_phases = True # Run phase immediately
+                        else:
+                            # Requeue
+                            return False
                     else:
-                        # Requeue
-                        return False
-                else:
-                    self.__clear_retry_status(process_strategy_job)
-            except Exception as e:
-                logger.exception(f'An error occurred whilst processing deployment strategy \'{report_status.uid}\' on group \'{process_strategy_job.keg_name}\', attempting to update records with failure')
-                if isinstance(e, MultiErrorStrategyProcessingError):
-                    errors.extend(e.original_errors)
-                errors.append(f'Internal error: {e}')
-            if phase_result != None:
-                errors.extend(phase_result.errors)
-
+                        self.__clear_retry_status(process_strategy_job)
+        except Exception as e:
+            logger.exception(f'An error occurred whilst processing deployment strategy \'{report_status.uid}\' on group \'{process_strategy_job.keg_name}\', attempting to update records with failure')
+            if isinstance(e, MultiErrorStrategyProcessingError):
+                errors.extend(e.original_errors)
+            errors.append(f'Internal error: {e}')
+            
         # If we can't update the record then the job is lost
         self.__update_report_with_final_results(report_status, errors)
         return True
 
     def __has_retry_timedout(self, now_as_datetime, retry_status):
-        if retry_status == None:
+        if retry_status is None:
             return False, None
-        if retry_status.start_time == None:
+        if retry_status.start_time is None:
             return False, None
-        if retry_status.settings.timeout_seconds == None or retry_status.settings.timeout_seconds < 0:
+        if retry_status.settings.timeout_seconds is None or retry_status.settings.timeout_seconds < 0:
             return True, 0
         if retry_status.settings.timeout_seconds == 0:
             return True, 0
@@ -141,11 +165,11 @@ class KegdStrategyLocationProcessor:
             return False, None
 
     def __has_interval_passed(self, now_as_datetime, retry_status):
-        if retry_status == None:
+        if retry_status is None:
             return True, 0
-        if retry_status.settings.interval_seconds == None or retry_status.settings.interval_seconds <= 0:
+        if retry_status.settings.interval_seconds is None or retry_status.settings.interval_seconds <= 0:
             return True, 0
-        if retry_status.recent_attempt_times == None or len(retry_status.recent_attempt_times) == 0:
+        if retry_status.recent_attempt_times is None or len(retry_status.recent_attempt_times) == 0:
             return True, 0
         last_attempt_as_datetime = timeutil.utc_from_string(retry_status.recent_attempt_times[-1])
         duration_passed = now_as_datetime - last_attempt_as_datetime
@@ -155,9 +179,9 @@ class KegdStrategyLocationProcessor:
             return False, None
 
     def __has_exceeded_max_attempts(self, retry_status):
-        if retry_status == None:
+        if retry_status is None:
             return False
-        if retry_status.settings.max_attempts == None or retry_status.settings.max_attempts < 0:
+        if retry_status.settings.max_attempts is None or retry_status.settings.max_attempts < 0:
             return False
         if retry_status.settings.max_attempts == 0:
             return True
@@ -167,7 +191,7 @@ class KegdStrategyLocationProcessor:
             return False
 
     def __update_retry_status(self, attempt_time, process_strategy_job, requeue_request): 
-        if process_strategy_job.retry_status == None or process_strategy_job.retry_status.current_task != requeue_request.task_name:
+        if process_strategy_job.retry_status is None or process_strategy_job.retry_status.current_task != requeue_request.task_name:
             process_strategy_job.retry_status = RetryStatus(requeue_request.task_name, requeue_request.settings)
             process_strategy_job.retry_status.current_task = requeue_request.task_name
             process_strategy_job.retry_status.attempts = 1
@@ -196,7 +220,7 @@ class KegdStrategyLocationProcessor:
         cancel_process = False
         requeue_process = False
         retry_status = process_strategy_job.retry_status
-        if retry_status != None:
+        if retry_status is not None:
             timedout, duration = self.__has_retry_timedout(now_as_datetime, retry_status)
             if timedout:
                 cancel_process = True
@@ -219,10 +243,10 @@ class KegdStrategyLocationProcessor:
                                                                 uid=record_ref['metadata'].get('uid')))
             report_status.delta = delta_capture.delta
             self.kegd_persister.update(report_status.uid, report_status)
-        all_errors = []
+        captured_errors = []
         try:
             # This point forward we must make best efforts to update the request if there is an error (and to run Immediate cleanup on error)
-            while report_status.phase != None and report_status.phase != StrategyExecutionPhases.END:
+            while report_status.phase is not None and report_status.phase != StrategyExecutionPhases.END:
                 phase_result = None
                 try:
                     if report_status.phase == StrategyExecutionPhases.TASKS:
@@ -232,7 +256,7 @@ class KegdStrategyLocationProcessor:
                     elif report_status.phase == StrategyExecutionPhases.OUTPUTS:
                         phase_result = self.__execute_output_extraction_task(report_status, keg_name, keg_status, strategy_execution, resource_context_properties)
                     elif report_status.phase == StrategyExecutionPhases.IMMEDIATE_CLEANUP or report_status.phase == StrategyExecutionPhases.IMMEDIATE_CLEANUP_ON_FAILURE:
-                        phase_result = self.__process_immediate_cleanup(report_status, keg_name, keg_status, strategy_execution, all_errors)
+                        phase_result = self.__process_immediate_cleanup(report_status, keg_name, keg_status, strategy_execution, captured_errors)
                     elif report_status.phase == StrategyExecutionPhases.CLEANUP:
                         phase_result = self.__execute_cleanup(report_status, keg_name, keg_status, strategy_execution)
                 except Exception as e:
@@ -242,33 +266,36 @@ class KegdStrategyLocationProcessor:
                 if phase_result.requeue is not None:
                     return phase_result
                 else:
-                    all_errors.extend(phase_result.errors)
+                    captured_errors.extend(phase_result.errors)
                     # Even if there are errors, we may move to the Immediate cleanup stage on failure
-                    self.__move_to_next_phase(report_status, strategy_execution, all_errors)
+                    self.__move_to_next_phase(report_status, strategy_execution, captured_errors)
         except Exception as e:
             # Fail safe catch all, that makes sure we don't lose any of the original errors 
-            if len(all_errors) > 0:
+            if len(captured_errors) > 0:
                 logger.exception(f'An error occurred whilst processing phases of the deployment strategy \'{report_status.uid}\' on group \'{keg_name}\'')
-                all_errors.append(f'{e}')
-                raise MultiErrorStrategyProcessingError(f'{e}', all_errors) from e
+                captured_errors.append(f'{e}')
+                raise MultiErrorStrategyProcessingError(f'{e}', captured_errors) from e
             else:
                 raise
 
-        return PhaseResult(errors=all_errors)
+        return PhaseResult(errors=captured_errors)
 
     def __move_to_next_phase(self, report_status, strategy_execution, current_errors):
         next_phase = None
+        # Update with errors so we don't lose them in case this request is dropped and picked up by another node
+        if report_status.errors is None:
+            report_status.errors = []
+        for err in current_errors:
+            if err not in report_status.errors:
+                report_status.errors.append(err)
+
         if report_status.phase == StrategyExecutionPhases.IMMEDIATE_CLEANUP_ON_FAILURE:
             next_phase = StrategyExecutionPhases.END
-        elif len(current_errors) > 0:
+        elif len(report_status.errors) > 0:
             immediate_cleanup_num = NORMAL_PHASE_ORDER.index(StrategyExecutionPhases.IMMEDIATE_CLEANUP)
             phase_num = NORMAL_PHASE_ORDER.index(report_status.phase)
             if phase_num < immediate_cleanup_num:
                 next_phase = StrategyExecutionPhases.IMMEDIATE_CLEANUP_ON_FAILURE
-                # Update with errors so we don't lose them in case this request is dropped and picked up by another node
-                if report_status.errors == None:
-                    report_status.errors = []
-                report_status.errors.extend(current_errors)
             else:
                 next_phase = StrategyExecutionPhases.END
         else:
@@ -356,7 +383,7 @@ class KegdStrategyLocationProcessor:
     def __execute_ready_check_task(self, report_status, keg_name, keg_status, strategy_execution, resource_context_properties):
         errors = []
         requeue_request = None
-        if strategy_execution.ready_check_task != None:
+        if strategy_execution.ready_check_task is not None:
             ready_check_task = strategy_execution.ready_check_task
             handler = ReadyCheckHandler()
             ready_result = handler.handle(report_status.operation, keg_name, keg_status, self.context, ready_check_task, resource_context_properties)
@@ -370,7 +397,7 @@ class KegdStrategyLocationProcessor:
     def __execute_output_extraction_task(self, report_status, keg_name, keg_status, strategy_execution, resource_context_properties):
         errors = []
         requeue_request = None
-        if strategy_execution.output_extraction_task != None:
+        if strategy_execution.output_extraction_task is not None:
             output_extraction_task = strategy_execution.output_extraction_task
             handler = OutputExtractionHandler()
             extraction_result = handler.handle(report_status.operation, keg_name, keg_status, self.context, output_extraction_task, resource_context_properties)
@@ -383,7 +410,7 @@ class KegdStrategyLocationProcessor:
 
     def __process_immediate_cleanup(self, report_status, keg_name, keg_status, strategy_execution, exec_errors):
         allowed_values = [DeployTaskSettings.IMMEDIATE_CLEANUP_ALWAYS]
-        if len(exec_errors) > 0:
+        if len(exec_errors) > 0 or (report_status.errors != None and len(report_status.errors) > 0):
             allowed_values.append(DeployTaskSettings.IMMEDIATE_CLEANUP_FAILURE)
         else:
             allowed_values.append(DeployTaskSettings.IMMEDIATE_CLEANUP_SUCCESS)
@@ -403,12 +430,14 @@ class KegdStrategyLocationProcessor:
             return PhaseResult()
 
     def __update_report_with_final_results(self, report_status, exec_errors):
-        if exec_errors != None and len(exec_errors) > 0:
+        if exec_errors is not None and len(exec_errors) > 0:
             report_status.state = StrategyExecutionStates.FAILED
-            if report_status.errors == None:
+            if report_status.errors is None:
                 report_status.errors = []
-            report_status.errors.extend(exec_errors)
-        elif report_status.errors != None and len(report_status.errors) > 0:
+            for err in exec_errors:
+                if err not in report_status.errors:
+                    report_status.errors.append(err)
+        elif report_status.errors is not None and len(report_status.errors) > 0:
             report_status.state = StrategyExecutionStates.FAILED
         else:
             report_status.state = StrategyExecutionStates.COMPLETE

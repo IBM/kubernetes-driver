@@ -4,6 +4,7 @@ import kubedriver.kegd.model as kegd_model
 import tests.unit.kegd.test_kegd_files as test_kegd_files
 import inspect
 import tests.utils as testutils
+import time
 from unittest.mock import MagicMock
 from ignition.service.templating import Jinja2TemplatingService
 from kubedriver.resourcedriver import ExtendedResourceTemplateContext, NameManager
@@ -58,6 +59,99 @@ class TestKegdStrategyLocationProcessor(unittest.TestCase):
         self.context = MagicMock(kube_location=self.kube_location, keg_persister=self.keg_persister, kegd_persister=self.kegd_persister, api_ctl=self.api_ctl)
         self.processor = KegdStrategyLocationProcessor(self.context, self.templating)
         self.manager = KegdStrategyLocationManager(KegDeploymentProperties(), self.context, self.templating)
+
+    def test_immediate_cleanup_on_retry_timeout_failure(self):
+        render_context = generate_base_render_context()
+        keg_name = render_context['system_properties']['resourceName']
+        kegd_files = get_kegd_files('immediate-cleanup-on-ready-timeout')
+        kegd_strategy = parse_strategy(kegd_files.get_strategy_file())
+        job = self.manager.build_process_strategy_job(
+            keg_name=keg_name,
+            kegd_strategy=kegd_strategy, 
+            operation_name='Create',
+            kegd_files=kegd_files,
+            render_context=render_context
+        )
+
+        # Configure Mocks
+        resource_subdomain = render_context['system_properties']['resource_subdomain']
+        mock_obj = MagicMock()
+        mock_obj.to_dict.return_value = {
+            'apiVersion': 'v1',
+            'kind': 'ConfigMap',
+            'metadata': {
+                'name': f'{resource_subdomain}-a'
+            },
+            'data': {}
+        }
+        self.api_ctl.safe_read_object.return_value = (True, mock_obj)
+
+        # Run
+        finished = self.processor.handle_process_strategy_job(job)
+        # Not Ready
+        self.assertFalse(finished)
+
+        # Wait for timeout
+        time.sleep(0.2)
+
+        # Run again
+        finished = self.processor.handle_process_strategy_job(job)
+        self.assertTrue(finished) 
+
+        self.assertTrue(len(self.kegd_persister.update.call_args_list)>0)
+        before_end_calls = self.kegd_persister.update.call_args_list[-3]
+        self.assertEqual(before_end_calls[0][1].phase, 'Immediate cleanup on failure')
+
+        # Confirm cleanup of object took place
+        self.api_ctl.delete_object.assert_called_once_with('v1', 'ConfigMap', 'just-testing-123-a', namespace='default')
+
+    def test_immediate_cleanup_on_retry_attempts_exceeded(self):
+        render_context = generate_base_render_context()
+        keg_name = render_context['system_properties']['resourceName']
+        kegd_files = get_kegd_files('immediate-cleanup-on-ready-attempts-exceeded')
+        kegd_strategy = parse_strategy(kegd_files.get_strategy_file())
+        job = self.manager.build_process_strategy_job(
+            keg_name=keg_name,
+            kegd_strategy=kegd_strategy, 
+            operation_name='Create',
+            kegd_files=kegd_files,
+            render_context=render_context
+        )
+
+        # Configure Mocks
+        resource_subdomain = render_context['system_properties']['resource_subdomain']
+        mock_obj = MagicMock()
+        mock_obj.to_dict.return_value = {
+            'apiVersion': 'v1',
+            'kind': 'ConfigMap',
+            'metadata': {
+                'name': f'{resource_subdomain}-a'
+            },
+            'data': {}
+        }
+        self.api_ctl.safe_read_object.return_value = (True, mock_obj)
+
+        # Run #1
+        finished = self.processor.handle_process_strategy_job(job)
+        # Not Ready
+        self.assertFalse(finished)
+    
+        # Run #2
+        finished = self.processor.handle_process_strategy_job(job)
+        # Not Ready
+        self.assertFalse(finished)
+
+        # Run #3
+        finished = self.processor.handle_process_strategy_job(job)
+        self.assertTrue(finished)
+
+        self.assertTrue(len(self.kegd_persister.update.call_args_list)>0)
+        before_end_calls = self.kegd_persister.update.call_args_list[-3]
+        self.assertEqual(before_end_calls[0][1].phase, 'Immediate cleanup on failure')
+
+        # Confirm cleanup of object took place
+        self.api_ctl.delete_object.assert_called_once_with('v1', 'ConfigMap', 'just-testing-123-a', namespace='default')
+
 
     def test_deploy_object(self):
         render_context = generate_base_render_context()
