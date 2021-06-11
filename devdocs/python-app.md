@@ -48,7 +48,7 @@ This whl file can now be used to install your application with Python:
 python3 -m pip install <path to whl>
 ```
 
-The commands `kubedriver-dev`, `kubedriver`, `kubedriver-gunicorn` and `kubedriver-uswgi` will now be avaiable from the command line.
+The commands `kubedriver-dev`, `kubedriver`, and `kubedriver-gunicorn` will now be avaiable from the command line.
 
 ## Configuration
 

@@ -4,9 +4,7 @@ echo "WSGI_CONTAINER=$WSGI_CONTAINER"
 
 if [[ $WSGI_CONTAINER = "gunicorn" ]]; then 
     kubedriver-gunicorn
-elif [[ $WSGI_CONTAINER = "uwsgi" ]]; then 
-    kubedriver-uwsgi
 else
-    echo "Invalid WSGI_CONTAINER: must be 'gunicorn' or 'uwsgi'" 
+    echo "Invalid WSGI_CONTAINER: must be 'gunicorn'" 
     exit 1
 fi
