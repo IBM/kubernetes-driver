@@ -35,7 +35,7 @@ When reporting a bug, please include:
 
 ## Feature Requests
 
-Firstly, vheck the existing list of [issues](https://github.com/IBM/kubernetes-driver/issues) to see if the feature has already been requested. Feel free to upvote the issue to add your support but only add comments if you intend to add to the idea, give feedback or provide additional use cases/reasons why the feature is valuable.
+Firstly, check the existing list of [issues](https://github.com/IBM/kubernetes-driver/issues) to see if the feature has already been requested. Feel free to upvote the issue to add your support but only add comments if you intend to add to the idea, give feedback or provide additional use cases/reasons why the feature is valuable.
 
 When requesting a feature, please include:
 
