@@ -1,4 +1,4 @@
-# How to contribute to Ignition
+# How to contribute to this project
 
 ## Table of Contents
 
