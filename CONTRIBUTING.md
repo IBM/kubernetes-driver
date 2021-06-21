@@ -46,7 +46,7 @@ When requesting a feature, please include:
 
 ## Submitting Changes
 
-If you intend to contribute changes to this project, be sure to read the [developer docs](devdocs/dev-env.md) to setup your local development environment.
+If you intend to contribute changes to this project, be sure to read the [developer docs](devdocs/dev-env.md) to set up your local development environment.
 
 Before submitting changes, please complete the following:
 
