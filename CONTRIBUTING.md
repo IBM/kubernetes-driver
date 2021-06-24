@@ -13,6 +13,7 @@
 
 - Daniel Vaccaro-Senna [@dvaccarosenna](https://github.com/dvaccarosenna)
 - Craig Howarth [@chowarth123](https://github.com/chowarth123)
+- Steve Glover [@sglover](https://github.com/sglover)
 
 ## Reporting Issues
 
