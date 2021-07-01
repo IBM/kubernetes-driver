@@ -141,7 +141,7 @@ class KegdStrategyLocationManager:
             deploy_task_group = self.__build_deploy_task_group(compose_script, kegd_files, render_context)
             task_groups.append(deploy_task_group)
             if compose_script.ready_check != None:
-                ready_check_task = self.__build_ready_check_task(compose_script, kegd_files)
+                ready_check_task = self.__build_ready_check_task(compose_script, kegd_files, render_context)
             if compose_script.output_extraction != None:
                 output_extraction_task = self.__build_output_extraction_task(compose_script, kegd_files)
         run_cleanup = False
@@ -177,11 +177,13 @@ class KegdStrategyLocationManager:
                 task_group.deploy_tasks.append(deploy_task)
         return task_group
 
-    def __build_ready_check_task(self, compose_script, kegd_files):
-        ready_script_name = compose_script.ready_check.script
+    def __build_ready_check_task(self, compose_script, kegd_files, render_context):
+        unrendered_ready_script_name = compose_script.ready_check.script
+        ready_script_name = self.templating.render(unrendered_ready_script_name, render_context)
         file_path = kegd_files.get_script_file(ready_script_name)
         with open(file_path, 'r') as f:
-            ready_script_content = f.read()
+            unrendered_ready_script_content = f.read()
+            ready_script_content = self.templating.render(unrendered_ready_script_content, render_context)
         retry_settings = compose_script.ready_check.retry_settings
         if retry_settings == None:
             retry_settings = RetrySettings()
