@@ -44,37 +44,7 @@ The namespace to install the Helm chart into (`helm install --namespace <namespa
 | --- | --- | --- | 
 | N | - | Y (see [templating values](#templating-values)) |
 
-The values to provide to the installation in order to customise the deployment (`helm install -f <values1> -f <values2>`). This should be a list of names of YAML files, from the `Lifecycle/kubernetes/helm` directory of your Resource package.
-
-e.g. 
-```
-compose:
-  - name: Create
-    deploy:
-      - helm:
-          chart: test-chart.tgz
-          name: r{{ system_properties.resource_id_label }}
-          namespace: default
-          values: [ "test-values1.yaml", "test-values2.yaml" ]
-```
-
-for a directory structure
-```
-Lifecycle/kubernetes/helm/
-├── test-chart.tgz
-├── test-values2.yaml
-└── test-values1.yaml
-```
-
-These files will be rendered as templates so you may inject properties into this files as described in [templating](../user-guide/templating.md)
-
-### values
-
-| Mandatory | Default | Templated Value |
-| --- | --- | --- | 
-| N | - | Y (see [templating values](#templating-values)) |
-
-The values provided to the installation in order to customise the deployment (`helm install -f <values1> -f <values2>`). This should be a list of names of YAML files, from the `Lifecycle/kubernetes/helm` directory of your Resource package.
+The values provided to the installation in order to customise the deployment (`helm install -f <values1> -f <values2>`). This should be a list of names of YAML files (for backwards compatibility a single filename as string is also supported), from the `Lifecycle/kubernetes/helm` directory of your Resource package.
 
 e.g. 
 ```
