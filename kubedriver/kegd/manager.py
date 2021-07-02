@@ -232,16 +232,18 @@ class KegdStrategyLocationManager:
         if deploy_action.setfiles != None:
             expanded_setfiles = {}
             for key in deploy_action.setfiles:
-                if key in expanded_setfiles:
-                    raise InvalidDeploymentStrategyError(f'Duplicate key:{key} present in setfiles')
+                rendered_key = self.templating.render(key, render_context)
+                if rendered_key in expanded_setfiles:
+                    raise InvalidDeploymentStrategyError(f'Duplicate key:{rendered_key} present in setfiles')
+                # get filepath from original dict and render
                 filepath = deploy_action.setfiles[key]
                 rendered_path = self.templating.render(filepath, render_context)
                 kegd_path = kegd_files.get_helm_file(rendered_path)
                 file_content = None
                 with open(kegd_path, 'r') as f:
                     file_content = f.read()
-                # Custom files likely won't have templates, render content here later if needed
-                expanded_setfiles[key] = file_content
+                rendered_file_content = self.__process_template(file_content, render_context, kegd_path)
+                expanded_setfiles[rendered_key] = rendered_file_content
             deploy_action.setfiles = expanded_setfiles
         return [deploy_task]
     

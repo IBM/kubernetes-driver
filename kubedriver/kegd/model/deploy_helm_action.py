@@ -20,7 +20,7 @@ class DeployHelmAction:
                 # Keep this check for backwards compatibility with older assemblies.
                 self.values = [values]
             elif not isinstance(values, list):
-                raise InvalidDeploymentStrategyError(f'{DeployHelmAction.action_name} expected values to be a list of strings, found '+str(isinstance(values))+' instead')
+                raise InvalidDeploymentStrategyError(f'{DeployHelmAction.action_name} expected values to be a single string/list of strings, found '+str(type(values))+' instead')
             else:
                 self.values = values
         else:
@@ -28,7 +28,7 @@ class DeployHelmAction:
 
         if setfiles is not None:
             if not isinstance(setfiles, dict):
-                raise InvalidDeploymentStrategyError(f'{DeployHelmAction.action_name} expected setfiles to be a dict <key>:<value-file>, found '+str(isinstance(values))+' instead')
+                raise InvalidDeploymentStrategyError(f'{DeployHelmAction.action_name} expected setfiles to be a dict key:filepath, found '+str(type(setfiles))+' instead')
             else:
                 self.setfiles = setfiles
         else:

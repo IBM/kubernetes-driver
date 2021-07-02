@@ -92,10 +92,14 @@ class HelmClient:
             else:
                 args = ['install', chart, '--name', name]
         if values != None:
+            if not isinstance(values, list):
+                raise HelmError(f'values passed to helmclient should be an array')
             for path in values:
                 args.append('-f')
                 args.append(path)
         if setfiles != None:
+            if not isinstance(setfiles, dict):
+                raise HelmError(f'setfiles passed to helmclient should be a dict')
             setfiles_args = []
             for key in setfiles:
                 arg = key + "=" + setfiles[key]
@@ -129,10 +133,14 @@ class HelmClient:
         else:
             args = ['upgrade', name, chart]
         if values != None:
+            if not isinstance(values, list):
+                raise HelmError(f'values passed to helmclient should be a list')
             for path in values:
                 args.append('-f')
                 args.append(path)
         if setfiles != None:
+            if not isinstance(setfiles, dict):
+                raise HelmError(f'setfiles passed to helmclient should be a dict')
             setfiles_args = []
             for key in setfiles:
                 arg = key + "=" + setfiles[key]
