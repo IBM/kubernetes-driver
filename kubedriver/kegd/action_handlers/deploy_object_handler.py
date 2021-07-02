@@ -17,10 +17,12 @@ class DeployObjectHandler:
 
     def __do_decorate(self, obj_status, action, parent_task_settings, script_name, keg_name, keg_status):
         if obj_status == None:
+            # TODO api_version
             obj_status = V1alpha1ObjectStatus(group=action.group, kind=action.kind, namespace=action.namespace, 
                                                 name=action.name)
             keg_status.composition.objects.append(obj_status)
             obj_status.state = EntityStates.CREATE_PENDING
+        logger.debug(f'__do_decorate {obj_status}')
         if obj_status.state not in [EntityStates.CREATE_FAILED, EntityStates.CREATE_PENDING]:
             obj_status.state = EntityStates.UPDATE_PENDING
         else:
@@ -38,12 +40,18 @@ class DeployObjectHandler:
         object_config = ObjectConfiguration(action.config)
         self.config_utils.add_label(object_config, Labels.MANAGED_BY, LabelValues.MANAGED_BY)
         self.config_utils.add_label(object_config, Labels.KEG, keg_name)
+        self.config_utils.add_label(object_config, Labels.REQUEST_ID, keg_name)
         try:
+            logger.info(f'handle obj_status={obj_status} object_config={object_config}')
             if obj_status.state == EntityStates.UPDATE_PENDING:
-                return_obj = api_ctl.update_object(object_config)
+                return_obj = api_ctl.update_object(object_config, resource_version=obj_status.resource_version)
             else:
                 return_obj = api_ctl.create_object(object_config)
+            obj_status.delete_on_ready = True
             obj_status.uid = self.__get_uid(return_obj)
+            # TODO
+            obj_status.api_version = object_config
+            obj_status.resource_version = self.__get_resource_version(return_obj)
             obj_status.state = EntityStates.CREATED if obj_status.state == EntityStates.CREATE_PENDING else EntityStates.UPDATED
             obj_status.error = None
             if obj_status.state == EntityStates.CREATED:
@@ -66,6 +74,14 @@ class DeployObjectHandler:
         else:
             metadata = return_obj.get('metadata', {})
             return metadata.get('uid')
+
+    def __get_resource_version(self, return_obj):
+        if hasattr(return_obj, 'metadata'):
+            metadata = return_obj.metadata
+            return metadata.resourceVersion
+        else:
+            metadata = return_obj.get('metadata', {})
+            return metadata.get('resourceVersion')
 
     def build_cleanup(self, action, parent_task_settings):
         return RemovalTask(RemovalTaskSettings(), RemoveObjectAction(action.group, action.kind, action.name, namespace=action.namespace))

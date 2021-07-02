@@ -1,6 +1,7 @@
 from .manager import KegdStrategyManager
 from .processor import KegdStrategyProcessor
 from .properties import KegDeploymentStrategyProperties, KegDeploymentProperties
-from .persistence import KegdReportPersistenceFactory
+from .persistence import KegdReportPersistenceFactory, ProcessStrategyRepository
 from .delta_capture import KegDeltaCapture
 from .exceptions import MissingKegDeploymentStrategyFileError, StrategyProcessingError, MultiErrorStrategyProcessingError
+from .watcher import Watcher

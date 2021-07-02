@@ -1,5 +1,6 @@
 import uuid
 import logging
+import time
 from ignition.service.framework import Service, Capability
 from kubedriver.kegd.model import (RemovalTask, RemovalTaskSettings, RemoveObjectAction, DeployTask, DeployHelmAction,
                                     DeployObjectsAction, DeployObjectAction, Labels, LabelValues, OutputExtractionTask,
@@ -16,11 +17,13 @@ logger = logging.getLogger(__name__)
 
 class KegdStrategyManager(Service, Capability):
 
-    def __init__(self, kegd_properties, context_factory, templating, job_queue):
+    def __init__(self, kegd_properties, context_factory, templating, job_queue, process_strategy_repository):
         self.kegd_properties = kegd_properties
         self.context_factory = context_factory
         self.templating = templating
         self.job_queue = job_queue
+        self.process_strategy_repository = process_strategy_repository
+        self.process_strategies = {}
         if self.kegd_properties.ready_checks.default_timeout_seconds == None:
             raise ValueError('Must set kegd.ready_checks.default_timeout_seconds in the configuration properties')
         if self.kegd_properties.ready_checks.default_timeout_seconds <= 0:
@@ -38,8 +41,10 @@ class KegdStrategyManager(Service, Capability):
             'data': process_strategy_job.on_write(),
             'logging_context': {k:v for k,v in logging_context.get_all().items()}
         }
+        request_id = process_strategy_job.request_id
         try:
-            self.job_queue.queue_job(job_data)
+            self.process_strategies[request_id] = job_data
+            # self.job_queue.queue_job(job_data)
         except Exception as e:
             #Try and delete the request as we never scheduled the job
             logger.exception(f'Failed to queue request \'{process_strategy_job.request_id}\', will attempt to remove report data')
@@ -235,6 +240,9 @@ class KegdStrategyLocationManager:
         file_path = kegd_files.get_object_file(deploy_action.file)
         with open(file_path, 'r') as f:
             template = f.read()
+        render_context['extras'] = {
+            'ts': str(int(round(time.time() * 1000)))
+        }
         rendered_template = self.__process_template(template, render_context, file_path)
         objects_confs_in_template = self.__parse_doc_to_objects(rendered_template, file_path)
         for object_conf in objects_confs_in_template:

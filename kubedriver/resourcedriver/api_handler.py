@@ -90,6 +90,11 @@ class KubeResourceDriverHandler(Service, ResourceDriverHandlerCapability):
                 execution_status = lifecycle_model.STATUS_FAILED
                 failure_details = failure_model.FailureDetails(failure_model.FAILURE_CODE_INTERNAL_ERROR, description=str(request_report.errors))
             associated_topology = self.__build_associated_topology_from_delta(request_report.delta)
+
+
+            # if request_report.delete_on_ready:
+
+
             return lifecycle_model.LifecycleExecution(request_id, execution_status, outputs=outputs, failure_details=failure_details, associated_topology=associated_topology)
         finally:
             try:
@@ -132,13 +137,16 @@ class KubeResourceDriverHandler(Service, ResourceDriverHandlerCapability):
                             associated_topology.add_removed_object(obj)
         return associated_topology
 
+    # TODO why isn't this being called by Ignition?
     def post_lifecycle_response(self, request_id, deployment_location):
         """
         Clears the kegd report to keep Kubernetes clusters tidy. 
         This is only called if the lifecycle monitor has posted a message on Kafka (in response to Brent) so this is safe to do, as this request will not be checked again.
         """
+        logger.info(f'post_lifecycle_response1 request_id={request_id}')
         if self.resource_driver_properties.keep_kegdrs is False:
             kube_location = self.__translate_location(deployment_location)
+            logger.info(f'post_lifecycle_response2 request_id={request_id} kube_location={kube_location}')
             self.kegd_strategy_manager.delete_request_report(kube_location, request_id)
 
     def find_reference(self, instance_name, driver_files, deployment_location):

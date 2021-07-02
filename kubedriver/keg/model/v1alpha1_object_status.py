@@ -10,6 +10,7 @@ class V1alpha1ObjectStatus(object):
         'name': 'str',
         'uid': 'str',
         'state': 'str',
+        'resource_version': 'str',
         'error': 'str',
         'tags': 'dict(str, list[str])'
     }
@@ -22,10 +23,11 @@ class V1alpha1ObjectStatus(object):
         'uid': 'uid',
         'state': 'state',
         'error': 'error',
+        'resource_version': 'resource_version',
         'tags': 'tags'
     }
 
-    def __init__(self, group=None, kind=None, namespace=None, name=None, uid=None, state=None, error=None, tags=None):
+    def __init__(self, group=None, kind=None, namespace=None, name=None, uid=None, state=None, error=None, tags=None, resource_version=None):
         self._group = None
         self._kind = None
         self._namespace = None
@@ -34,6 +36,7 @@ class V1alpha1ObjectStatus(object):
         self._state = None
         self._error = None
         self._tags = None
+        self._resource_version = None
         if group is not None:
             self._group = group
         if kind is not None:
@@ -50,6 +53,8 @@ class V1alpha1ObjectStatus(object):
             self._error = error
         if tags is not None:
             self._tags = tags
+        if resource_version is not None:
+            self._resource_version = resource_version
 
     @property
     def group(self):
@@ -82,6 +87,14 @@ class V1alpha1ObjectStatus(object):
     @name.setter
     def name(self, name):
         self._name = name
+
+    @property
+    def resource_version(self):
+        return self._resource_version
+
+    @resource_version.setter
+    def resource_version(self, resource_version):
+        self._resource_version = resource_version
 
     @property
     def uid(self):

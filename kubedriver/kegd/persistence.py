@@ -22,3 +22,14 @@ class KegdReportPersistenceFactory(Service, Capability):
 
     def __build_record_builder(self, kube_location):
         return CmRecordBuilder(kube_location.client, V1alpha1KegdStrategyReportStatus, data_types)
+
+
+class ProcessStrategyRepository(Service):
+    def __init__(self):
+        self.strategies = {}
+
+    def get(self, request_id):
+        return self.strategies[request_id]
+
+    def put(self, job_data):
+        self.strategies[job_data.request_id] = job_data

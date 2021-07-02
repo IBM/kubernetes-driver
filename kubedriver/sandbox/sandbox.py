@@ -20,6 +20,7 @@ def safer_getitem(obj, name, default=None, getattr=getattr):
     elif type(obj) == list:
         if type(name) != int and type(name) != slice:
             raise AttributeError(f'list indices must be integers or slices, not {type(name)}')
+    logger.info(f'safer_getitem1 obj={obj} name={name}')
     return obj[name]
 
 class Sandbox:

@@ -2,7 +2,7 @@ import logging
 from ignition.service.framework import Service, Capability
 from ignition.service.logging import logging_context
 from kubedriver.kegd.action_handlers import (DeployObjectHandler, RemoveObjectHandler, DeployHelmHandler, 
-                                                RemoveHelmHandler, ReadyCheckHandler, OutputExtractionHandler)
+                                                RemoveHelmHandler, ReadyCheckHandler, OutputExtractionHandler, RunScriptHandler)
 from kubedriver.keg.model import V1alpha1KegStatus, V1alpha1KegCompositionStatus, EntityStates, V1alpha1ObjectStatus
 from kubedriver.kegd.model import (RemovalTask, RemovalTaskSettings, RemoveObjectAction, DeployTask, DeployHelmAction,
                                     DeployObjectAction, DeployTaskSettings, RetryStatus,
@@ -26,7 +26,8 @@ DEPLOY_ACTION_HANDLERS = {
 }
 
 NORMAL_PHASE_ORDER = [
-    StrategyExecutionPhases.TASKS, 
+    StrategyExecutionPhases.TASKS,
+    StrategyExecutionPhases.RUN_SCRIPT,
     StrategyExecutionPhases.READY_CHECK,
     StrategyExecutionPhases.OUTPUTS,
     StrategyExecutionPhases.IMMEDIATE_CLEANUP,
@@ -78,7 +79,7 @@ class KegdStrategyLocationProcessor:
         self.api_ctl = context.api_ctl
 
     def handle_process_strategy_job(self, process_strategy_job):
-        logger.debug(f'Processing request \'{process_strategy_job.request_id}\'')
+        logger.info(f'Processing request \'{process_strategy_job.keg_name}\' \'{process_strategy_job.request_id}\'')
 
         cancel_process, errors, requeue_process = self.__check_retry_status(process_strategy_job)
         if requeue_process:
@@ -119,6 +120,48 @@ class KegdStrategyLocationProcessor:
                 errors.append(f'Internal error: {e}')
             if phase_result != None:
                 errors.extend(phase_result.errors)
+
+        # If we can't update the record then the job is lost
+        self.__update_report_with_final_results(report_status, errors)
+        return True
+
+    def handle_process_strategy_job(self, request_id, keg_name):
+        logger.info(f'Processing request \'{request_id}\'')
+
+        errors = []
+
+        # Errors retrieving the request or checking request state result in the job not being requeued
+        try:
+            report_status = self.kegd_persister.get(request_id)
+        except RecordNotFoundError as e:
+            logger.exception(f'Report could not be found for request {request_id}, this request will no longer be processed')
+            # Finished
+            return True
+
+        # This point forward we must make best efforts to update the request if there is an error
+        self.__mark_as_running(report_status)
+        phase_result = None
+        try:
+            if report_status.phase == None:
+                report_status.phase = StrategyExecutionPhases.TASKS
+            keg_name = keg_name
+            phase_result = self.__process_next_phases(report_status, keg_name, strategy_execution, process_strategy_job.resource_context_properties)
+            if phase_result.requeue != None:
+                self.__update_retry_status(timeutil.utc_to_string(timeutil.get_utc_datetime()), process_strategy_job, phase_result.requeue)
+                if self.__has_exceeded_max_attempts(process_strategy_job.retry_status):
+                    errors.append(f'Retryable task {process_strategy_job.retry_status.current_task} has exceeded max attempts of {process_strategy_job.retry_status.settings.max_attempts} (attempts {process_strategy_job.retry_status.attempts})')
+                else:
+                    # Requeue
+                    return False
+            else:
+                self.__clear_retry_status(process_strategy_job)
+        except Exception as e:
+            logger.exception(f'An error occurred whilst processing deployment strategy \'{report_status.uid}\' on group \'{keg_name}\', attempting to update records with failure')
+            if isinstance(e, MultiErrorStrategyProcessingError):
+                errors.extend(e.original_errors)
+            errors.append(f'Internal error: {e}')
+        if phase_result != None:
+            errors.extend(phase_result.errors)
 
         # If we can't update the record then the job is lost
         self.__update_report_with_final_results(report_status, errors)
@@ -229,6 +272,8 @@ class KegdStrategyLocationProcessor:
                         phase_result = self.__execute_task_groups(report_status, keg_name, keg_status, strategy_execution)
                     elif report_status.phase == StrategyExecutionPhases.READY_CHECK:
                         phase_result = self.__execute_ready_check_task(report_status, keg_name, keg_status, strategy_execution, resource_context_properties)
+                    elif report_status.phase == StrategyExecutionPhases.RUN_SCRIPT:
+                        phase_result = self.__execute_run_script_task(report_status, keg_name, keg_status, strategy_execution, resource_context_properties)
                     elif report_status.phase == StrategyExecutionPhases.OUTPUTS:
                         phase_result = self.__execute_output_extraction_task(report_status, keg_name, keg_status, strategy_execution, resource_context_properties)
                     elif report_status.phase == StrategyExecutionPhases.IMMEDIATE_CLEANUP or report_status.phase == StrategyExecutionPhases.IMMEDIATE_CLEANUP_ON_FAILURE:
@@ -365,6 +410,25 @@ class KegdStrategyLocationProcessor:
                 errors.append(reason)
             elif not ready_result.is_ready():
                 requeue_request = RequeueRequest('Ready Check', ready_check_task.retry_settings)
+        return PhaseResult(errors=errors, requeue=requeue_request)
+
+    def __execute_run_script_task(self, report_status, keg_name, keg_status, strategy_execution, resource_context_properties):
+        errors = []
+        requeue_request = None
+        if strategy_execution.run_script_task != None:
+            run_script_task = strategy_execution.run_script_task
+            handler = RunScriptHandler()
+            ready_result = handler.handle(report_status.operation, keg_name, keg_status, self.context, run_script_task, resource_context_properties)
+
+
+            self.api_ctl.update_object(cm_config, default_namespace=self.storage_namespace)
+
+
+            has_failed, reason = ready_result.has_failed()
+            if has_failed:
+                errors.append(reason)
+            elif not ready_result.is_ready():
+                requeue_request = RequeueRequest('Run Script', run_script_task.retry_settings)
         return PhaseResult(errors=errors, requeue=requeue_request)
 
     def __execute_output_extraction_task(self, report_status, keg_name, keg_status, strategy_execution, resource_context_properties):

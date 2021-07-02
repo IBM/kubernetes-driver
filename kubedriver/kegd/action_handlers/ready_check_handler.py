@@ -19,6 +19,27 @@ class ReadyCheckHandler:
         composition = self.__load_composition(keg_status, api_ctl, helm_client)
         result_holder = ReadyResultHolder()
         inputs = self.__build_inputs(composition, result_holder, resource_context_properties)
+
+        # keg = KegCollection(composition)
+        # found, pod = keg.objects.get('v1', 'Pod', props['system_properties']['resource_subdomain'], namespace='5g')
+        # if not found:
+        #     return resultBuilder.failed('Could not find')
+
+		# 		cr.Status.Conditions = append(cr.Status.Conditions, v1.Condition{
+		# 			Type:   "Ready",
+		# 			Status: v1.ConditionTrue,
+		# 			#ObservedGeneration: 0,
+		# 			LastTransitionTime: v1.Now(),
+		# 			Reason:             "ready",
+		# 			Message:            "",
+		# 		})
+
+
+        # if pod['status']['phase'] == 'Running':
+        #     return resultBuilder.ready()
+        # else:
+        #     return resultBuilder.notReady()
+
         complete_script = self.__build_script(ready_script)
         try:
             execute_result = sandbox.run(complete_script, file_name=ready_script_file_name, inputs=inputs)

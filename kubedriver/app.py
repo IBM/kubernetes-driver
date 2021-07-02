@@ -6,10 +6,10 @@ import kubedriver.config as driverconfig
 from ignition.service.queue import JobQueueCapability
 from ignition.service.templating import TemplatingCapability, ResourceTemplateContextCapability 
 from kubedriver.resourcedriver import (KubeResourceDriverHandler, AdditionalResourceDriverProperties, ExtendedResourceTemplateContext,
-                                        NameManager)
+                                        NameManager, Watcher)
 from kubedriver.kubeclient import OpenshiftApiControllerFactory
 from kubedriver.keg import KegPersistenceFactory
-from kubedriver.kegd import KegdStrategyProcessor, KegdStrategyManager, KegDeploymentProperties, KegDeploymentStrategyProperties, KegdReportPersistenceFactory
+from kubedriver.kegd import KegdStrategyProcessor, KegdStrategyManager, KegDeploymentProperties, KegDeploymentStrategyProperties, KegdReportPersistenceFactory, ProcessStrategyRepository
 from kubedriver.kegd.model import DeploymentStrategyFileReader, DeploymentStrategyParser
 from kubedriver.locationcontext import LocationContextFactory
 
@@ -29,6 +29,7 @@ def create_app():
 
     app_builder.add_service(NameManager)
     app_builder.add_service(KegPersistenceFactory)
+    app_builder.add_service(ProcessStrategyRepository)
     app_builder.add_service(KegdReportPersistenceFactory)
     app_builder.add_service(OpenshiftApiControllerFactory)
     app_builder.add_service(LocationContextFactory, 
@@ -48,13 +49,15 @@ def create_app():
     app_builder.add_service(KegdStrategyProcessor, 
             context_factory=LocationContextFactory, 
             templating=TemplatingCapability, 
-            job_queue=JobQueueCapability
+            job_queue=JobQueueCapability,
+            process_strategy_repository=ProcessStrategyRepository
     )
     app_builder.add_service(KegdStrategyManager, 
             context_factory=LocationContextFactory, 
             templating=TemplatingCapability, 
             job_queue=JobQueueCapability,
-            kegd_properties=KegDeploymentProperties
+            kegd_properties=KegDeploymentProperties,
+            process_strategy_repository=ProcessStrategyRepository
     )
     app_builder.add_service(KubeResourceDriverHandler, 
             resource_driver_properties=AdditionalResourceDriverProperties, 
@@ -62,6 +65,10 @@ def create_app():
             kegd_file_reader=DeploymentStrategyFileReader, 
             render_context_service=ResourceTemplateContextCapability, 
             name_manager=NameManager
+    )
+    app_builder.add_service(Watcher, 
+            context_factory=LocationContextFactory, 
+            process_strategy_repository=ProcessStrategyRepository
     )
 
     return app_builder.configure()

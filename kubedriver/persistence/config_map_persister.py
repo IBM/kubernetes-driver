@@ -1,7 +1,10 @@
+import logging
 from kubernetes.client.rest import ApiException
 from kubedriver.kubeobjects import ObjectConfiguration, ObjectAttributes
 from .exceptions import RecordNotFoundError, PersistenceError, InvalidRecordError
 from openshift.dynamic.exceptions import DynamicApiError, NotFoundError, BadRequestError
+
+logger = logging.getLogger(__name__)
 
 class ConfigMapPersister:
 
@@ -66,10 +69,21 @@ class ConfigMapPersister:
 
     def get(self, record_name):
         record_cm = self.__get_config_map_for(record_name)
-        return self.__read_config_map_to_record(record_cm)
+        record = self.__read_config_map_to_record(record_cm)
+        return record
 
     def delete(self, record_name):
+        logger.info(f'ConfigMapPersister1 record_name={record_name}')
         try:
+            record_cm = self.__get_config_map_for(record_name)
+            record = self.__read_config_map_to_record(record_cm)
+            logger.info(f'ConfigMapPersister2 record={record}')
+            if hasattr(record, 'delete_on_ready') and record.delete_on_ready:
+                logger.info(f'ConfigMapPersister3 record={record}')
+                # TODO delete the CR too
+                self.kube_api_ctl.delete_object(record.api_version, record.kind, record.name, namespace=record.namespace)
+                pass
+
             self.kube_api_ctl.delete_object(self.cm_api_version, self.cm_kind, record_name, namespace=self.storage_namespace)
         except ApiException as e:
             self.__raise_error('delete', e, record_name)

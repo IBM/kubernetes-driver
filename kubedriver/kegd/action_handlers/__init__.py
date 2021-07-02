@@ -4,3 +4,4 @@ from .deploy_helm_handler import DeployHelmHandler
 from .remove_helm_handler import RemoveHelmHandler
 from .ready_check_handler import ReadyCheckHandler
 from .output_extraction_handler import OutputExtractionHandler
+from .run_script_handler import RunScriptHandler
