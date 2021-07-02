@@ -44,9 +44,63 @@ The namespace to install the Helm chart into (`helm install --namespace <namespa
 | --- | --- | --- | 
 | N | - | Y (see [templating values](#templating-values)) |
 
-The values to provide to the installation in order to customise the deployment (`helm install -f <values>`). This should be the name of a YAML file, from the `Lifecycle/kubernetes/objects` directory of your Resource package.
+The values provided to the installation in order to customise the deployment (`helm install -f <values1> -f <values2>`). This should be a list of names of YAML files (for backwards compatibility a single filename as string is also supported), from the `Lifecycle/kubernetes/helm` directory of your Resource package.
 
-This file will be rendered as template so you may inject properties into this file as described in [templating](../user-guide/templating.md)
+e.g. 
+```
+compose:
+  - name: Create
+    deploy:
+      - helm:
+          chart: test-chart.tgz
+          name: r{{ system_properties.resource_id_label }}
+          namespace: default
+          values: [ "test-values1.yaml", "test-values2.yaml" ]
+```
+
+for a directory structure
+```
+Lifecycle/kubernetes/helm/
+├── test-chart.tgz
+├── test-values2.yaml
+└── test-values1.yaml
+```
+
+These files and filenames will be rendered as templates so you may inject properties into them as described in [templating](../user-guide/templating.md)
+
+### setfiles
+
+| Mandatory | Default | Templated Value |
+| --- | --- | --- | 
+| N | - | Y (see [templating values](#templating-values)) |
+
+The setfiles argument to helm which can be used to pass large config values from external files 
+(`helm install --set-file valuesA=valuefileA.yaml,valuesB=valuefileB.yaml`) in order to customise the deployment. This should be a dict of `key:filename` mapping and the files should be from the `Lifecycle/kubernetes/helm` directory of your Resource package.
+
+e.g. 
+```
+compose:
+  - name: Create
+    deploy:
+      - helm:
+          chart: test.tgz
+          name: r{{ system_properties.resource_id_label }}
+          namespace: default
+          setfiles:
+               serverA.port.https : "httpsPort.data"
+```
+
+for a directory structure
+```
+Lifecycle/kubernetes/helm/
+├── test-chart.tgz
+├── test-values2.yaml
+├── test-values1.yaml
+└── httpsPort.data
+```
+
+These files and their keys will be rendered as templates so you may inject properties into these as described in [templating](../user-guide/templating.md)
+
 
 ### immediateCleanupOn
 

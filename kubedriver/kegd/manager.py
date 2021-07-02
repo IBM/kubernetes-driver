@@ -221,12 +221,32 @@ class KegdStrategyLocationManager:
             namespace = self.templating.render(deploy_action.namespace, render_context)
         deploy_action.namespace = namespace
         if deploy_action.values != None:
-            deploy_action.values = self.templating.render(deploy_action.values, render_context)
-            values_file_path = kegd_files.get_helm_file(deploy_action.values)
-            with open(values_file_path, 'r') as f:
-                values_file_content = f.read()
-            rendered_values_file_content = self.__process_template(values_file_content, render_context, values_file_path)
-            deploy_action.values = rendered_values_file_content
+            expanded_valuefiles = []
+            for filepath in deploy_action.values:
+                rendered_path = self.templating.render(filepath, render_context)
+                kegd_path = kegd_files.get_helm_file(rendered_path)
+                values_file_content = None
+                with open(kegd_path, 'r') as f:
+                    values_file_content = f.read()
+                rendered_values_file_content = self.__process_template(values_file_content, render_context, kegd_path)
+                expanded_valuefiles.append(rendered_values_file_content)
+            deploy_action.values = expanded_valuefiles
+        if deploy_action.setfiles != None:
+            expanded_setfiles = {}
+            for key in deploy_action.setfiles:
+                rendered_key = self.templating.render(key, render_context)
+                if rendered_key in expanded_setfiles:
+                    raise InvalidDeploymentStrategyError(f'Duplicate key:{rendered_key} present in setfiles')
+                # get filepath from original dict and render
+                filepath = deploy_action.setfiles[key]
+                rendered_path = self.templating.render(filepath, render_context)
+                kegd_path = kegd_files.get_helm_file(rendered_path)
+                file_content = None
+                with open(kegd_path, 'r') as f:
+                    file_content = f.read()
+                rendered_file_content = self.__process_template(file_content, render_context, kegd_path)
+                expanded_setfiles[rendered_key] = rendered_file_content
+            deploy_action.setfiles = expanded_setfiles
         return [deploy_task]
     
     def __expand_deploy_objects_action(self, deploy_task, kegd_files, render_context):

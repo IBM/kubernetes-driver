@@ -80,7 +80,7 @@ class HelmClient:
         cmd = ['sh', script_path]
         return cmd
 
-    def install(self, chart, name, namespace, values=None, wait=None, timeout=None):
+    def install(self, chart, name, namespace, values=None, setfiles=None, wait=None, timeout=None):
         if self.helm_version.startswith("3"):
             if namespace is not None:
                 args = ['install', name, chart, '--namespace', namespace]
@@ -92,8 +92,21 @@ class HelmClient:
             else:
                 args = ['install', chart, '--name', name]
         if values != None:
-            args.append('-f')
-            args.append(values)
+            if not isinstance(values, list):
+                raise HelmError(f'values passed to helmclient should be an array')
+            for path in values:
+                args.append('-f')
+                args.append(path)
+        if setfiles != None:
+            if not isinstance(setfiles, dict):
+                raise HelmError(f'setfiles passed to helmclient should be a dict')
+            setfiles_args = []
+            for key in setfiles:
+                arg = key + "=" + setfiles[key]
+                setfiles_args.append(arg)
+            _arg = ",".join(setfiles_args)
+            args.append('--set-file')
+            args.append(_arg)
         if wait != None:
             args.append('--wait')
             if timeout != None:
@@ -114,14 +127,27 @@ class HelmClient:
         else:
             return name
 
-    def upgrade(self, chart, name, namespace, values=None, reuse_values=False, wait=None, timeout=None):
+    def upgrade(self, chart, name, namespace, values=None, setfiles=None, reuse_values=False, wait=None, timeout=None):
         if namespace is not None:
             args = ['upgrade', name, chart, '--namespace', namespace]
         else:
             args = ['upgrade', name, chart]
         if values != None:
-            args.append('-f')
-            args.append(values)
+            if not isinstance(values, list):
+                raise HelmError(f'values passed to helmclient should be a list')
+            for path in values:
+                args.append('-f')
+                args.append(path)
+        if setfiles != None:
+            if not isinstance(setfiles, dict):
+                raise HelmError(f'setfiles passed to helmclient should be a dict')
+            setfiles_args = []
+            for key in setfiles:
+                arg = key + "=" + setfiles[key]
+                setfiles_args.append(arg)
+            _arg = ",".join(setfiles_args)
+            args.append('--set-file')
+            args.append(_arg)
         if reuse_values is True:
             args.append('--reuse-values')
         if wait != None:
