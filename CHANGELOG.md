@@ -1,5 +1,17 @@
 # Change Log
 
+## [1.1.0](https://github.com/IBM/kubernetes-driver/tree/1.1.0) (2021-07-16)
+[Full Changelog](https://github.com/IBM/kubernetes-driver/compare/1.0.1...1.1.0
+
+**Implement Enhancements**
+- Add support for multiple values file and set-file option in Helm deploy action [\#47](https://github.com/IBM/kubernetes-driver/issues/47)
+- Allow name and content of readyCheck script to be templated [\#46](https://github.com/IBM/kubernetes-driver/issues/46)
+- Uplift dependency versions [\#41](https://github.com/IBM/kubernetes-driver/issues/41)
+
+**Bug Fixes:**
+
+- immediateCleanupOn: Failure not working  [\#40](https://github.com/IBM/kubernetes-driver/issues/40)
+
 ## [1.0.1](https://github.com/IBM/kubernetes-driver/tree/1.0.1) (2021-05-20)
 [Full Changelog](https://github.com/IBM/kubernetes-driver/compare/1.0.0...1.0.1)
 
