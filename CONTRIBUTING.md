@@ -13,6 +13,7 @@
 
 - Daniel Vaccaro-Senna [@dvaccarosenna](https://github.com/dvaccarosenna)
 - Craig Howarth [@chowarth123](https://github.com/chowarth123)
+- Steve Glover [@sglover](https://github.com/sglover)
 
 ## Reporting Issues
 
@@ -35,7 +36,7 @@ When reporting a bug, please include:
 
 ## Feature Requests
 
-Firstly, vheck the existing list of [issues](https://github.com/IBM/kubernetes-driver/issues) to see if the feature has already been requested. Feel free to upvote the issue to add your support but only add comments if you intend to add to the idea, give feedback or provide additional use cases/reasons why the feature is valuable.
+Firstly, check the existing list of [issues](https://github.com/IBM/kubernetes-driver/issues) to see if the feature has already been requested. Feel free to upvote the issue to add your support but only add comments if you intend to add to the idea, give feedback or provide additional use cases/reasons why the feature is valuable.
 
 When requesting a feature, please include:
 
@@ -46,7 +47,7 @@ When requesting a feature, please include:
 
 ## Submitting Changes
 
-If you intend to contribute changes to this project, be sure to read the [developer docs](devdocs/dev-env.md) to setup your local development environment.
+If you intend to contribute changes to this project, be sure to read the [developer docs](devdocs/dev-env.md) to set up your local development environment.
 
 Before submitting changes, please complete the following:
 

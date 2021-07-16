@@ -1,4 +1,4 @@
-FROM python:3.7-alpine
+FROM python:3.9-alpine
 
 ARG DRIVER_PORT
 ENV DRIVER_PORT ${DRIVER_PORT:-8294}
@@ -14,7 +14,7 @@ ENV SUPPORTED_HELM_VERSIONS ${SUPPORTED_HELM_VERSIONS:-2.16.9 3.2.4}
 COPY whls/*.whl /whls/
 
 RUN addgroup -S kubedriver \
- && adduser -S kubedriver -G kubedriver -u 100 \
+ && adduser -S kubedriver -G kubedriver -u 101 \
  && mkdir -p /var/kubedriver \
  # set group to 0 to allow arbitrary users in OCP to write to these directories
  && chown -R kubedriver:0 /var/kubedriver \

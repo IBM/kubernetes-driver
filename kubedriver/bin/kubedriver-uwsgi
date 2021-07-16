@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-
-if [[ $( tr '[:upper:]' '[:lower:]' <<<$SSL_ENABLED ) == "true" ]]; then
-    PORT="--https :$DRIVER_PORT,/var/kubedriver/certs/tls.crt,/var/kubedriver/certs/tls.key"
-else
-    PORT="--http :$DRIVER_PORT"
-fi
-
-uwsgi $PORT --master --processes $NUM_PROCESSES --threads $NUM_THREADS --module "kubedriver:create_wsgi_app()"

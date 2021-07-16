@@ -141,7 +141,7 @@ class KegdStrategyLocationManager:
             deploy_task_group = self.__build_deploy_task_group(compose_script, kegd_files, render_context)
             task_groups.append(deploy_task_group)
             if compose_script.ready_check != None:
-                ready_check_task = self.__build_ready_check_task(compose_script, kegd_files)
+                ready_check_task = self.__build_ready_check_task(compose_script, kegd_files, render_context)
             if compose_script.output_extraction != None:
                 output_extraction_task = self.__build_output_extraction_task(compose_script, kegd_files)
         run_cleanup = False
@@ -177,11 +177,13 @@ class KegdStrategyLocationManager:
                 task_group.deploy_tasks.append(deploy_task)
         return task_group
 
-    def __build_ready_check_task(self, compose_script, kegd_files):
-        ready_script_name = compose_script.ready_check.script
+    def __build_ready_check_task(self, compose_script, kegd_files, render_context):
+        unrendered_ready_script_name = compose_script.ready_check.script
+        ready_script_name = self.templating.render(unrendered_ready_script_name, render_context)
         file_path = kegd_files.get_script_file(ready_script_name)
         with open(file_path, 'r') as f:
-            ready_script_content = f.read()
+            unrendered_ready_script_content = f.read()
+            ready_script_content = self.templating.render(unrendered_ready_script_content, render_context)
         retry_settings = compose_script.ready_check.retry_settings
         if retry_settings == None:
             retry_settings = RetrySettings()
@@ -219,12 +221,32 @@ class KegdStrategyLocationManager:
             namespace = self.templating.render(deploy_action.namespace, render_context)
         deploy_action.namespace = namespace
         if deploy_action.values != None:
-            deploy_action.values = self.templating.render(deploy_action.values, render_context)
-            values_file_path = kegd_files.get_helm_file(deploy_action.values)
-            with open(values_file_path, 'r') as f:
-                values_file_content = f.read()
-            rendered_values_file_content = self.__process_template(values_file_content, render_context, values_file_path)
-            deploy_action.values = rendered_values_file_content
+            expanded_valuefiles = []
+            for filepath in deploy_action.values:
+                rendered_path = self.templating.render(filepath, render_context)
+                kegd_path = kegd_files.get_helm_file(rendered_path)
+                values_file_content = None
+                with open(kegd_path, 'r') as f:
+                    values_file_content = f.read()
+                rendered_values_file_content = self.__process_template(values_file_content, render_context, kegd_path)
+                expanded_valuefiles.append(rendered_values_file_content)
+            deploy_action.values = expanded_valuefiles
+        if deploy_action.setfiles != None:
+            expanded_setfiles = {}
+            for key in deploy_action.setfiles:
+                rendered_key = self.templating.render(key, render_context)
+                if rendered_key in expanded_setfiles:
+                    raise InvalidDeploymentStrategyError(f'Duplicate key:{rendered_key} present in setfiles')
+                # get filepath from original dict and render
+                filepath = deploy_action.setfiles[key]
+                rendered_path = self.templating.render(filepath, render_context)
+                kegd_path = kegd_files.get_helm_file(rendered_path)
+                file_content = None
+                with open(kegd_path, 'r') as f:
+                    file_content = f.read()
+                rendered_file_content = self.__process_template(file_content, render_context, kegd_path)
+                expanded_setfiles[rendered_key] = rendered_file_content
+            deploy_action.setfiles = expanded_setfiles
         return [deploy_task]
     
     def __expand_deploy_objects_action(self, deploy_task, kegd_files, render_context):

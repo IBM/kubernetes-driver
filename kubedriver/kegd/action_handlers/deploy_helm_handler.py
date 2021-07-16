@@ -40,13 +40,13 @@ class DeployHelmHandler:
         tmp_dir = None
         action_type = self.__install_or_upgrade(helm_client, helm_status)
         try:
-            tmp_dir, chart_path, values_path = self.__write_chart(action)
+            tmp_dir, chart_path, value_file_paths, setfiles_dict = self.__write_chart(action)
             captured_objects = []
             if action_type == 'Install':
-                helm_client.install(chart_path, action.name, action.namespace, values=values_path, wait=action.wait, timeout=action.timeout)
+                helm_client.install(chart_path, action.name, action.namespace, values=value_file_paths, setfiles=setfiles_dict, wait=action.wait, timeout=action.timeout)
             else:
                 captured_objects = self.__pre_capture_objects(context.api_ctl, helm_client, helm_status)
-                helm_client.upgrade(chart_path, action.name, action.namespace, values=values_path, reuse_values=True, wait=action.wait, timeout=action.timeout)
+                helm_client.upgrade(chart_path, action.name, action.namespace, values=value_file_paths, setfiles=setfiles_dict, reuse_values=True, wait=action.wait, timeout=action.timeout)
             helm_status.state = EntityStates.CREATED if action_type == 'Install' else EntityStates.UPDATED
             helm_status.error = None
             self.__capture_deltas(delta_capture, context.api_ctl, helm_client, helm_status, captured_objects, is_upgrade=helm_status.state==EntityStates.UPDATED)
@@ -105,20 +105,41 @@ class DeployHelmHandler:
                 writer.write(base64.b64decode(action.chart))
         else:
             chart_path = action.chart        
-        if action.values != None:
-            values_path = os.path.join(tmp_dir, 'values.yaml')
-            with open(values_path, 'w') as writer:
-                writer.write(action.values)
-        else:
-            values_path = None
-        return tmp_dir, chart_path, values_path
 
-    def __write_values(self, values_string):
-        tmp_dir = tempfile.mkdtemp()
-        values_path = os.path.join(tmp_dir, 'values.yaml')
-        with open(values_path, 'w') as writer:
-            writer.write(values_string)
-        return values_path, tmp_dir
+        if action.values != None:
+            value_paths = self.__write_value_files(action.values, tmp_dir)
+        else:
+            value_paths = None
+
+        if action.setfiles != None:
+            setfiles_dict = self.__write_set_files(action.setfiles, tmp_dir)
+        else:
+            setfiles_dict = None
+
+        return tmp_dir, chart_path, value_paths, setfiles_dict
+
+    def __write_value_files(self, data_strings, tmp_dir, file_prefix='values', file_type='yaml'):
+        dumped_valuefiles = []
+        i = 1
+        for data in data_strings:
+            filename = file_prefix+'_'+str(i)+'.'+file_type
+            filepath = os.path.join(tmp_dir, filename)
+            with open(filepath, 'w') as writer:
+                writer.write(data)
+            i += 1
+            dumped_valuefiles.append(filepath)
+        return dumped_valuefiles
+
+    def __write_set_files(self, setfiles, tmp_dir):
+        dumped_setfiles = {}
+        for key in setfiles:
+            # setfiles can be arbitrary text files so just use a generic name here
+            filename = key+'_setfile.data'
+            filepath = os.path.join(tmp_dir, filename)
+            with open(filepath, 'w') as writer:
+                writer.write(setfiles[key])
+            dumped_setfiles[key] = filepath
+        return dumped_setfiles
 
     def __pre_capture_objects(self, api_ctl, helm_client, helm_status):
         helm_release_details = helm_client.get(helm_status.name, helm_status.namespace)

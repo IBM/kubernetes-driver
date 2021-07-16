@@ -204,6 +204,50 @@ class TestHelmClient3(unittest.TestCase):
         ])
 
     @patch('kubedriver.helmclient.client.subprocess')
+    def test_helm_client_install_values(self, mock_subprocess):
+        self.__mock_subprocess_response(mock_subprocess, 0, EXAMPLE_MANIFEST)
+        name = self.client.install('chart', 'name', 'namespace', values=['valuefile_1.yaml'], setfiles=None, wait=None, timeout=None)
+        self.assertEqual(name, 'name')
+
+    @patch('kubedriver.helmclient.client.subprocess')
+    def test_helm_client_upgrade_values(self, mock_subprocess):
+        self.__mock_subprocess_response(mock_subprocess, 0, EXAMPLE_MANIFEST)
+        name = self.client.install('chart', 'name', 'namespace', values=['valuefile_1.yaml'], setfiles=None, wait=None, timeout=None)
+        self.assertEqual(name, 'name')
+
+    @patch('kubedriver.helmclient.client.subprocess')
+    def test_helm_client_install_values_error(self, mock_subprocess):
+        self.__mock_subprocess_response(mock_subprocess, 0, EXAMPLE_MANIFEST)
+        self.assertRaises(HelmError, self.client.install, 'chart', 'name', 'namespace', values='valueA.mapKeyA', setfiles=None, wait=None, timeout=None)
+
+    @patch('kubedriver.helmclient.client.subprocess')
+    def test_helm_client_upgrade_values_error(self, mock_subprocess):
+        self.__mock_subprocess_response(mock_subprocess, 0, EXAMPLE_MANIFEST)
+        self.assertRaises(HelmError, self.client.upgrade, 'chart', 'name', 'namespace', values='valueA.mapKeyA', setfiles=None, wait=None, timeout=None)
+
+    @patch('kubedriver.helmclient.client.subprocess')
+    def test_helm_client_install_setfiles(self, mock_subprocess):
+        self.__mock_subprocess_response(mock_subprocess, 0, EXAMPLE_MANIFEST)
+        name = self.client.install('chart', 'name', 'namespace', values=None, setfiles={'valueA.mapKeyA': 'mapValueB'}, wait=None, timeout=None)
+        self.assertEqual(name, 'name')
+
+    @patch('kubedriver.helmclient.client.subprocess')
+    def test_helm_client_upgrade_setfiles(self, mock_subprocess):
+        self.__mock_subprocess_response(mock_subprocess, 0, EXAMPLE_MANIFEST)
+        name = self.client.install('chart', 'name', 'namespace', values=None, setfiles={'valueA.mapKeyA': 'mapValueB'}, wait=None, timeout=None)
+        self.assertEqual(name, 'name')
+
+    @patch('kubedriver.helmclient.client.subprocess')
+    def test_helm_client_install_setfiles_error(self, mock_subprocess):
+        self.__mock_subprocess_response(mock_subprocess, 0, EXAMPLE_MANIFEST)
+        self.assertRaises(HelmError, self.client.install, 'chart', 'name', 'namespace', values=None, setfiles=['valueA.mapKeyA', 'mapValueB'], wait=None, timeout=None)
+
+    @patch('kubedriver.helmclient.client.subprocess')
+    def test_helm_client_upgrade_setfiles_error(self, mock_subprocess):
+        self.__mock_subprocess_response(mock_subprocess, 0, EXAMPLE_MANIFEST)
+        self.assertRaises(HelmError, self.client.upgrade, 'chart', 'name', 'namespace', values=None, setfiles=['valueA.mapKeyA', 'mapValueB'], wait=None, timeout=None)
+
+    @patch('kubedriver.helmclient.client.subprocess')
     def test_get_helm_error(self, mock_subprocess):
         self.__mock_subprocess_response(mock_subprocess, 1, EXAMPLE_MANIFEST)
         self.assertRaises(HelmError, self.client.get, 'name', 'namespace')
