@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.2.0](https://github.com/IBM/kubernetes-driver/tree/1.2.0) (2021-08-13)
+[Full Changelog](https://github.com/IBM/kubernetes-driver/compare/1.1.0...1.2.0
+
+**Implement Enhancements**
+- Uplift dependency versions [\#51](https://github.com/IBM/kubernetes-driver/issues/51)
+
 ## [1.1.0](https://github.com/IBM/kubernetes-driver/tree/1.1.0) (2021-07-16)
 [Full Changelog](https://github.com/IBM/kubernetes-driver/compare/1.0.1...1.1.0
 
