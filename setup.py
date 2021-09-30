@@ -25,6 +25,5 @@ setup(
     entry_points='''
         [console_scripts]
         kubedriver-dev=kubedriver.__main__:main
-    ''',
-    scripts=['kubedriver/bin/kubedriver-gunicorn', 'kubedriver/bin/kubedriver']
+    '''
 )
