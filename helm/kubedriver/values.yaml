@@ -29,8 +29,6 @@ app:
       ## as top level fields in the Elasticsearch index.
       LOG_TYPE: logstash
 
-      ## configuration for WSGI container
-      WSGI_CONTAINER: gunicorn
       ## the number of processes and threads to spawn to handle requests
       NUM_PROCESSES: "2"
 

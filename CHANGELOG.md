@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.3.0](https://github.com/IBM/kubernetes-driver/tree/1.3.0) (2021-12-10)
+[Full Changelog](https://github.com/IBM/kubernetes-driver/compare/1.2.0...1.3.0
+
+**Implement Enhancements**
+- Remove uwsgi and support graceful shutdown [\#55](https://github.com/IBM/kubernetes-driver/issues/55)
+
 ## [1.2.0](https://github.com/IBM/kubernetes-driver/tree/1.2.0) (2021-08-13)
 [Full Changelog](https://github.com/IBM/kubernetes-driver/compare/1.1.0...1.2.0
 

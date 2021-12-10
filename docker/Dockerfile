@@ -4,10 +4,6 @@ ARG DRIVER_PORT
 ENV DRIVER_PORT ${DRIVER_PORT:-8294}
 ARG NUM_PROCESSES
 ENV NUM_PROCESSES ${NUM_PROCESSES:-4}
-ARG NUM_THREADS
-ENV NUM_THREADS ${NUM_THREADS:-2}
-ARG WSGI_CONTAINER
-ENV WSGI_CONTAINER ${WSGI_CONTAINER:-gunicorn}
 ARG SUPPORTED_HELM_VERSIONS
 ENV SUPPORTED_HELM_VERSIONS ${SUPPORTED_HELM_VERSIONS:-2.16.9 3.2.4}
 
@@ -37,4 +33,5 @@ WORKDIR /home/kubedriver
 
 EXPOSE 8294
 
-CMD ["kubedriver"]
+CMD if [ $SSL_ENABLED | tr [:upper:] [:lower:] == "true" ]; then SSL="--certfile /var/kubedriver/certs/tls.crt --keyfile /var/kubedriver/certs/tls.key" ; fi \
+&& gunicorn --workers $NUM_PROCESSES --bind :$DRIVER_PORT $SSL "kubedriver:create_wsgi_app()"
