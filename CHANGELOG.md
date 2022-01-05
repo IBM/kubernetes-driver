@@ -1,19 +1,19 @@
 # Change Log
 
 ## [1.3.0](https://github.com/IBM/kubernetes-driver/tree/1.3.0) (2021-12-10)
-[Full Changelog](https://github.com/IBM/kubernetes-driver/compare/1.2.0...1.3.0)
+[Full Changelog](https://github.com/IBM/kubernetes-driver/compare/1.2.0...1.3.0
 
 **Implement Enhancements**
 - Remove uwsgi and support graceful shutdown [\#55](https://github.com/IBM/kubernetes-driver/issues/55)
 
 ## [1.2.0](https://github.com/IBM/kubernetes-driver/tree/1.2.0) (2021-08-13)
-[Full Changelog](https://github.com/IBM/kubernetes-driver/compare/1.1.0...1.2.0)
+[Full Changelog](https://github.com/IBM/kubernetes-driver/compare/1.1.0...1.2.0
 
 **Implement Enhancements**
 - Uplift dependency versions [\#51](https://github.com/IBM/kubernetes-driver/issues/51)
 
 ## [1.1.0](https://github.com/IBM/kubernetes-driver/tree/1.1.0) (2021-07-16)
-[Full Changelog](https://github.com/IBM/kubernetes-driver/compare/1.0.1...1.1.0)
+[Full Changelog](https://github.com/IBM/kubernetes-driver/compare/1.0.1...1.1.0
 
 **Implement Enhancements**
 - Add support for multiple values file and set-file option in Helm deploy action [\#47](https://github.com/IBM/kubernetes-driver/issues/47)
