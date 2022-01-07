@@ -13,6 +13,7 @@
 
 - Daniel Vaccaro-Senna [@dvaccarosenna](https://github.com/dvaccarosenna)
 - Owen Lynch [@owen-lynch-ibm](https://github.com/owen-lynch-ibm)
+- Howard Hellyer [@hhellyer](https://github.com/hhellyer)
 
 ## Reporting Issues
 
