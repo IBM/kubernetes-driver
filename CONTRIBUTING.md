@@ -75,7 +75,7 @@ When working on the changes, please complete the following:
 
 - Monitor the PR for comments/approval, responding to any suggested changes. Once at least one maintainer has approved the PR it will be merged when deemed appropriate (usually on approval but there may be rare cases where changes are put on hold). 
 
-**Note:** if your PR is left statle for a while, trying tagging one of the maintainers (listed at the start of this project) 
+**Note:** if your PR is left statle for a while, trying tagging one of the maintainers (listed [above](#maintainers))
 
 ## Issue and PR Lifecycle
 
