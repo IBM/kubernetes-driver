@@ -1,5 +1,10 @@
 # Change Log
 
+## [1.4.0](https://github.com/IBM/kubernetes-driver/tree/1.4.0) (2022-01-13)
+[Full Changelog](https://github.com/IBM/kubernetes-driver/compare/1.3.0...1.4.0)
+
+- Kubernetes Vulnerabilities Issues [\#59](https://github.com/IBM/kubernetes-driver/issues/59)
+
 ## [1.3.0](https://github.com/IBM/kubernetes-driver/tree/1.3.0) (2021-12-10)
 [Full Changelog](https://github.com/IBM/kubernetes-driver/compare/1.2.0...1.3.0)
 
