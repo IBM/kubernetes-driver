@@ -100,7 +100,7 @@ For full details on templates and the syntax used, check out the [Templating](te
 
 ## Helm Charts
 
-The Kubernetes driver can deploy any helm charts to your target Kubernetes environments as long as Helm has been initialised on the environment.
+The Kubernetes driver can deploy any helm charts to your target Kubernetes environments as long as Helm3 has been installed on the environment.
 
 The Helm charts must be compatible with Helm 3 (helm v.3.8.0 is included in the driver).
 
