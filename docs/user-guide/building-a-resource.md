@@ -100,9 +100,9 @@ For full details on templates and the syntax used, check out the [Templating](te
 
 ## Helm Charts
 
-The Kubernetes driver can deploy any helm charts to your target Kubernetes environments as long as Helm has been initialised on the environment (for Helm2 this means you have a running Tiller pod. Check out [helm init](https://v2.helm.sh/docs/helm/#helm-init)).
+The Kubernetes driver can deploy any helm charts to your target Kubernetes environments as long as Helm has been initialised on the environment.
 
-The Helm charts must be compatible with Helm 2 or 3 (helm v.2.16.9, v3.2.4 are included in the driver).
+The Helm charts must be compatible with Helm 3 (helm v.3.8.0 is included in the driver).
 
 The `helm` directory should include the packaged Helm charts you intend to install (`.tgz` files) and any values files you may use to configure the installation. We'll see how you install the charts and select your values file later.
 

@@ -31,13 +31,12 @@ NOTES_PREFIX = 'NOTES:'
 
 class HelmClient:
     
-    def __init__(self, kube_config, helm_version, tls=None, tiller_namespace=None):
+    def __init__(self, kube_config, helm_version, tls=None):
         self.tmp_dir = tempfile.mkdtemp()
         self.tls = tls if tls is not None else HelmTls(enabled=False)
         self.__configure_helm(kube_config)
         self.helm = f'helm{helm_version}'
         self.helm_version = str(helm_version)
-        self.tiller_namespace = tiller_namespace
 
     def close(self):
         if os.path.exists(self.tmp_dir):
@@ -67,8 +66,6 @@ class HelmClient:
         tmp_script = '#!/bin/sh'
         tmp_script += f'\nexport KUBECONFIG={self.kube_conf_path}'
         tmp_script += f'\nexport HELM_HOME={self.helm_home_path}'
-        if self.tiller_namespace is not None:
-            tmp_script += f'\nexport TILLER_NAMESPACE={self.tiller_namespace}'
         tmp_script += f'\n{self.helm}'
         for arg in args:
             tmp_script += f' {arg}'
@@ -81,16 +78,10 @@ class HelmClient:
         return cmd
 
     def install(self, chart, name, namespace, values=None, setfiles=None, wait=None, timeout=None):
-        if self.helm_version.startswith("3"):
-            if namespace is not None:
-                args = ['install', name, chart, '--namespace', namespace]
-            else:
-                args = ['install', name, chart]
+        if namespace is not None:
+            args = ['install', name, chart, '--namespace', namespace]
         else:
-            if namespace is not None:
-                args = ['install', chart, '--name', name, '--namespace', namespace]
-            else:
-                args = ['install', chart, '--name', name]
+            args = ['install', name, chart]
         if values != None:
             if not isinstance(values, list):
                 raise HelmError(f'values passed to helmclient should be an array')
@@ -111,10 +102,7 @@ class HelmClient:
             args.append('--wait')
             if timeout != None:
                 args.append('--timeout')
-                if self.helm_version.startswith("3"):
-                    args.append(str(timeout) + 's')
-                else:
-                    args.append(str(timeout))
+                args.append(str(timeout) + 's')
                     
         cmd = self.__helm_cmd(*args)
 
@@ -154,10 +142,7 @@ class HelmClient:
             args.append('--wait')
             if timeout != None:
                 args.append('--timeout')
-                if self.helm_version.startswith("3"):
-                    args.append(str(timeout) + 's')
-                else:
-                    args.append(str(timeout)) 
+                args.append(str(timeout) + 's')
         cmd = self.__helm_cmd(*args)
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         if process_result.returncode == 127:
@@ -168,45 +153,32 @@ class HelmClient:
             return name
 
     def get(self, name, namespace):
-        if self.helm_version.startswith("3"):
-            if namespace is not None:
-                cmd = self.__helm_cmd('get', "all", name, '--namespace', namespace)
-            else:
-                cmd = self.__helm_cmd('get', "all", name)
+        if namespace is not None:
+            cmd = self.__helm_cmd('get', "all", name, '--namespace', namespace)
         else:
-            cmd = self.__helm_cmd('get', name)
+            cmd = self.__helm_cmd('get', "all", name)
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         if process_result.returncode == 127:
             raise HelmCommandNotFoundError(f'Helm install command not found: {process_result.stdout}')
         elif process_result.returncode != 0:
             raise HelmError(f'Helm get failed: {process_result.stdout}')
         else:
-            if self.helm_version.startswith("3"):
-                return self.__parse_to_helm_3_release(process_result.stdout, name, namespace)
-            else:
-                return self.__parse_to_helm_release(process_result.stdout, name, namespace)
+            return self.__parse_to_helm_3_release(process_result.stdout, name, namespace)
 
     def safe_get(self, name, namespace):
         try:
             release = self.get(name, namespace)
             return True, release
         except HelmError as e:
-            if self.helm_version.startswith("3"):
-                if f'Error: release: not found' in str(e):
-                    return False, None
-            else:
-                if f'Error: release: "{name}" not found' in str(e):
-                    return False, None
+            if f'Error: release: not found' in str(e):
+                return False, None
             raise e from None
 
     def delete(self, name, namespace):
-        if self.helm_version.startswith("3"):
-            if namespace is not None:
-                cmd = self.__helm_cmd('uninstall', name, '--keep-history', '--namespace', namespace)
-            else:
-                cmd = self.__helm_cmd('uninstall', name, '--keep-history')
+        if namespace is not None:
+            cmd = self.__helm_cmd('uninstall', name, '--keep-history', '--namespace', namespace)
         else:
-            cmd = self.__helm_cmd('delete', name)
+            cmd = self.__helm_cmd('uninstall', name, '--keep-history')
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         if process_result.returncode == 127:
             raise HelmCommandNotFoundError(f'Helm delete command not found: {process_result.stdout}')
@@ -214,13 +186,10 @@ class HelmClient:
             raise HelmError(f'Helm delete failed: {process_result.stdout}')
 
     def purge(self, name, namespace):
-        if self.helm_version.startswith("3"):
-            if namespace is not None:
-                cmd = self.__helm_cmd('uninstall', name, '--namespace', namespace)
-            else:
-                cmd = self.__helm_cmd('uninstall', name)
+        if namespace is not None:
+            cmd = self.__helm_cmd('uninstall', name, '--namespace', namespace)
         else:
-            cmd = self.__helm_cmd('delete', name, '--purge')
+            cmd = self.__helm_cmd('uninstall', name)
         process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         if process_result.returncode == 127:
             raise HelmCommandNotFoundError(f'Helm delete (with purge) command not found: {process_result.stdout}')

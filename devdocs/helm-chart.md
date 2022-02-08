@@ -18,7 +18,7 @@ The Helm chart for this driver includes the following features:
 
 # Build Helm Chart
 
-To build the Helm chart you will need to install Helm and initialise it (e.g. `helm init --client-only` on your local machine).
+To build the Helm chart you will need to install Helm v3.8.0
 
 ## Full Build
 
@@ -36,7 +36,7 @@ python3 build.py --skip-docker
 
 # Deploy Helm Chart
 
-To deploy the Helm chart will need Helm installed and initialised against a Kubernetes cluster (e.g. `helm init` on your Kubernetes cluster master node).
+To deploy the Helm chart will need Helm v3.8.0 installed
 
 Install the chart with the default configuration using the install command:
 

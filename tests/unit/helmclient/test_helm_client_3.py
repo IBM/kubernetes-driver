@@ -52,11 +52,11 @@ NOTES:
 
 class TestHelmClient3(unittest.TestCase):
     """
-        The kubernetes driver supports multiple versions of helm that have different syntax for the helm commands. This class is to test actions using the Helm 2 syntax.
+        The kubernetes driver supports multiple versions of helm that have different syntax for the helm commands. This class is to test actions using the Helm 3 syntax.
     """
 
     def setUp(self):
-        self.client = HelmClient('kubeconfig', '3.2.4')
+        self.client = HelmClient('kubeconfig', '3.8.0')
 
     def tearDown(self):
         self.client.close()

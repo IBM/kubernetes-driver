@@ -47,8 +47,6 @@
 
 - Check Helm release has created all objects and add wait option[\#17](https://github.com/IBM/kubernetes-driver/issues/17)
 
-- For Helm Installs support tiller-namespace helm parameter [\#11](https://github.com/IBM/kubernetes-driver/issues/11)
-
 
 Template:
 ## [VERSION NUMBER](https://github.com/IBM/kubernetes-driver/tree/VERSION NUMBER) (YYYY-MM-DD)
