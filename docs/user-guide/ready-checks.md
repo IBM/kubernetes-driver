@@ -168,7 +168,7 @@ def checkReady(keg, props, resultBuilder, log, *args, **kwargs):
 
 ### Helm Releases
 
-Each Helm release deployed is retrievable by it's name and namespace (Releases are actually unique by their name in Helm2 but in future Helm versions they will be unique by namespace as well, so best to use both to avoid compatiblity issues).
+Each Helm release deployed is retrievable by it's name and namespace (Releases are actually different by their namespace but can have the same name in helm3).
 
 As an example, if you've deployed a Helm chart in our kegd.yaml file:
 

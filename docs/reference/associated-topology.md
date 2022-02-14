@@ -97,7 +97,7 @@ id: Helm:docs:example
 type: Helm
 ```
 
-The driver uses the name of the Helm release and the namespace it was installed in as a unique id and name (even though we are using Helm2, this prepares us for Helm3 where releases can have the same name but in different namespaces). 
+The driver uses the name of the Helm release and the namespace it was installed in as a unique id and name. 
 
 The driver will also include a [Deployed Object](#deployed-object) entry for each object deployed as part of the Helm chart.
 
