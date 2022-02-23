@@ -1,4 +1,4 @@
-FROM python:3.9-alpine
+FROM python:3.10-alpine
 
 ARG DRIVER_PORT
 ENV DRIVER_PORT ${DRIVER_PORT:-8294}
