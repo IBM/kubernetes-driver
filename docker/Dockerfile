@@ -1,5 +1,6 @@
 FROM python:3.9-alpine
-RUN apk update && apk upgrade
+RUN apk update && apk upgrade \
+&& rm -rf /var/cache/apk/*
 
 ARG DRIVER_PORT
 ENV DRIVER_PORT ${DRIVER_PORT:-8294}
