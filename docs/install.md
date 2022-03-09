@@ -58,6 +58,20 @@ helm install kubedriver-<version>.tgz --name kubedriver -f custom-values.yml
 
 The driver runs with SSL enabled by default. The installation will generate a self-signed certificate and key by default, adding them to the Kubernetes secret "kubedriver-tls". To use a custom certificate and key in your own secret, override the properties under "apps.config.security.ssl.secret".
 
+### Confirm
+
+You can confirm the driver is working by :
+```
+curl -k -X GET https://10.22.13.236:31684/management/health
+{
+ "vitals": {
+  "app": {
+   "status": "OK"
+  }
+ }
+}
+```
+
 Onboard the driver with [LMCTL v2.5.0+](https://github.com/IBM/lmctl):
 ```
 kubectl get secret kubedriver-tls -o 'go-template={{index .data "tls.crt"}}' | base64 -d > kubedriver-tls.pem
