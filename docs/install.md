@@ -60,17 +60,7 @@ The driver runs with SSL enabled by default. The installation will generate a se
 
 ### Confirm
 
-You can confirm the driver is working by :
-```
-curl -k -X GET https://10.22.13.236:31684/management/health
-{
- "vitals": {
-  "app": {
-   "status": "OK"
-  }
- }
-}
-```
+You can confirm the driver is working accessing: ```http://<kubernetes-node-ip>:{(helm.node_port)}/management/health```
 
 Onboard the driver with [LMCTL v2.5.0+](https://github.com/IBM/lmctl):
 ```
