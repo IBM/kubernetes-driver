@@ -184,7 +184,27 @@ When `found` is `True`, the value of `helm_release` will be a special Helm objec
 `info` - dictionary of details related to the Helm release
 `objects` - a collection of the objects managed by this Helm release
 
+Example of `info`:
+
+```python
+{
+  'name': 'MyReleaseName',
+  'namespace': 'MyNamespace',
+  'revision': 1,
+  'released': 'Mon Mar 30 13:04:31 2020',
+  'chart': 'nginx-ingress-1.24.4',
+  ...
+}
+```
+
 The `objects` attribute has the same functions as `keg.objects`, so you can lookup objects in the Helm release by their apiVersion, kind, name and namespace.
+
+```python
+def checkReady(keg, props, resultBuilder, log, *args, **kwargs):
+    found, helm_release = keg.helm_releases.get('MyReleaseName', 'MyNamespace')
+    if found:
+      objFound, controller = helm_release.objects.get('v1', 'Service', 'MyReleaseName-nginx-ingress-controller', namespace=helm_release.info['namespace'])
+```
 
 ## Props
 
