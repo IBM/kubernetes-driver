@@ -134,3 +134,57 @@ Example with removed object named `example`:
 associatedTopology:
   v1:ConfigMap:doc:example: null
 ```
+
+Example with deployed Helm release named `example`:
+```
+associatedTopology:
+  Helm:doc:example:
+    id: Helm:doc:example
+    type: Helm
+  apps/v1:Deployment:doc:example-nginx-ingress-controlle:
+    id: dff72633-96c0-11ea-98ae-005056956986
+    type: apps/v1:Deployment
+  apps/v1:Deployment:doc:example-nginx-ingress-default-b:
+    id: dff8d818-96c0-11ea-98ae-005056956986
+    type: apps/v1:Deployment
+  rbac.authorization.k8s.io/v1beta1:ClusterRole:a3fa7d7c8-54b2-4d7d-8324-7752b64e7296-4-nginx-ingress:
+    id: dfd67625-96c0-11ea-98ae-005056956986
+    type: rbac.authorization.k8s.io/v1beta1:ClusterRole
+  rbac.authorization.k8s.io/v1beta1:ClusterRoleBinding:a3fa7d7c8-54b2-4d7d-8324-7752b64e7296-4-nginx-ingress:
+    id: dfd82cb2-96c0-11ea-98ae-005056956986
+    type: rbac.authorization.k8s.io/v1beta1:ClusterRoleBinding
+  rbac.authorization.k8s.io/v1beta1:Role:doc:example-nginx-ingress:
+    id: dfde6ee3-96c0-11ea-98ae-005056956986
+    type: rbac.authorization.k8s.io/v1beta1:Role
+  rbac.authorization.k8s.io/v1beta1:RoleBinding:doc:example-nginx-ingress:
+    id: dfe0b5a7-96c0-11ea-98ae-005056956986
+    type: rbac.authorization.k8s.io/v1beta1:RoleBinding
+  v1:Service:doc:example-nginx-ingress-controlle:
+    id: dfefa9fb-96c0-11ea-98ae-005056956986
+    type: v1:Service
+  v1:Service:doc:example-nginx-ingress-default-b:
+    id: dff52f4c-96c0-11ea-98ae-005056956986
+    type: v1:Service
+  v1:ServiceAccount:doc:example-nginx-ingress:
+    id: dfb4f7b8-96c0-11ea-98ae-005056956986
+    type: v1:ServiceAccount
+  v1:ServiceAccount:doc:example-nginx-ingress-backend:
+    id: dfb77967-96c0-11ea-98ae-005056956986
+    type: v1:ServiceAccount
+``` 
+
+Example with removed Helm release named `example`:
+```
+associatedTopology:
+  Helm:doc:example: null
+  apps/v1:Deployment:doc:example-nginx-ingress-controlle: null
+  apps/v1:Deployment:doc:example-nginx-ingress-default-b: null
+  rbac.authorization.k8s.io/v1beta1:ClusterRole:a3fa7d7c8-54b2-4d7d-8324-7752b64e7296-4-nginx-ingress: null
+  rbac.authorization.k8s.io/v1beta1:ClusterRoleBinding:a3fa7d7c8-54b2-4d7d-8324-7752b64e7296-4-nginx-ingress: null
+  rbac.authorization.k8s.io/v1beta1:Role:doc:example-nginx-ingress: null
+  rbac.authorization.k8s.io/v1beta1:RoleBinding:doc:example-nginx-ingress: null
+  v1:Service:doc:example-nginx-ingress-controlle: null
+  v1:Service:doc:example-nginx-ingress-default-b: null
+  v1:ServiceAccount:doc:example-nginx-ingress: null
+  v1:ServiceAccount:doc:example-nginx-ingress-backend: null
+```
