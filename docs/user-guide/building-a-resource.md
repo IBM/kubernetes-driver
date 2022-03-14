@@ -345,7 +345,7 @@ compose:
           name: my-release-name
 ```
 
-The value of `chart` must be either a file in the `helm` directory of your Resource’s Kubernetes directory or the name of a chart from a repository (that has been configured on the Helm server of your deployment location) e.g. `stable/nginx-ingress`. 
+The value of `chart` must be either a file in the `helm` directory of your Resource’s Kubernetes directory or the name of a chart from a repository (that has been configured on the Helm server of your deployment location)
 
 A value must be set to give the release a name and you may optionally set the namespace to use (otherwise the default on the deployment location is used). 
 

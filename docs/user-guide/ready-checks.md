@@ -170,18 +170,6 @@ def checkReady(keg, props, resultBuilder, log, *args, **kwargs):
 
 Each Helm release deployed is retrievable by it's name and namespace (Releases are actually different by their namespace but can have the same name in helm3).
 
-As an example, if you've deployed a Helm chart in our kegd.yaml file:
-
-```yaml
-compose:
-  - name: Create
-    deploy:
-      - helm:
-          chart: nginx-ingress-1.24.4.tgz
-          name: MyReleaseName
-          namespace: MyNamespace
-```
-
 ```python
 def checkReady(keg, props, resultBuilder, log, *args, **kwargs):
     found, helm_release = keg.helm_releases.get('MyReleaseName', 'MyNamespace')
