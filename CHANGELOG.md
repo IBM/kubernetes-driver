@@ -1,10 +1,10 @@
 # Change Log
 
-## [2.0.0](https://github.com/IBM/kubernetes-driver/tree/2.0.0) (2022-02-11)
-[Full Changelog](https://github.com/IBM/kubernetes-driver/compare/1.4.0...2.0.0)
+## [2.0.1](https://github.com/IBM/kubernetes-driver/tree/2.0.1) (2022-03-15)
+[Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.0.0...2.0.1)
 
-- Kubernetes Vulnerabilities Issues [\#75](https://github.com/IBM/kubernetes-driver/issues/75)
-- Removed Helm2 support [\#80](https://github.com/IBM/kubernetes-driver/issues/80)
+- Vulnerability fixed, swagger reference removed [\#85](https://github.com/IBM/kubernetes-driver/issues/85)
+- Ingress removed [\#87](https://github.com/IBM/kubernetes-driver/issues/87)
 
 ## [1.4.0](https://github.com/IBM/kubernetes-driver/tree/1.4.0) (2022-01-13)
 [Full Changelog](https://github.com/IBM/kubernetes-driver/compare/1.3.0...1.4.0)
