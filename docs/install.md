@@ -96,8 +96,6 @@ The following table lists configurable parameters of the chart:
 | app.resources | Set requests and limits to CPU and memory resources | {} |
 | service.type | Type of Service to be deployed | NodePort |
 | service.nodePort | NodePort used to expose the service | 31684 |
-| ingress.enabled | Flag to disable/enable creation of an Ingress rule for external access | true |
-| ingress.host | Hostname on the Ingress rule | kubedriver.lm |
 
 ## Application Configuration
 
