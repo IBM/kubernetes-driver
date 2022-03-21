@@ -1,5 +1,11 @@
 # Change Log
 
+## [2.0.1](https://github.com/IBM/kubernetes-driver/tree/2.0.1) (2022-03-15)
+[Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.0.0...2.0.1)
+
+- Vulnerability fixed, swagger reference removed [\#85](https://github.com/IBM/kubernetes-driver/issues/85)
+- Ingress removed [\#87](https://github.com/IBM/kubernetes-driver/issues/87)
+
 ## [2.0.0](https://github.com/IBM/kubernetes-driver/tree/2.0.0) (2022-02-11)
 [Full Changelog](https://github.com/IBM/kubernetes-driver/compare/1.4.0...2.0.0)
 

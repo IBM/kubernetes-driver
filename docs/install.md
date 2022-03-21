@@ -58,11 +58,9 @@ helm install kubedriver-<version>.tgz --name kubedriver -f custom-values.yml
 
 The driver runs with SSL enabled by default. The installation will generate a self-signed certificate and key by default, adding them to the Kubernetes secret "kubedriver-tls". To use a custom certificate and key in your own secret, override the properties under "apps.config.security.ssl.secret".
 
-### Confirm 
+### Confirm
 
-You can confirm the driver is working by accessing the Swagger UI included to render the API definitions.
-
-Access the UI at `https://your_host:31684/api/driver/ui` e.g. [`http://localhost:31684/api/driver/ui`](http://localhost:31684/api/driver/ui)
+You can confirm the driver is working accessing: ```http://<kubernetes-node-ip>:31684/management/health```
 
 Onboard the driver with [LMCTL v2.5.0+](https://github.com/IBM/lmctl):
 ```
@@ -98,8 +96,6 @@ The following table lists configurable parameters of the chart:
 | app.resources | Set requests and limits to CPU and memory resources | {} |
 | service.type | Type of Service to be deployed | NodePort |
 | service.nodePort | NodePort used to expose the service | 31684 |
-| ingress.enabled | Flag to disable/enable creation of an Ingress rule for external access | true |
-| ingress.host | Hostname on the Ingress rule | kubedriver.lm |
 
 ## Application Configuration
 

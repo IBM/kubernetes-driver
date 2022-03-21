@@ -137,11 +137,3 @@ service:
   # Using NodePort allows access to the IPs through http://k8s-host:nodePort/
   type: NodePort
   nodePort: 31684
-
-ingress:
-  enabled: true
-  ## The host used to access the service externally i.e. http://<server.ingress.hostname>/
-  ## If not making use of a DNS to resolve this host you must add this to the client hosts file with the K8s IP
-  ## E.g.
-  ## 10.220.1.2     kubedriver.lm
-  host: kubedriver.lm
