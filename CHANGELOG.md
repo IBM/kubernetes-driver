@@ -53,7 +53,7 @@
 
 **Implemented Enhancements:**
 
-- Update connection_address to cp4na-o-events-kafka-bootstrap:9092 in driver values.yaml to be compatible with TNC-O installed with IAF [\#31](https://github.com/IBM/kubernetes-driver/issues/31)
+- Update connection_address to iaf-system-kafka-bootstrap:9092 in driver values.yaml to be compatible with TNC-O installed with IAF [\#31](https://github.com/IBM/kubernetes-driver/issues/31)
 
 - Support structured properties [\#29](https://github.com/IBM/kubernetes-driver/issues/29)
 
@@ -77,4 +77,4 @@ Template:
 
 **Implemented Enhancements:**
 
-- Update connection_address to iaf-system-kafka-bootstrap:9092 in driver values.yaml to be compatible with cp4na [\#91](https://github.com/IBM/kubernetes-driver/issues/91)
+- Update connection_address to cp4na-o-events-kafka-bootstrap:9092 in driver values.yaml to be compatible with cp4na [\#91](https://github.com/IBM/kubernetes-driver/issues/91)
