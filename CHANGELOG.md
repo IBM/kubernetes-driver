@@ -74,3 +74,7 @@ Template:
 
 **Doc Updates:**
 - ISSUE_TITLE [#1](https://github.com/IBM/kubernetes-driver/issues/1)
+
+**Implemented Enhancements:**
+
+- Update connection_address to iaf-system-kafka-bootstrap:9092 in driver values.yaml to be compatible with cp4na [\#91](https://github.com/IBM/kubernetes-driver/issues/91)
