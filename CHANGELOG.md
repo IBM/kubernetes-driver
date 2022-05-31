@@ -1,5 +1,12 @@
 # Change Log
 
+## [2.0.2](https://github.com/IBM/kubernetes-driver/tree/2.0.2) (2022-05-31)
+[Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.0.1...2.0.2)
+
+- Fixed vulnerabilities [\#96](https://github.com/IBM/kubernetes-driver/issues/96)
+- Kafka instance name changed & updated ignition version [\#94](https://github.com/IBM/kubernetes-driver/issues/94)
+- Update docker image location [\#93](https://github.com/IBM/kubernetes-driver/issues/93)
+
 ## [2.0.1](https://github.com/IBM/kubernetes-driver/tree/2.0.1) (2022-03-15)
 [Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.0.0...2.0.1)
 
