@@ -8,7 +8,7 @@ global:
 ## Docker Image for the Openstack VIM Driver
 docker:
   ## Make this the full path, including registry host and port if using one
-  image: ibmcom/kubernetes-driver
+  image: icr.io/cp4na-drivers/kubernetes-driver
   version: ${version}
   imagePullPolicy: IfNotPresent
 
@@ -36,7 +36,7 @@ app:
     override:
       messaging:
         # Kafka connection url
-        connection_address: iaf-system-kafka-bootstrap:9092
+        connection_address: cp4na-o-events-kafka-bootstrap:9092
         # timeout waiting for initial version check on Kafka producer/consumer initialisation
         # 5000ms is usually sufficient, increase if problems with NoBrokersAvailable occur
         api_version_auto_timeout_ms: 5000
