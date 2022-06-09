@@ -28,6 +28,12 @@ A list of the most common configuration options has also been included as an [ap
 
 The driver has a dependency on Kafka, which it uses to send response messages back to LM. Therefore it must be installed with access to the same shared Kafka cluster as your Lifecycle Manager.
 
+kafka host value must be set as follows, in values.yaml file of the helm package, depending on the CP4NA versions:
+
+* For pre CP4NA v2.3, the kafka host must be iaf-system-kafka-bootstrap
+
+* For CP4NA v2.3/v2.3+, the kafka host must be cp4na-o-events-kafka-bootstrap  
+
 By default, the driver will attempt to connect to Kafka with the address `alm-kafka:9092`.  For [All In One](https://github.com/accanto-systems/lm-allinone) it should be set to `foundation-kafka:9092`.
 
 If you need to set a different address (or configure any of the other values of the Helm chart) you may do so by creating a custom values file.
