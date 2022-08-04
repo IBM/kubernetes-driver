@@ -23,13 +23,13 @@ class RemoveObjectHandler:
         obj_status.state = EntityStates.DELETE_PENDING
         obj_status.error = None
 
-    def handle(self, action, parent_task_settings, script_name, keg_name, keg_status, context, delta_capture):
+    def handle(self, action, parent_task_settings, script_name, keg_name, keg_status, context, delta_capture, driver_request_id=None):
         api_ctl = context.api_ctl
         task_errors = []
         obj_status = self.__find_object(action, keg_status)
         if obj_status != None:
             try:
-                api_ctl.delete_object(action.group, action.kind, action.name, namespace=action.namespace)
+                api_ctl.delete_object(action.group, action.kind, action.name, namespace=action.namespace, driver_request_id=driver_request_id)
                 obj_status.state = EntityStates.DELETED
                 obj_status.error = None
             except NotFoundError:

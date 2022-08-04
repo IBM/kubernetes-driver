@@ -74,21 +74,21 @@ class KegdStrategyLocationManager:
     def build_process_strategy_job(self, keg_name, kegd_strategy, operation_name, kegd_files, render_context):
         keg_status = None
         try:
-            keg_status = self.keg_persister.get(keg_name)
+            request_id = 'kegdr-' + str(uuid.uuid4())
+            keg_status = self.keg_persister.get(keg_name, driver_request_id=request_id)
         except RecordNotFoundError:
             #Not found, first operation on this Keg 
             pass
         strategy_execution = self.__build_strategy_execution(kegd_strategy, operation_name, kegd_files, render_context, keg_status=keg_status)
-        request_id = 'kegdr-' + str(uuid.uuid4())
         self.__create_report_status(request_id, keg_name, strategy_execution)
         return ProcessStrategyJob(request_id, self.kube_location, keg_name, strategy_execution, render_context)
 
     def get_request_report(self, request_id):
-        return self.kegd_persister.get(request_id)
+        return self.kegd_persister.get(request_id, driver_request_id=request_id)
 
     def delete_request_report(self, request_id):
         try:
-            return self.kegd_persister.delete(request_id)
+            return self.kegd_persister.delete(request_id, driver_request_id=request_id)
         except RecordNotFoundError:
             #Not found, nothing to do
             pass
@@ -106,7 +106,7 @@ class KegdStrategyLocationManager:
             Labels.MANAGED_BY: LabelValues.MANAGED_BY,
             Labels.KEG: keg_name
         }
-        self.kegd_persister.create(request_id, report, labels=labels)
+        self.kegd_persister.create(request_id, report, labels=labels, driver_request_id=request_id)
         return report
 
     def __gen_task_group_name(self, compose_script, render_context):

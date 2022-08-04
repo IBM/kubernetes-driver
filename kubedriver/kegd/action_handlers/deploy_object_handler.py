@@ -29,7 +29,7 @@ class DeployObjectHandler:
         self.__add_tags(obj_status, action.tags, script_name)
         return obj_status
 
-    def handle(self, action, parent_task_settings, script_name, keg_name, keg_status, context, delta_capture):
+    def handle(self, action, parent_task_settings, script_name, keg_name, keg_status, context, delta_capture, driver_request_id=None):
         api_ctl = context.api_ctl
         task_errors = []
         obj_status = self.__find_object(action, keg_status)
@@ -39,10 +39,11 @@ class DeployObjectHandler:
         self.config_utils.add_label(object_config, Labels.MANAGED_BY, LabelValues.MANAGED_BY)
         self.config_utils.add_label(object_config, Labels.KEG, keg_name)
         try:
+            # logger.info("!!!object_config %s", object_config)
             if obj_status.state == EntityStates.UPDATE_PENDING:
-                return_obj = api_ctl.update_object(object_config)
+                return_obj = api_ctl.update_object(object_config, driver_request_id=driver_request_id)
             else:
-                return_obj = api_ctl.create_object(object_config)
+                return_obj = api_ctl.create_object(object_config, driver_request_id=driver_request_id)
             obj_status.uid = self.__get_uid(return_obj)
             obj_status.state = EntityStates.CREATED if obj_status.state == EntityStates.CREATE_PENDING else EntityStates.UPDATED
             obj_status.error = None

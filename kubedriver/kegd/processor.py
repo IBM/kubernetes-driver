@@ -76,9 +76,11 @@ class KegdStrategyLocationProcessor:
         self.keg_persister = context.keg_persister
         self.kegd_persister = context.kegd_persister
         self.api_ctl = context.api_ctl
+        self.driver_request_id = ''
 
     def handle_process_strategy_job(self, process_strategy_job):
         logger.debug(f'Processing request \'{process_strategy_job.request_id}\'')
+        self.driver_request_id = process_strategy_job.request_id
 
         cancel_process, errors, requeue_process = self.__check_retry_status(process_strategy_job)
         if requeue_process:
@@ -88,7 +90,7 @@ class KegdStrategyLocationProcessor:
         # Errors retrieving the request or checking request state result in the job not being requeued
         strategy_execution = process_strategy_job.strategy_execution
         try:
-            report_status = self.kegd_persister.get(process_strategy_job.request_id)
+            report_status = self.kegd_persister.get(process_strategy_job.request_id, driver_request_id=self.driver_request_id)
         except RecordNotFoundError as e:
             logger.exception(f'Report could not be found for request {process_strategy_job.request_id}, this request will no longer be processed')
             # Finished
@@ -212,7 +214,7 @@ class KegdStrategyLocationProcessor:
     def __mark_as_running(self, report_status):
         if report_status.state != StrategyExecutionStates.RUNNING:
             report_status.state = StrategyExecutionStates.RUNNING
-            self.kegd_persister.update(report_status.uid, report_status)
+            self.kegd_persister.update(report_status.uid, report_status, driver_request_id=self.driver_request_id)
 
     def __check_retry_status(self, process_strategy_job):
         now_as_datetime = timeutil.get_utc_datetime()
@@ -235,14 +237,14 @@ class KegdStrategyLocationProcessor:
     def __process_next_phases(self, report_status, keg_name, strategy_execution, resource_context_properties):
         keg_status, new_keg = self.__get_or_init_keg(keg_name)
         if new_keg is True:
-            uid = self.keg_persister.get_record_uid(keg_name)
+            uid = self.keg_persister.get_record_uid(keg_name, driver_request_id=self.driver_request_id)
             record_ref = self.keg_persister.build_record_reference(uid, keg_name)
             delta_capture = KegDeltaCapture(report_status.delta)
             delta_capture.deployed_object(V1alpha1ObjectStatus(group=record_ref.get('apiVersion'), kind=record_ref.get('kind'), 
                                                                 namespace=record_ref['metadata'].get('namespace'), name=record_ref['metadata'].get('name'),
                                                                 uid=record_ref['metadata'].get('uid')))
             report_status.delta = delta_capture.delta
-            self.kegd_persister.update(report_status.uid, report_status)
+            self.kegd_persister.update(report_status.uid, report_status, driver_request_id=self.driver_request_id)
         captured_errors = []
         try:
             # This point forward we must make best efforts to update the request if there is an error (and to run Immediate cleanup on error)
@@ -306,7 +308,7 @@ class KegdStrategyLocationProcessor:
             else:
                 next_phase = StrategyExecutionPhases.END
         report_status.phase = next_phase
-        self.kegd_persister.update(report_status.uid, report_status)
+        self.kegd_persister.update(report_status.uid, report_status, driver_request_id=self.driver_request_id)
 
     def __execute_task_groups(self, report_status, keg_name, keg_status, strategy_execution):
         errors = []
@@ -332,7 +334,7 @@ class KegdStrategyLocationProcessor:
                 handler = self.__get_removal_task_handler(task)
                 handler.decorate(task.action, task.settings, task_group_name, keg_name, keg_status)
             try:
-                self.keg_persister.update(keg_name, keg_status)
+                self.keg_persister.update(keg_name, keg_status, driver_request_id=self.driver_request_id)
             except PersistenceError as e:
                 msg = f'Failed to update Keg \'{keg_name}\' with planned composition remove changes on request \'{report_status.uid}\''
                 logger.exception(msg)
@@ -342,10 +344,10 @@ class KegdStrategyLocationProcessor:
                 for task in removal_tasks:
                     logger.debug('Processing handler for remove task ' + str(task.on_write()))
                     handler = self.__get_removal_task_handler(task)
-                    handler_errors = handler.handle(task.action, task.settings, task_group_name, keg_name, keg_status, self.context, delta_capture)
+                    handler_errors = handler.handle(task.action, task.settings, task_group_name, keg_name, keg_status, self.context, delta_capture, driver_request_id=self.driver_request_id)
                     task_errors.extend(handler_errors)
                 try:
-                    self.keg_persister.update(keg_name, keg_status)
+                    self.keg_persister.update(keg_name, keg_status, driver_request_id=self.driver_request_id)
                 except PersistenceError as e:
                     msg = f'Failed to update Keg \'{keg_name}\' with composition remove changes on request \'{report_status.uid}\''
                     logger.exception(msg)
@@ -360,7 +362,7 @@ class KegdStrategyLocationProcessor:
                 handler = self.__get_deploy_task_handler(task)
                 handler.decorate(task.action, task.settings, task_group_name, keg_name, keg_status)
             try:
-                self.keg_persister.update(keg_name, keg_status)
+                self.keg_persister.update(keg_name, keg_status, driver_request_id=self.driver_request_id)
             except PersistenceError as e:
                 msg = f'Failed to update Keg \'{keg_name}\' with planned composition deploy changes on request \'{report_status.uid}\''
                 logger.exception(msg)
@@ -370,10 +372,10 @@ class KegdStrategyLocationProcessor:
                 for task in deploy_tasks:
                     logger.debug('Processing handler for deploy task ' + str(task.on_write()))
                     handler = self.__get_deploy_task_handler(task)
-                    handler_errors = handler.handle(task.action, task.settings, task_group_name, keg_name, keg_status, self.context, delta_capture)
+                    handler_errors = handler.handle(task.action, task.settings, task_group_name, keg_name, keg_status, self.context, delta_capture, driver_request_id=self.driver_request_id)
                     task_errors.extend(handler_errors)
                 try:
-                    self.keg_persister.update(keg_name, keg_status)
+                    self.keg_persister.update(keg_name, keg_status, driver_request_id=self.driver_request_id)
                 except PersistenceError as e:
                     msg = f'Failed to update Keg \'{keg_name}\' with composition deploy changes on request \'{report_status.uid}\''
                     logger.exception(msg)
@@ -386,7 +388,7 @@ class KegdStrategyLocationProcessor:
         if strategy_execution.ready_check_task is not None:
             ready_check_task = strategy_execution.ready_check_task
             handler = ReadyCheckHandler()
-            ready_result = handler.handle(report_status.operation, keg_name, keg_status, self.context, ready_check_task, resource_context_properties)
+            ready_result = handler.handle(report_status.operation, keg_name, keg_status, self.context, ready_check_task, resource_context_properties, driver_request_id=self.driver_request_id)
             has_failed, reason = ready_result.has_failed()
             if has_failed:
                 errors.append(reason)
@@ -443,7 +445,7 @@ class KegdStrategyLocationProcessor:
             report_status.state = StrategyExecutionStates.COMPLETE
             report_status.phase = StrategyExecutionPhases.END
             report_status.errors = []
-        self.kegd_persister.update(report_status.uid, report_status)
+        self.kegd_persister.update(report_status.uid, report_status, driver_request_id=self.driver_request_id)
  
     def __summarise_exec_errors(self, exec_errors):
         error_msg = 'Request encountered {0} error(s):'.format(len(exec_errors))
@@ -470,7 +472,7 @@ class KegdStrategyLocationProcessor:
             cleanup_errors = self.__cleanout_keg(report_status, keg_name, keg_status, delta_capture)
             if len(cleanup_errors) == 0:
                 try:
-                    self.keg_persister.delete(keg_name)
+                    self.keg_persister.delete(keg_name, driver_request_id=self.driver_request_id)
                 except PersistenceError as e:
                     msg = f'Failed to remove Keg \'{keg_name}\' on request \'{report_status.uid}\''
                     logger.exception(msg)
@@ -496,7 +498,7 @@ class KegdStrategyLocationProcessor:
 
     def __get_or_init_keg(self, keg_name):
         try:
-            keg = self.keg_persister.get(keg_name)
+            keg = self.keg_persister.get(keg_name, driver_request_id=self.driver_request_id)
             return keg, False
         except RecordNotFoundError:
             # Not found
@@ -504,5 +506,5 @@ class KegdStrategyLocationProcessor:
             keg.composition = V1alpha1KegCompositionStatus()
             keg.composition.objects = []
             keg.composition.helm_releases = []
-            self.keg_persister.create(keg_name, keg)
+            self.keg_persister.create(keg_name, keg, driver_request_id=self.driver_request_id)
             return keg, True
