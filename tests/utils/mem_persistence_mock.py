@@ -34,24 +34,24 @@ class MemoryPersistenceWorker():
             }
         }
     
-    def get_record_uid(self, record_name):
+    def get_record_uid(self, record_name, driver_request_id=None):
         return self.uids[record_name]
 
-    def create(self, record_name, record_data, labels=None):
+    def create(self, record_name, record_data, labels=None, driver_request_id=None):
         self.store[record_name] = copy.deepcopy(record_data)
         self.uids[record_name] = str(uuid.uuid4())
 
-    def get(self, record_name):
+    def get(self, record_name, driver_request_id=None):
         if record_name not in self.store:
             raise RecordNotFoundError('Mock persistence has not been configured with record_name: {0}'.format(record_name))
         return copy.deepcopy(self.store[record_name])
 
-    def delete(self, record_name):
+    def delete(self, record_name, driver_request_id=None):
         if record_name not in self.store:
             raise RecordNotFoundError('Mock persistence has not been configured with record_name: {0}'.format(record_name))
         self.store.pop(uid)
 
-    def update(self, record_name, record_data):
+    def update(self, record_name, record_data, driver_request_id=None):
         if record_name not in self.store:
             raise RecordNotFoundError('Mock persistence has not been configured with record_name: {0}'.format(record_name))
         self.store[record_name] = copy.deepcopy(record_data)

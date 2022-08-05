@@ -103,7 +103,7 @@ class TestKegdStrategyLocationProcessor(unittest.TestCase):
         self.assertEqual(before_end_calls[0][1].phase, 'Immediate cleanup on failure')
 
         # Confirm cleanup of object took place
-        self.api_ctl.delete_object.assert_called_once_with('v1', 'ConfigMap', 'just-testing-123-a', namespace='default')
+        self.api_ctl.delete_object.assert_called_once_with('v1', 'ConfigMap', 'just-testing-123-a', namespace='default', driver_request_id=job.request_id)
 
     def test_immediate_cleanup_on_retry_attempts_exceeded(self):
         render_context = generate_base_render_context()
@@ -150,7 +150,7 @@ class TestKegdStrategyLocationProcessor(unittest.TestCase):
         self.assertEqual(before_end_calls[0][1].phase, 'Immediate cleanup on failure')
 
         # Confirm cleanup of object took place
-        self.api_ctl.delete_object.assert_called_once_with('v1', 'ConfigMap', 'just-testing-123-a', namespace='default')
+        self.api_ctl.delete_object.assert_called_once_with('v1', 'ConfigMap', 'just-testing-123-a', namespace='default', driver_request_id=job.request_id)
 
     def test_immediate_cleanup_with_templated_ready(self):
         render_context = generate_base_render_context()
@@ -195,7 +195,7 @@ class TestKegdStrategyLocationProcessor(unittest.TestCase):
         self.assertEqual(before_end_calls[0][1].phase, 'Immediate cleanup on failure')
 
         # Confirm cleanup of object took place
-        self.api_ctl.delete_object.assert_called_once_with('v1', 'ConfigMap', 'just-testing-123-a', namespace='default')
+        self.api_ctl.delete_object.assert_called_once_with('v1', 'ConfigMap', 'just-testing-123-a', namespace='default', driver_request_id=job.request_id)
 
     def test_deploy_object(self):
         render_context = generate_base_render_context()
@@ -251,7 +251,8 @@ class TestKegdStrategyLocationProcessor(unittest.TestCase):
                     'propertyA': 'A property', 
                     'propertyB': 'Include a number - 123'
                 }
-            })
+            }),
+            driver_request_id=job.request_id
         )
     
     def test_property_inputs_to_scripts(self):

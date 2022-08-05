@@ -39,7 +39,6 @@ class DeployObjectHandler:
         self.config_utils.add_label(object_config, Labels.MANAGED_BY, LabelValues.MANAGED_BY)
         self.config_utils.add_label(object_config, Labels.KEG, keg_name)
         try:
-            # logger.info("!!!object_config %s", object_config)
             if obj_status.state == EntityStates.UPDATE_PENDING:
                 return_obj = api_ctl.update_object(object_config, driver_request_id=driver_request_id)
             else:
