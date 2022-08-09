@@ -51,7 +51,7 @@ class OpenshiftApiController:
                                        'request', 'http', {'method':'post'}, driver_request_id)
         return_obj = resource_client.create(**create_args)
         self._generate_additional_logs(return_obj.to_dict(), 'received', external_request_id, 'application/json',
-                                       'request', 'http', {'method':'post'}, driver_request_id)
+                                       'response', 'http', {'method':'post'}, driver_request_id)
         return return_obj
 
     def __build_create_arguments(self, resource_client, object_config, supplied_default_namespace):
@@ -71,7 +71,7 @@ class OpenshiftApiController:
                                        'request', 'http', {'method':'put'}, driver_request_id)   
         return_obj = resource_client.replace(**update_args)
         self._generate_additional_logs(return_obj.to_dict(), 'received', external_request_id, 'application/json',
-                                       'request', 'http', {'method':'put'}, driver_request_id)
+                                       'response', 'http', {'method':'put'}, driver_request_id)
         return return_obj
 
     def __build_update_arguments(self, resource_client, object_config, supplied_default_namespace):
@@ -98,7 +98,7 @@ class OpenshiftApiController:
                                        'request', 'http', {'method':'get'}, driver_request_id)
         return_obj = resource_client.get(**read_args)
         self._generate_additional_logs(return_obj.to_dict(), 'received', external_request_id, 'application/json',
-                                       'request', 'http', {'method':'get'}, driver_request_id)
+                                       'response', 'http', {'method':'get'}, driver_request_id)
         return return_obj
 
     def __build_read_arguments(self, resource_client, name, namespace):
@@ -118,7 +118,7 @@ class OpenshiftApiController:
                                        'request', 'http', {'method':'delete'}, driver_request_id)
         return_obj = resource_client.delete(**delete_args)
         self._generate_additional_logs(return_obj.to_dict(), 'received', external_request_id, 'application/json',
-                                       'request', 'http', {'method':'delete'}, driver_request_id)
+                                       'response', 'http', {'method':'delete'}, driver_request_id)
 
     def __build_delete_arguments(self, resource_client, name, namespace):
         args = {
