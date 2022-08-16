@@ -34,7 +34,7 @@ kafka host value must be set as follows, in values.yaml file of the helm package
 
 * For CP4NA v2.3/v2.3+, the kafka host must be cp4na-o-events-kafka-bootstrap  
 
-By default, the driver will attempt to connect to Kafka with the address `alm-kafka:9092`.  For [All In One](https://github.com/accanto-systems/lm-allinone) it should be set to `foundation-kafka:9092`.
+By default, the driver will attempt to connect to Kafka with the address `cp4na-o-events-kafka-bootstrap:9092`.
 
 If you need to set a different address (or configure any of the other values of the Helm chart) you may do so by creating a custom values file.
 
@@ -93,7 +93,7 @@ The following table lists configurable parameters of the chart:
 | app.config.env.WSGI_CONTAINER | WSGI container implementation used by the driver | gunicorn |
 | app.config.env.NUM_PROCESSES | Number of threads per process | 2 |
 | app.config.override | Map to set [Application Configuration)[#app-configuration] properties | See connection_address below and [Application Configuration)[#app-configuration] properties |
-| app.config.override.message.connection_address | Kafka address. Default set to address of Kafka installed as standard with LM | alm-kafka:9092 |
+| app.config.override.message.connection_address | Kafka address. Default set to address of Kafka installed as standard with LM | cp4na-o-events-kafka-bootstrap:9092 |
 | app.config.security.ssl.enabled | Enabled/disable SSL | True |
 | app.config.security.ssl.secret.name | Name of the secret containing the SSL certificate for the non-host based access | kubedriver-tls |
 | app.config.security.ssl.secret.generate | If True, the Helm chart installation will generate a new SSL key with a self-signed certificate | True |
@@ -110,4 +110,4 @@ The following table lists configurable parameters of the Application, that may b
 | Parameter | Description | Default |
 | --- | --- | --- |
 | application.port | Port the application runs on (internal access only) | 8294 | 
-| messaging.connection_address | Kafka address | alm-kafka:9092 |
+| messaging.connection_address | Kafka address | cp4na-o-events-kafka-bootstrap:9092 |
