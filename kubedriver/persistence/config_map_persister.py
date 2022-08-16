@@ -1,7 +1,10 @@
+import logging
 from kubernetes.client.rest import ApiException
 from kubedriver.kubeobjects import ObjectConfiguration, ObjectAttributes
 from .exceptions import RecordNotFoundError, PersistenceError, InvalidRecordError
 from openshift.dynamic.exceptions import DynamicApiError, NotFoundError, BadRequestError
+
+logger = logging.getLogger(__name__)
 
 class ConfigMapPersister:
 
@@ -38,39 +41,39 @@ class ConfigMapPersister:
             }
         }
     
-    def get_record_uid(self, record_name):
-        record_cm = self.__get_config_map_for(record_name)
+    def get_record_uid(self, record_name, driver_request_id=None):
+        record_cm = self.__get_config_map_for(record_name, driver_request_id=driver_request_id)
         return record_cm.metadata.uid
     
-    def create(self, record_name, record_data, labels=None):
+    def create(self, record_name, record_data, labels=None, driver_request_id=None):
         cm_config = self.__build_config_map_for_record(record_name, record_data, labels=labels)
         try:
-            self.kube_api_ctl.create_object(cm_config, default_namespace=self.storage_namespace)
+            self.kube_api_ctl.create_object(cm_config, default_namespace=self.storage_namespace, driver_request_id=driver_request_id)
         except ApiException as e:
             self.__raise_error('create', e, record_name)
 
-    def update(self, record_name, record_data):
-        existing_cm = self.__get_config_map_for(record_name)
+    def update(self, record_name, record_data, driver_request_id=None):
+        existing_cm = self.__get_config_map_for(record_name, driver_request_id=driver_request_id)
         cm_config = self.__build_config_map_for_record(record_name, record_data, existing_cm=existing_cm)
         try:
-            self.kube_api_ctl.update_object(cm_config, default_namespace=self.storage_namespace)
+            self.kube_api_ctl.update_object(cm_config, default_namespace=self.storage_namespace, driver_request_id=driver_request_id)
         except ApiException as e:
             self.__raise_error('update', e, record_name)
 
-    def __get_config_map_for(self, record_name):
+    def __get_config_map_for(self, record_name, driver_request_id=None):
         try:
-            record_cm = self.kube_api_ctl.read_object(self.cm_api_version, self.cm_kind, record_name, namespace=self.storage_namespace)
+            record_cm = self.kube_api_ctl.read_object(self.cm_api_version, self.cm_kind, record_name, namespace=self.storage_namespace, driver_request_id=driver_request_id)
             return record_cm
         except ApiException as e:
             self.__raise_error('read', e, record_name)
 
-    def get(self, record_name):
-        record_cm = self.__get_config_map_for(record_name)
+    def get(self, record_name, driver_request_id=None):
+        record_cm = self.__get_config_map_for(record_name, driver_request_id=driver_request_id)
         return self.__read_config_map_to_record(record_cm)
 
-    def delete(self, record_name):
+    def delete(self, record_name, driver_request_id=None):
         try:
-            self.kube_api_ctl.delete_object(self.cm_api_version, self.cm_kind, record_name, namespace=self.storage_namespace)
+            self.kube_api_ctl.delete_object(self.cm_api_version, self.cm_kind, record_name, namespace=self.storage_namespace, driver_request_id=driver_request_id)
         except ApiException as e:
             self.__raise_error('delete', e, record_name)
 
