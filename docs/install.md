@@ -62,6 +62,8 @@ Install the chart using the Helm CLI, adding any custom values file if created.
 helm install kubedriver kubedriver-<version>.tgz -f custom-values.yml
 ```
 
+Please note that `Helm v3` is required to execute the above helm install command.
+
 The driver runs with SSL enabled by default. The installation will generate a self-signed certificate and key by default, adding them to the Kubernetes secret "kubedriver-tls". To use a custom certificate and key in your own secret, override the properties under "apps.config.security.ssl.secret".
 
 ### Confirm
