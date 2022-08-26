@@ -8,7 +8,7 @@ This section details how to install the driver into a Kubernetes environment wit
 
 To complete the install you will need a Kubernetes cluster.
 
-You will also need a controller machine (can be one of the Kubernetes cluster nodes) to perform the installation from. This machine must have the Helm CLI tool installed with access to your cluster.
+You will also need a controller machine (can be one of the Kubernetes cluster nodes) to perform the installation from. This machine must have the Helm CLI tool installed with access to your cluster. Please note that `Helm v3` is required.
 
 ## Installation
 
@@ -34,7 +34,7 @@ kafka host value must be set as follows, in values.yaml file of the helm package
 
 * For CP4NA v2.3/v2.3+, the kafka host must be cp4na-o-events-kafka-bootstrap  
 
-By default, the driver will attempt to connect to Kafka with the address `alm-kafka:9092`.  For [All In One](https://github.com/accanto-systems/lm-allinone) it should be set to `foundation-kafka:9092`.
+By default, the driver will attempt to connect to Kafka with the address `cp4na-o-events-kafka-bootstrap:9092`.
 
 If you need to set a different address (or configure any of the other values of the Helm chart) you may do so by creating a custom values file.
 
@@ -59,7 +59,7 @@ You will reference the custom-values.yml file when installing the chart with Hel
 Install the chart using the Helm CLI, adding any custom values file if created.
 
 ```
-helm install kubedriver-<version>.tgz --name kubedriver -f custom-values.yml
+helm install kubedriver kubedriver-<version>.tgz -f custom-values.yml
 ```
 
 The driver runs with SSL enabled by default. The installation will generate a self-signed certificate and key by default, adding them to the Kubernetes secret "kubedriver-tls". To use a custom certificate and key in your own secret, override the properties under "apps.config.security.ssl.secret".
@@ -93,7 +93,7 @@ The following table lists configurable parameters of the chart:
 | app.config.env.WSGI_CONTAINER | WSGI container implementation used by the driver | gunicorn |
 | app.config.env.NUM_PROCESSES | Number of threads per process | 2 |
 | app.config.override | Map to set [Application Configuration)[#app-configuration] properties | See connection_address below and [Application Configuration)[#app-configuration] properties |
-| app.config.override.message.connection_address | Kafka address. Default set to address of Kafka installed as standard with LM | alm-kafka:9092 |
+| app.config.override.message.connection_address | Kafka address. Default set to address of Kafka installed as standard with LM | cp4na-o-events-kafka-bootstrap:9092 |
 | app.config.security.ssl.enabled | Enabled/disable SSL | True |
 | app.config.security.ssl.secret.name | Name of the secret containing the SSL certificate for the non-host based access | kubedriver-tls |
 | app.config.security.ssl.secret.generate | If True, the Helm chart installation will generate a new SSL key with a self-signed certificate | True |
@@ -110,4 +110,4 @@ The following table lists configurable parameters of the Application, that may b
 | Parameter | Description | Default |
 | --- | --- | --- |
 | application.port | Port the application runs on (internal access only) | 8294 | 
-| messaging.connection_address | Kafka address | alm-kafka:9092 |
+| messaging.connection_address | Kafka address | cp4na-o-events-kafka-bootstrap:9092 |
