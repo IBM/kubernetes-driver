@@ -5,7 +5,9 @@
 
 - Update Ignition version to latest 3.4.0 [\#110](https://github.com/IBM/kubernetes-driver/issues/110)
 - Adding note for KAFKA address change [\#100](https://github.com/IBM/kubernetes-driver/issues/100)
-- Fixed Vulnerabilities [\#95](https://github.com/IBM/kubernetes-driver/issues/95)
+- Fix Vulnerabilities [\#95](https://github.com/IBM/kubernetes-driver/issues/95)
+- Enable Logging for External Request & Response [\#102](https://github.com/IBM/kubernetes-driver/issues/102)
+- Update install instructions for Kubernetes Driver [\#104](https://github.com/IBM/kubernetes-driver/issues/104)
 
 ## [2.0.2](https://github.com/IBM/kubernetes-driver/tree/2.0.2) (2022-05-31)
 [Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.0.1...2.0.2)
