@@ -1,6 +1,6 @@
 # Change Log
 
-## [2.1.2](https://github.com/IBM/kubernetes-driver/tree/2.1.1) (2022-12)
+## [2.1.2](https://github.com/IBM/kubernetes-driver/tree/2.1.2) (2022-12-08)
 [Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.1.1...2.1.2)
 
 - Fix vulnerability [\#129](https://github.com/IBM/kubernetes-driver/issues/129)
