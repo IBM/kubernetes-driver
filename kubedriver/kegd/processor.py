@@ -344,7 +344,12 @@ class KegdStrategyLocationProcessor:
                 for task in removal_tasks:
                     logger.debug('Processing handler for remove task ' + str(task.on_write()))
                     handler = self.__get_removal_task_handler(task)
-                    handler_errors = handler.handle(task.action, task.settings, task_group_name, keg_name, keg_status, self.context, delta_capture, driver_request_id=self.driver_request_id)
+                    if isinstance(handler, (DeployObjectHandler, ReadyCheckHandler, RemoveObjectHandler)):
+                        handler_errors = handler.handle(task.action, task.settings, task_group_name, keg_name, keg_status, self.context, delta_capture, driver_request_id=self.driver_request_id)
+                        logger.debug("handler type is DeployObjectHandler or ReadyCheckHandler or RemoveObjectHandler")
+                    else:
+                        handler_errors = handler.handle(task.action, task.settings, task_group_name, keg_name, keg_status, self.context, delta_capture)
+                        logger.debug("handler type is not DeployObjectHandler or ReadyCheckHandler or RemoveObjectHandler")
                     task_errors.extend(handler_errors)
                 try:
                     self.keg_persister.update(keg_name, keg_status, driver_request_id=self.driver_request_id)
@@ -372,7 +377,12 @@ class KegdStrategyLocationProcessor:
                 for task in deploy_tasks:
                     logger.debug('Processing handler for deploy task ' + str(task.on_write()))
                     handler = self.__get_deploy_task_handler(task)
-                    handler_errors = handler.handle(task.action, task.settings, task_group_name, keg_name, keg_status, self.context, delta_capture, driver_request_id=self.driver_request_id)
+                    if isinstance(handler, (DeployObjectHandler, ReadyCheckHandler, RemoveObjectHandler)):
+                        handler_errors = handler.handle(task.action, task.settings, task_group_name, keg_name, keg_status, self.context, delta_capture, driver_request_id=self.driver_request_id)
+                        logger.debug("handler type is DeployObjectHandler or ReadyCheckHandler or RemoveObjectHandler")
+                    else:
+                        handler_errors = handler.handle(task.action, task.settings, task_group_name, keg_name, keg_status, self.context, delta_capture)
+                        logger.debug("handler type is not DeployObjectHandler or ReadyCheckHandler or RemoveObjectHandler")
                     task_errors.extend(handler_errors)
                 try:
                     self.keg_persister.update(keg_name, keg_status, driver_request_id=self.driver_request_id)
@@ -388,7 +398,12 @@ class KegdStrategyLocationProcessor:
         if strategy_execution.ready_check_task is not None:
             ready_check_task = strategy_execution.ready_check_task
             handler = ReadyCheckHandler()
-            ready_result = handler.handle(report_status.operation, keg_name, keg_status, self.context, ready_check_task, resource_context_properties, driver_request_id=self.driver_request_id)
+            if isinstance(handler, (DeployObjectHandler, ReadyCheckHandler, RemoveObjectHandler)):
+                ready_result = handler.handle(report_status.operation, keg_name, keg_status, self.context, ready_check_task, resource_context_properties, driver_request_id=self.driver_request_id)
+                logger.debug("handler type is DeployObjectHandler or ReadyCheckHandler or RemoveObjectHandler")
+            else:
+                ready_result = handler.handle(report_status.operation, keg_name, keg_status, self.context, ready_check_task, resource_context_properties)
+                logger.debug("handler type is not DeployObjectHandler or ReadyCheckHandler or RemoveObjectHandler")
             has_failed, reason = ready_result.has_failed()
             if has_failed:
                 errors.append(reason)
@@ -402,7 +417,12 @@ class KegdStrategyLocationProcessor:
         if strategy_execution.output_extraction_task is not None:
             output_extraction_task = strategy_execution.output_extraction_task
             handler = OutputExtractionHandler()
-            extraction_result = handler.handle(report_status.operation, keg_name, keg_status, self.context, output_extraction_task, resource_context_properties)
+            if isinstance(handler, (DeployObjectHandler, ReadyCheckHandler, RemoveObjectHandler)):
+                extraction_result = handler.handle(report_status.operation, keg_name, keg_status, self.context, output_extraction_task, resource_context_properties, driver_request_id=self.driver_request_id)
+                logger.debug("handler type is DeployObjectHandler or ReadyCheckHandler or RemoveObjectHandler")
+            else:
+                extraction_result = handler.handle(report_status.operation, keg_name, keg_status, self.context, output_extraction_task, resource_context_properties)
+                logger.debug("handler type is not DeployObjectHandler or ReadyCheckHandler or RemoveObjectHandler")
             has_failed, reason = extraction_result.has_failed()
             if has_failed:
                 errors.append(reason)

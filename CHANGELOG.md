@@ -1,5 +1,11 @@
 # Change Log
 
+## [2.1.3](https://github.com/IBM/kubernetes-driver/tree/2.1.3) (2023-01-27)
+[Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.1.2...2.1.3)
+
+- Error while using kube driver to deploy a Helm chart [\#134](https://github.com/IBM/kubernetes-driver/issues/134)
+
+
 ## [2.1.2](https://github.com/IBM/kubernetes-driver/tree/2.1.2) (2022-12-08)
 [Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.1.1...2.1.2)
 
