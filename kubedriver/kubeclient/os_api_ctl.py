@@ -35,6 +35,7 @@ class OpenshiftApiController:
                                     'protocol' : protocol, 'protocol_metadata' : str(filtered_protocol_metadata).replace("'", '\"'),
                                     'tracectx.driverrequestid' : driver_request_id}
             logging_context.set_from_dict(logging_context_dict)
+
             logger.info(str(body).replace("'", '\"'))
         finally:
             if('message_direction' in logging_context.data):
@@ -54,7 +55,7 @@ class OpenshiftApiController:
 
     
     def create_object(self, object_config, default_namespace=None, driver_request_id=None):
-        logger.info("!!!Inside create_object")
+        logger.debug("Calling create_object API")
         resource_client = self.__get_resource_client(object_config.api_version, object_config.kind)
         create_args = self.__build_create_arguments(resource_client, object_config, default_namespace)
         external_request_id = str(uuid.uuid4())
@@ -66,7 +67,7 @@ class OpenshiftApiController:
             return_obj = resource_client.create(**create_args)
             # Have to change the response logs for success case
             self._generate_additional_logs(return_obj.to_dict(), 'received', external_request_id, 'application/json',
-                                        'response', 'http', {'method':'post'}, driver_request_id)
+                                        'response', 'http', {'status_code' : 201}, driver_request_id)
             return return_obj
         except ApiException as e:
             dict_headers = {}
@@ -88,7 +89,7 @@ class OpenshiftApiController:
         return args
 
     def update_object(self, object_config, default_namespace=None, driver_request_id=None):
-        logger.info("!!!Inside update_object")
+        logger.debug("Calling update_object API")
         resource_client = self.__get_resource_client(object_config.api_version, object_config.kind)
         update_args = self.__build_update_arguments(resource_client, object_config, default_namespace)
         external_request_id = str(uuid.uuid4())
@@ -99,7 +100,7 @@ class OpenshiftApiController:
         try:
             return_obj = resource_client.replace(**update_args)
             self._generate_additional_logs(return_obj.to_dict(), 'received', external_request_id, 'application/json',
-                                        'response', 'http', {'method':'put'}, driver_request_id)
+                                        'response', 'http', {'status_code' : 200}, driver_request_id)
             return return_obj
         except ApiException as e:
             dict_headers = {}
@@ -120,7 +121,6 @@ class OpenshiftApiController:
         return args
 
     def safe_read_object(self, api_version, kind, name, namespace=None, driver_request_id=None):
-        logger.info("!!!Inside safe_read_object1")
         try:
             obj = self.read_object(api_version, kind, name, namespace=namespace, driver_request_id=driver_request_id)
             return True, obj
@@ -128,18 +128,18 @@ class OpenshiftApiController:
             return False, None
 
     def read_object(self, api_version, kind, name, namespace=None, driver_request_id=None):
-        logger.info("!!!Inside read_object")
+        logger.debug("Calling read_object API")
         resource_client = self.__get_resource_client(api_version, kind)
         read_args = self.__build_read_arguments(resource_client, name, namespace)
         external_request_id = str(uuid.uuid4())
         logger.debug("read_args : %s", read_args)
         uri = resource_client.client.client.configuration.host + resource_client.urls['full']
-        self._generate_additional_logs('', 'sent', external_request_id, '',
+        self._generate_additional_logs(None, 'sent', external_request_id, None,
                                        'request', 'http', {'uri' : uri, 'method':'get'}, driver_request_id)
         try:
             return_obj = resource_client.get(**read_args)
             self._generate_additional_logs(return_obj.to_dict(), 'received', external_request_id, 'application/json',
-                                        'response', 'http', {'method':'get'}, driver_request_id)
+                                        'response', 'http', {'status_code' : 200}, driver_request_id)
             return return_obj
         except ApiException as e:
             dict_headers = {}
@@ -160,7 +160,7 @@ class OpenshiftApiController:
         return args
 
     def delete_object(self, api_version, kind, name, namespace=None, driver_request_id=None):
-        logger.info("!!!Inside delete_object")
+        logger.debug("Calling delete_object API")
         resource_client = self.__get_resource_client(api_version, kind)
         delete_args = self.__build_delete_arguments(resource_client, name, namespace)
         external_request_id = str(uuid.uuid4())
@@ -171,7 +171,7 @@ class OpenshiftApiController:
         try:
             return_obj = resource_client.delete(**delete_args)
             self._generate_additional_logs(return_obj.to_dict(), 'received', external_request_id, 'application/json',
-                                       'response', 'http', {'method':'delete'}, driver_request_id)
+                                       'response', 'http', {'status_code' : 204}, driver_request_id)
         except ApiException as e:
             dict_headers = {}
             if hasattr(e, 'headers'):
