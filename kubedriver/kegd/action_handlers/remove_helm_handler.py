@@ -18,14 +18,14 @@ class RemoveHelmHandler:
         helm_status.state = EntityStates.DELETE_PENDING
         helm_status.error = None
 
-    def handle(self, action, parent_task_settings, script_name, keg_name, keg_status, context, delta_capture):
+    def handle(self, action, parent_task_settings, script_name, keg_name, keg_status, context, delta_capture, driver_request_id=None):
         helm_client = context.kube_location.helm_client
         task_errors = []
         helm_status = self.__find_helm_status(action, keg_status)
         if helm_status != None:
             should_delete = False
             try:
-                found, _ = helm_client.safe_get(action.name, action.namespace)
+                found, _ = helm_client.safe_get(action.name, action.namespace, driver_request_id=driver_request_id)
                 if found: 
                     should_delete = True
             except Exception as e:
@@ -39,7 +39,7 @@ class RemoveHelmHandler:
                 if should_delete:
                     try:
                         captured_objects = self.__pre_capture_objects(context.api_ctl, helm_client, helm_status)
-                        helm_client.purge(action.name, action.namespace)
+                        helm_client.purge(action.name, action.namespace, driver_request_id=driver_request_id)
                         helm_status.state = EntityStates.DELETED
                         helm_status.error = None
                         self.__capture_deltas(delta_capture, helm_status, captured_objects)
@@ -73,8 +73,8 @@ class RemoveHelmHandler:
                 new_helm_releases.append(helm_status)
         keg_status.composition.helm_releases = new_helm_releases
 
-    def __pre_capture_objects(self, api_ctl, helm_client, helm_status):
-        helm_release_details = helm_client.get(helm_status.name, helm_status.namespace)
+    def __pre_capture_objects(self, api_ctl, helm_client, helm_status, driver_request_id=None):
+        helm_release_details = helm_client.get(helm_status.name, helm_status.namespace, driver_request_id=driver_request_id)
         loader = CompositionLoader(api_ctl, helm_client)
         loaded_objects = loader.load_objects_in_helm_release(helm_release_details)
         return loaded_objects
