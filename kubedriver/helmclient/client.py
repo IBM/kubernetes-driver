@@ -172,11 +172,11 @@ class HelmClient:
                 cmd = self.__helm_cmd('get', "all", name)
         else:
             cmd = self.__helm_cmd('get', name)
-        process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if process_result.returncode == 127:
-            raise HelmCommandNotFoundError(f'Helm install command not found: {process_result.stdout}')
+            raise HelmCommandNotFoundError(f'Helm install command not found: stdout: {process_result.stdout} stderr: {process_result.stderr}')
         elif process_result.returncode != 0:
-            raise HelmError(f'Helm get failed: {process_result.stdout}')
+            raise HelmError(f'Helm get failed: stdout: {process_result.stdout} stderr: {process_result.stderr}')
         else:
             if self.helm_version.startswith("3"):
                 return self.__parse_to_helm_3_release(process_result.stdout, name, namespace)
