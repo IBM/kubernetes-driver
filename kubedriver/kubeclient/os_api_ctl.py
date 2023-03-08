@@ -134,7 +134,7 @@ class OpenshiftApiController:
         external_request_id = str(uuid.uuid4())
         logger.debug("read_args : %s", read_args)
         uri = resource_client.client.client.configuration.host + resource_client.urls['full']
-        self._generate_additional_logs(None, 'sent', external_request_id, None,
+        self._generate_additional_logs("", 'sent', external_request_id, "",
                                        'request', 'http', {'uri' : uri, 'method':'get'}, driver_request_id)
         try:
             return_obj = resource_client.get(**read_args)

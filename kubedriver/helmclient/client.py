@@ -117,8 +117,11 @@ class HelmClient:
         cmd = self.__helm_cmd(*args)
         
         try:
+            cmd_string = "helm"
+            for ele in args:
+                cmd_string += " " + ele
             external_request_id = str(uuid.uuid4())
-            self._generate_additional_logs(cmd, 'sent', external_request_id, "",
+            self._generate_additional_logs(cmd_string, 'sent', external_request_id, "",
                                         'request', 'cmd', "", driver_request_id)
             process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             self._generate_additional_logs(process_result, 'received', external_request_id, "",
@@ -170,8 +173,11 @@ class HelmClient:
         cmd = self.__helm_cmd(*args)
 
         try:
+            cmd_string = "helm"
+            for ele in args:
+                cmd_string += " " + ele
             external_request_id = str(uuid.uuid4())
-            self._generate_additional_logs(cmd, 'sent', external_request_id, "",
+            self._generate_additional_logs(cmd_string, 'sent', external_request_id, "",
                                         'request', 'cmd', "", driver_request_id)
             process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             self._generate_additional_logs(process_result, 'received', external_request_id, "",
@@ -193,14 +199,20 @@ class HelmClient:
         if self.helm_version.startswith("3"):
             if namespace is not None:
                 cmd = self.__helm_cmd('get', "all", name, '--namespace', namespace)
+                args = ['get', "all", name, '--namespace', namespace]
             else:
                 cmd = self.__helm_cmd('get', "all", name)
+                args = ['get', "all", name]
         else:
             cmd = self.__helm_cmd('get', name)
+            args = ['get', name]
         
         try:
+            cmd_string = "helm"
+            for ele in args:
+                cmd_string += " " + ele
             external_request_id = str(uuid.uuid4())
-            self._generate_additional_logs(cmd, 'sent', external_request_id, "",
+            self._generate_additional_logs(cmd_string, 'sent', external_request_id, "",
                                         'request', 'cmd', "", driver_request_id)
             process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             self._generate_additional_logs(process_result, 'received', external_request_id, "",
@@ -238,14 +250,20 @@ class HelmClient:
         if self.helm_version.startswith("3"):
             if namespace is not None:
                 cmd = self.__helm_cmd('uninstall', name, '--keep-history', '--namespace', namespace)
+                args = ['uninstall', name, '--keep-history', '--namespace', namespace]
             else:
                 cmd = self.__helm_cmd('uninstall', name, '--keep-history')
+                args = ['uninstall', name, '--keep-history']
         else:
             cmd = self.__helm_cmd('delete', name)
+            args = ['delete', name]
 
         try:
+            cmd_string = "helm"
+            for ele in args:
+                cmd_string += " " + ele
             external_request_id = str(uuid.uuid4())
-            self._generate_additional_logs(cmd, 'sent', external_request_id, "",
+            self._generate_additional_logs(cmd_string, 'sent', external_request_id, "",
                                         'request', 'cmd', "", driver_request_id)
             process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             self._generate_additional_logs(process_result, 'received', external_request_id, "",
@@ -265,14 +283,20 @@ class HelmClient:
         if self.helm_version.startswith("3"):
             if namespace is not None:
                 cmd = self.__helm_cmd('uninstall', name, '--namespace', namespace)
+                args = ['uninstall', name, '--namespace', namespace]
             else:
                 cmd = self.__helm_cmd('uninstall', name)
+                args = ['uninstall', name]
         else:
             cmd = self.__helm_cmd('delete', name, '--purge')
+            args = ['delete', name, '--purge']
 
         try:
+            cmd_string = "helm"
+            for ele in args:
+                cmd_string += " " + ele
             external_request_id = str(uuid.uuid4())
-            self._generate_additional_logs(cmd, 'sent', external_request_id, "",
+            self._generate_additional_logs(cmd_string, 'sent', external_request_id, "",
                                         'request', 'cmd', "", driver_request_id)
             process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             self._generate_additional_logs(process_result, 'received', external_request_id, "",
@@ -375,7 +399,7 @@ class HelmClient:
                                   message_type, protocol, protocol_metadata, driver_request_id):
         try:
             logging_context_dict = {'message_direction' : message_direction, 'tracectx.externalrequestid' : external_request_id, 'content_type' : content_type,
-                                    'message_type' : message_type, 'protocol' : protocol, 'protocol_metadata' : protocol_metadata, 'tracectx.driverrequestid' : driver_request_id}
+                                    'message_type' : message_type, 'protocol' : protocol, 'protocol_metadata' : str(protocol_metadata).replace("'", '\"'), 'tracectx.driverrequestid' : driver_request_id}
             logging_context.set_from_dict(logging_context_dict)
             logger.info(body)
         finally:
