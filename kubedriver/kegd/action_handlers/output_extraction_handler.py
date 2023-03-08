@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 class OutputExtractionHandler:
 
-    def handle(self, operation_name, keg_name, keg_status, location_context, output_extraction_task, resource_context_properties):
+    def handle(self, operation_name, keg_name, keg_status, location_context, output_extraction_task, resource_context_properties, driver_request_id=None):
         script_file_name = output_extraction_task.script_file_name
         script = output_extraction_task.script
         sandbox = self.__build_sandbox()
