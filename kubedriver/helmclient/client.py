@@ -12,6 +12,7 @@ from .tls import HelmTls
 from kubedriver.kubeobjects import ObjectConfigurationDocument
 from kubedriver.helmobjects import HelmReleaseDetails
 from ignition.service.logging import logging_context
+from subprocess import CompletedProcess
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +80,7 @@ class HelmClient:
         return cmd
 
     def install(self, chart, name, namespace, values=None, setfiles=None, wait=None, timeout=None, driver_request_id=None):
-        logger.info("Invoking helm install command")
+        logger.debug("Invoking helm install command")
         if self.helm_version.startswith("3"):
             if namespace is not None:
                 args = ['install', name, chart, '--namespace', namespace]
@@ -121,13 +122,13 @@ class HelmClient:
             for ele in args:
                 cmd_string += " " + ele
             external_request_id = str(uuid.uuid4())
-            self._generate_additional_logs(cmd_string, 'sent', external_request_id, "",
+            self._generate_additional_logs(cmd_string, 'sent', external_request_id, "text/plain",
                                         'request', 'cmd', "", driver_request_id)
             process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            self._generate_additional_logs(process_result, 'received', external_request_id, "",
+            self._generate_additional_logs(process_result, 'received', external_request_id, "text/plain",
                                        'response', 'cmd', {'exit_code': process_result.returncode}, driver_request_id)
         except Exception as e:
-            self._generate_additional_logs(e, 'received', external_request_id, "",
+            self._generate_additional_logs(e, 'received', external_request_id, "text/plain",
                                        'response', 'cmd', {'exit_code': 1}, driver_request_id)
             raise e
 
@@ -139,7 +140,7 @@ class HelmClient:
             return name
 
     def upgrade(self, chart, name, namespace, values=None, setfiles=None, reuse_values=False, wait=None, timeout=None, driver_request_id=None):
-        logger.info("Invoking helm upgrade command")
+        logger.debug("Invoking helm upgrade command")
         if namespace is not None:
             args = ['upgrade', name, chart, '--namespace', namespace]
         else:
@@ -177,13 +178,13 @@ class HelmClient:
             for ele in args:
                 cmd_string += " " + ele
             external_request_id = str(uuid.uuid4())
-            self._generate_additional_logs(cmd_string, 'sent', external_request_id, "",
+            self._generate_additional_logs(cmd_string, 'sent', external_request_id, "text/plain",
                                         'request', 'cmd', "", driver_request_id)
             process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            self._generate_additional_logs(process_result, 'received', external_request_id, "",
+            self._generate_additional_logs(process_result, 'received', external_request_id, "text/plain",
                                        'response', 'cmd', {'exit_code': process_result.returncode}, driver_request_id)
         except Exception as e:
-            self._generate_additional_logs(e, 'received', external_request_id, "",
+            self._generate_additional_logs(e, 'received', external_request_id, "text/plain",
                                        'response', 'cmd', {'exit_code': 1}, driver_request_id)
             raise e
 
@@ -195,7 +196,7 @@ class HelmClient:
             return name
 
     def get(self, name, namespace, driver_request_id=None):
-        logger.info("Invoking helm read (get) command")
+        logger.debug("Invoking helm read (get) command")
         if self.helm_version.startswith("3"):
             if namespace is not None:
                 cmd = self.__helm_cmd('get', "all", name, '--namespace', namespace)
@@ -212,13 +213,13 @@ class HelmClient:
             for ele in args:
                 cmd_string += " " + ele
             external_request_id = str(uuid.uuid4())
-            self._generate_additional_logs(cmd_string, 'sent', external_request_id, "",
+            self._generate_additional_logs(cmd_string, 'sent', external_request_id, "text/plain",
                                         'request', 'cmd', "", driver_request_id)
             process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            self._generate_additional_logs(process_result, 'received', external_request_id, "",
+            self._generate_additional_logs(process_result, 'received', external_request_id, "text/plain",
                                        'response', 'cmd', {'exit_code': process_result.returncode}, driver_request_id)
         except Exception as e:
-            self._generate_additional_logs(e, 'received', external_request_id, "",
+            self._generate_additional_logs(e, 'received', external_request_id, "text/plain",
                                        'response', 'cmd', {'exit_code': 1}, driver_request_id)
             raise e
 
@@ -246,7 +247,7 @@ class HelmClient:
             raise e from None
 
     def delete(self, name, namespace, driver_request_id=None):
-        logger.info("Invoking helm delete (uninstall) command")
+        logger.debug("Invoking helm delete (uninstall) command")
         if self.helm_version.startswith("3"):
             if namespace is not None:
                 cmd = self.__helm_cmd('uninstall', name, '--keep-history', '--namespace', namespace)
@@ -263,13 +264,13 @@ class HelmClient:
             for ele in args:
                 cmd_string += " " + ele
             external_request_id = str(uuid.uuid4())
-            self._generate_additional_logs(cmd_string, 'sent', external_request_id, "",
+            self._generate_additional_logs(cmd_string, 'sent', external_request_id, "text/plain",
                                         'request', 'cmd', "", driver_request_id)
             process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            self._generate_additional_logs(process_result, 'received', external_request_id, "",
+            self._generate_additional_logs(process_result, 'received', external_request_id, "text/plain",
                                        'response', 'cmd', {'exit_code': process_result.returncode}, driver_request_id)
         except Exception as e:
-            self._generate_additional_logs(e, 'received', external_request_id, "",
+            self._generate_additional_logs(e, 'received', external_request_id, "text/plain",
                                        'response', 'cmd', {'exit_code': 1}, driver_request_id)
             raise e
            
@@ -279,7 +280,7 @@ class HelmClient:
             raise HelmError(f'Helm delete failed: {process_result.stdout}')
 
     def purge(self, name, namespace, driver_request_id=None):
-        logger.info("Invoking helm purge (uninstall) command")
+        logger.debug("Invoking helm purge (uninstall) command")
         if self.helm_version.startswith("3"):
             if namespace is not None:
                 cmd = self.__helm_cmd('uninstall', name, '--namespace', namespace)
@@ -296,13 +297,13 @@ class HelmClient:
             for ele in args:
                 cmd_string += " " + ele
             external_request_id = str(uuid.uuid4())
-            self._generate_additional_logs(cmd_string, 'sent', external_request_id, "",
+            self._generate_additional_logs(cmd_string, 'sent', external_request_id, "text/plain",
                                         'request', 'cmd', "", driver_request_id)
             process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            self._generate_additional_logs(process_result, 'received', external_request_id, "",
+            self._generate_additional_logs(process_result, 'received', external_request_id, "text/plain",
                                        'response', 'cmd', {'exit_code': process_result.returncode}, driver_request_id)
         except Exception as e:
-            self._generate_additional_logs(e, 'received', external_request_id, "",
+            self._generate_additional_logs(e, 'received', external_request_id, "text/plain",
                                        'response', 'cmd', {'exit_code': 1}, driver_request_id)
             raise e
         
@@ -401,7 +402,18 @@ class HelmClient:
             logging_context_dict = {'message_direction' : message_direction, 'tracectx.externalrequestid' : external_request_id, 'content_type' : content_type,
                                     'message_type' : message_type, 'protocol' : protocol, 'protocol_metadata' : str(protocol_metadata).replace("'", '\"'), 'tracectx.driverrequestid' : driver_request_id}
             logging_context.set_from_dict(logging_context_dict)
-            logger.info(body)
+            filteredBody = ""
+            # Extracting stdout a& stderr from CompletedProcess and converting it to text/plain format
+            if isinstance(body, CompletedProcess):
+                if hasattr(body, 'stdout') and body.stdout is not None:
+                    filteredBody = "stdout=" + body.stdout.decode()
+                if hasattr(body, 'stderr') and body.stderr is not None and filteredBody:
+                    filteredBody = filteredBody + ",stderr=" + body.stderr.decode()
+                if hasattr(body, 'stderr') and body.stderr is not None and not filteredBody:
+                    filteredBody = "stderr=" + body.stderr.decode()
+                logger.info(filteredBody)
+            else:
+                logger.info(body)                
         finally:
             if('message_direction' in logging_context.data):
                 logging_context.data.pop("message_direction")
