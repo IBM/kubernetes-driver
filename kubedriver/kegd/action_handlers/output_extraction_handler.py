@@ -16,7 +16,7 @@ class OutputExtractionHandler:
         sandbox = self.__build_sandbox()
         api_ctl = location_context.api_ctl
         helm_client = location_context.kube_location.helm_client
-        composition = self.__load_composition(keg_status, api_ctl, helm_client)
+        composition = self.__load_composition(keg_status, api_ctl, helm_client, driver_request_id=driver_request_id)
         result_holder = OutputExtractionResultHolder()
         inputs = self.__build_inputs(composition, result_holder, resource_context_properties)
         complete_script = self.__build_script(script)
@@ -46,8 +46,8 @@ class OutputExtractionHandler:
                 outputs[k] = v
             return OutputExtractionResult.success(outputs)
 
-    def __load_composition(self, keg_status, api_ctl, helm_client):
-        return CompositionLoader(api_ctl, helm_client).load_composition(keg_status)
+    def __load_composition(self, keg_status, api_ctl, helm_client, driver_request_id=None):
+        return CompositionLoader(api_ctl, helm_client).load_composition(keg_status, driver_request_id=driver_request_id)
 
     def __build_sandbox(self):
         config = SandboxConfiguration()

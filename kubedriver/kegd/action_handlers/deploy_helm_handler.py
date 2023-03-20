@@ -144,13 +144,13 @@ class DeployHelmHandler:
     def __pre_capture_objects(self, api_ctl, helm_client, helm_status, driver_request_id=None):
         helm_release_details = helm_client.get(helm_status.name, helm_status.namespace, driver_request_id=driver_request_id)
         loader = CompositionLoader(api_ctl, helm_client)
-        loaded_objects = loader.load_objects_in_helm_release(helm_release_details)
+        loaded_objects = loader.load_objects_in_helm_release(helm_release_details, driver_request_id=driver_request_id)
         return loaded_objects
 
     def __capture_deltas(self, delta_capture, api_ctl, helm_client, helm_status, pre_captured_objects, is_upgrade, driver_request_id=None):
         helm_release_details = helm_client.get(helm_status.name, helm_status.namespace, driver_request_id=driver_request_id)
         loader = CompositionLoader(api_ctl, helm_client)
-        loaded_objects = loader.load_objects_in_helm_release(helm_release_details)
+        loaded_objects = loader.load_objects_in_helm_release(helm_release_details, driver_request_id=driver_request_id)
         objects_only = False
         if is_upgrade:
             deployed_objects, removed_objects = self.__delta_snapshot_of_lists(pre_captured_objects, loaded_objects)

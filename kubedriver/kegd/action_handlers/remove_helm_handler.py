@@ -38,7 +38,7 @@ class RemoveHelmHandler:
             if len(task_errors) == 0:
                 if should_delete:
                     try:
-                        captured_objects = self.__pre_capture_objects(context.api_ctl, helm_client, helm_status)
+                        captured_objects = self.__pre_capture_objects(context.api_ctl, helm_client, helm_status, driver_request_id=driver_request_id)
                         helm_client.purge(action.name, action.namespace, driver_request_id=driver_request_id)
                         helm_status.state = EntityStates.DELETED
                         helm_status.error = None
@@ -76,7 +76,7 @@ class RemoveHelmHandler:
     def __pre_capture_objects(self, api_ctl, helm_client, helm_status, driver_request_id=None):
         helm_release_details = helm_client.get(helm_status.name, helm_status.namespace, driver_request_id=driver_request_id)
         loader = CompositionLoader(api_ctl, helm_client)
-        loaded_objects = loader.load_objects_in_helm_release(helm_release_details)
+        loaded_objects = loader.load_objects_in_helm_release(helm_release_details, driver_request_id=driver_request_id)
         return loaded_objects
 
     def __capture_deltas(self, delta_capture, helm_status, captured_objects):
