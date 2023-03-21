@@ -60,7 +60,7 @@ class OpenshiftApiController:
         create_args = self.__build_create_arguments(resource_client, object_config, default_namespace)
         external_request_id = str(uuid.uuid4())
         logger.debug("create_args : %s", create_args)
-        uri = resource_client.client.client.configuration.host + resource_client.urls['full']
+        uri = resource_client.client.client.configuration.host + resource_client.urls['base'] + "/" + object_config.metadata.get('name')
         self._generate_additional_logs(create_args['body'], 'sent', external_request_id, 'application/json',
                                        'request', 'http', {'uri' : uri, 'method' : 'post'}, driver_request_id)
         try:
@@ -94,7 +94,7 @@ class OpenshiftApiController:
         update_args = self.__build_update_arguments(resource_client, object_config, default_namespace)
         external_request_id = str(uuid.uuid4())
         logger.debug("update_args : %s", update_args)
-        uri = resource_client.client.client.configuration.host + resource_client.urls['full']
+        uri = resource_client.client.client.configuration.host + resource_client.urls['base'] + "/" + object_config.metadata.get('name')
         self._generate_additional_logs(update_args['body'], 'sent', external_request_id, 'application/json',
                                        'request', 'http', {'uri' : uri, 'method':'put'}, driver_request_id)   
         try:
@@ -133,7 +133,7 @@ class OpenshiftApiController:
         read_args = self.__build_read_arguments(resource_client, name, namespace)
         external_request_id = str(uuid.uuid4())
         logger.debug("read_args : %s", read_args)
-        uri = resource_client.client.client.configuration.host + resource_client.urls['full']
+        uri = resource_client.client.client.configuration.host + resource_client.urls['base'] + "/" + name
         self._generate_additional_logs("", 'sent', external_request_id, "",
                                        'request', 'http', {'uri' : uri, 'method':'get'}, driver_request_id)
         try:
@@ -165,7 +165,7 @@ class OpenshiftApiController:
         delete_args = self.__build_delete_arguments(resource_client, name, namespace)
         external_request_id = str(uuid.uuid4())
         logger.debug("delete_args : %s", delete_args)
-        uri = resource_client.client.client.configuration.host + resource_client.urls['full']
+        uri = resource_client.client.client.configuration.host + resource_client.urls['base'] + "/" + name
         self._generate_additional_logs(delete_args['body'], 'sent', external_request_id, 'application/json',
                                         'request', 'http', {'uri' : uri, 'method':'delete'}, driver_request_id)
         try:
