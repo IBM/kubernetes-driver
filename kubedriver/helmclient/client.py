@@ -215,7 +215,7 @@ class HelmClient:
             external_request_id = str(uuid.uuid4())
             self._generate_additional_logs(cmd_string, 'sent', external_request_id, "text/plain",
                                         'request', 'cmd', "", driver_request_id)
-            process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             self._generate_additional_logs(process_result, 'received', external_request_id, "text/plain",
                                        'response', 'cmd', {'exit_code': process_result.returncode}, driver_request_id)
         except Exception as e:
@@ -224,9 +224,9 @@ class HelmClient:
             raise e
 
         if process_result.returncode == 127:
-            raise HelmCommandNotFoundError(f'Helm install command not found: {process_result.stdout}')
+            raise HelmCommandNotFoundError(f'Helm install command not found: stdout: {process_result.stdout} stderr: {process_result.stderr}')
         elif process_result.returncode != 0:
-            raise HelmError(f'Helm get failed: {process_result.stdout}')
+            raise HelmError(f'Helm get failed: stdout: {process_result.stdout} stderr: {process_result.stderr}')
         else:
             if self.helm_version.startswith("3"):
                 return self.__parse_to_helm_3_release(process_result.stdout, name, namespace)
