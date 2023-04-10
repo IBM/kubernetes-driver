@@ -1,5 +1,13 @@
 # Change Log
 
+## [2.2.0](https://github.com/IBM/kubernetes-driver/tree/2.2.0) (2023-04-10)
+[Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.1.3...2.2.0)
+
+- Helm chart installs successfully but lifecycle transition fails. [\#56](https://github.com/IBM/kubernetes-driver/issues/56)
+- Enhancement - External Request and Response Logs [\#143](https://github.com/IBM/kubernetes-driver/issues/143)
+- Log Helm commands and responses for external calls and also resolve the name in uri value in external Kube Object APIs [\#145](https://github.com/IBM/kubernetes-driver/issues/145)
+- Fix security vulnerabilities [\#148](https://github.com/IBM/kubernetes-driver/issues/148)
+
 ## [2.1.3](https://github.com/IBM/kubernetes-driver/tree/2.1.3) (2023-01-27)
 [Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.1.2...2.1.3)
 
