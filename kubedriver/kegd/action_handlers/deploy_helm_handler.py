@@ -31,25 +31,25 @@ class DeployHelmHandler:
         self.__add_tags(helm_status, action.tags, script_name)
         return helm_status
 
-    def handle(self, action, parent_task_settings, script_name, keg_name, keg_status, context, delta_capture):
+    def handle(self, action, parent_task_settings, script_name, keg_name, keg_status, context, delta_capture, driver_request_id=None):
         helm_client = context.kube_location.helm_client
         task_errors = []
         helm_status = self.__find_helm_status(action, keg_status)
         if helm_status == None:
             helm_status = self.__do_decorate(helm_status, action, parent_task_settings, script_name, keg_name, keg_status)
         tmp_dir = None
-        action_type = self.__install_or_upgrade(helm_client, helm_status)
+        action_type = self.__install_or_upgrade(helm_client, helm_status, driver_request_id=driver_request_id)
         try:
             tmp_dir, chart_path, value_file_paths, setfiles_dict = self.__write_chart(action)
             captured_objects = []
             if action_type == 'Install':
-                helm_client.install(chart_path, action.name, action.namespace, values=value_file_paths, setfiles=setfiles_dict, wait=action.wait, timeout=action.timeout)
+                helm_client.install(chart_path, action.name, action.namespace, values=value_file_paths, setfiles=setfiles_dict, wait=action.wait, timeout=action.timeout, driver_request_id=driver_request_id)
             else:
-                captured_objects = self.__pre_capture_objects(context.api_ctl, helm_client, helm_status)
-                helm_client.upgrade(chart_path, action.name, action.namespace, values=value_file_paths, setfiles=setfiles_dict, reuse_values=True, wait=action.wait, timeout=action.timeout)
+                captured_objects = self.__pre_capture_objects(context.api_ctl, helm_client, helm_status, driver_request_id=driver_request_id)
+                helm_client.upgrade(chart_path, action.name, action.namespace, values=value_file_paths, setfiles=setfiles_dict, reuse_values=True, wait=action.wait, timeout=action.timeout, driver_request_id=driver_request_id)
             helm_status.state = EntityStates.CREATED if action_type == 'Install' else EntityStates.UPDATED
             helm_status.error = None
-            self.__capture_deltas(delta_capture, context.api_ctl, helm_client, helm_status, captured_objects, is_upgrade=helm_status.state==EntityStates.UPDATED)
+            self.__capture_deltas(delta_capture, context.api_ctl, helm_client, helm_status, captured_objects, is_upgrade=helm_status.state==EntityStates.UPDATED, driver_request_id=driver_request_id)
         except Exception as e:
             logger.exception(f'{action_type} attempt of helm release \'{action.name}\' in group \'{keg_name}\' failed')
             error_msg = f'{e}'
@@ -62,8 +62,8 @@ class DeployHelmHandler:
 
         return task_errors
 
-    def __install_or_upgrade(self, helm_client, helm_status):
-        exists, _ = helm_client.safe_get(helm_status.name, helm_status.namespace)
+    def __install_or_upgrade(self, helm_client, helm_status, driver_request_id=None):
+        exists, _ = helm_client.safe_get(helm_status.name, helm_status.namespace, driver_request_id=driver_request_id)
         if exists:
             helm_status.state = EntityStates.UPDATE_PENDING
             return 'Upgrade'
@@ -141,16 +141,16 @@ class DeployHelmHandler:
             dumped_setfiles[key] = filepath
         return dumped_setfiles
 
-    def __pre_capture_objects(self, api_ctl, helm_client, helm_status):
-        helm_release_details = helm_client.get(helm_status.name, helm_status.namespace)
+    def __pre_capture_objects(self, api_ctl, helm_client, helm_status, driver_request_id=None):
+        helm_release_details = helm_client.get(helm_status.name, helm_status.namespace, driver_request_id=driver_request_id)
         loader = CompositionLoader(api_ctl, helm_client)
-        loaded_objects = loader.load_objects_in_helm_release(helm_release_details)
+        loaded_objects = loader.load_objects_in_helm_release(helm_release_details, driver_request_id=driver_request_id)
         return loaded_objects
 
-    def __capture_deltas(self, delta_capture, api_ctl, helm_client, helm_status, pre_captured_objects, is_upgrade):
-        helm_release_details = helm_client.get(helm_status.name, helm_status.namespace)
+    def __capture_deltas(self, delta_capture, api_ctl, helm_client, helm_status, pre_captured_objects, is_upgrade, driver_request_id=None):
+        helm_release_details = helm_client.get(helm_status.name, helm_status.namespace, driver_request_id=driver_request_id)
         loader = CompositionLoader(api_ctl, helm_client)
-        loaded_objects = loader.load_objects_in_helm_release(helm_release_details)
+        loaded_objects = loader.load_objects_in_helm_release(helm_release_details, driver_request_id=driver_request_id)
         objects_only = False
         if is_upgrade:
             deployed_objects, removed_objects = self.__delta_snapshot_of_lists(pre_captured_objects, loaded_objects)

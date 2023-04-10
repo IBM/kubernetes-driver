@@ -28,7 +28,7 @@ class CompositionLoader:
         if keg_status.composition != None:
             if keg_status.composition.helm_releases != None:
                 for helm_release in keg_status.composition.helm_releases:
-                    found, helm_release_details = self.helm_client.safe_get(helm_release.name, helm_release.namespace)
+                    found, helm_release_details = self.helm_client.safe_get(helm_release.name, helm_release.namespace, driver_request_id=driver_request_id)
                     if found:
                         helm_release_details_as_dict = self.api_ctl.base_kube_client.sanitize_for_serialization(helm_release_details)
                         if include_objects:
