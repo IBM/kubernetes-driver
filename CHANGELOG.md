@@ -1,5 +1,11 @@
 # Change Log
 
+## [2.3.0](https://github.com/IBM/kubernetes-driver/tree/2.3.0) (2023-04-20)
+[Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.2.0...2.3.0)
+
+- Update Ignition to latest version 3.5.1. [\#154](https://github.com/IBM/kubernetes-driver/issues/154)
+- Update helm to fix vulnerabilities [\#156](https://github.com/IBM/kubernetes-driver/issues/156)
+
 ## [2.2.0](https://github.com/IBM/kubernetes-driver/tree/2.2.0) (2023-04-10)
 [Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.1.3...2.2.0)
 
