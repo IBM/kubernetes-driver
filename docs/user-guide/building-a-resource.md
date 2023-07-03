@@ -102,7 +102,7 @@ For full details on templates and the syntax used, check out the [Templating](te
 
 The Kubernetes driver can deploy any helm charts to your target Kubernetes environments as long as Helm3 has been installed on the environment.
 
-The Helm charts must be compatible with Helm 3 (helm v.3.8.0 is included in the driver).
+The Helm charts must be compatible with Helm 3 (helm v.3.12.1 is included in the driver).
 
 The `helm` directory should include the packaged Helm charts you intend to install (`.tgz` files) and any values files you may use to configure the installation. We'll see how you install the charts and select your values file later.
 
