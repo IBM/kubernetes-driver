@@ -77,7 +77,7 @@ class KubeDeploymentLocation(KubeDeploymentLocationBase):
         return KubeDeploymentLocation(name, client_config, **kwargs)
 
     def __init__(self, name, client_config, default_object_namespace=DEFAULT_NAMESPACE, crd_api_version=None, driver_namespace=None, \
-                    cm_api_version='v1', cm_kind='ConfigMap', cm_data_field='data', helm_version='3.8.0', helm_tls=None):
+                    cm_api_version='v1', cm_kind='ConfigMap', cm_data_field='data', helm_version='3.12.1', helm_tls=None):
         super().__init__(name, client_config, default_object_namespace=default_object_namespace)
         self.crd_api_version = crd_api_version
         self.cm_api_version = cm_api_version
