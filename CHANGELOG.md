@@ -1,5 +1,11 @@
 # Change Log
 
+## [2.4.0](https://github.com/IBM/kubernetes-driver/tree/2.4.0) (2023-07-12)
+[Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.3.0...2.4.0)
+
+- Build the kubernetes-driver with 'rc' tag. [\#163](https://github.com/IBM/kubernetes-driver/issues/163)
+- Update helm to 3.12.1 to fix Vulnerabilities [\#165](https://github.com/IBM/kubernetes-driver/issues/165)
+
 ## [2.3.0](https://github.com/IBM/kubernetes-driver/tree/2.3.0) (2023-04-20)
 [Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.2.0...2.3.0)
 
