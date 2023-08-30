@@ -19,7 +19,7 @@ setup(
         'ignition-framework=={0}'.format(_pkg_info['ignition-version']),
         'openshift==0.12.0',
         'python-dateutil==2.8.1',
-        'RestrictedPython==5.2',
+        'RestrictedPython==5.3',
         'gunicorn==20.1.0'
     ],
     entry_points='''
