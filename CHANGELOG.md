@@ -3,7 +3,7 @@
 ## [2.4.2](https://github.com/IBM/kubernetes-driver/tree/2.4.2) (2023-11-13)
 [Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.4.1...2.4.2)
 
-- Update helm to 3.13.2 to fix Vulnerabilitie [\#180](https://github.com/IBM/kubernetes-driver/issues/186)
+- Update helm to 3.13.2 to fix Vulnerabilitie [\#186](https://github.com/IBM/kubernetes-driver/issues/186)
 
 ## [2.4.1](https://github.com/IBM/kubernetes-driver/tree/2.4.1) (2023-09-20)
 [Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.4.0...2.4.1)
