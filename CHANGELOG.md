@@ -1,5 +1,10 @@
 # Change Log
 
+## [2.4.3](https://github.com/IBM/kubernetes-driver/tree/2.4.3) (2024-01-18)
+[Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.4.2...2.4.3)
+
+- Fix security vulnerabilities [\#191](https://github.com/IBM/kubernetes-driver/issues/191)
+
 ## [2.4.2](https://github.com/IBM/kubernetes-driver/tree/2.4.2) (2023-11-29)
 [Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.4.1...2.4.2)
 
