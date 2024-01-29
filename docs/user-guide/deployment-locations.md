@@ -12,12 +12,12 @@ The following properties are supported by the driver:
 | clientConfig      | -       | Y                                  | A multiline string version of the kubectl config file used to access the target cluster (see more details [below](#obtaining-clientconfig)) |
 | defaultObjectNamespace | default | N | Sets the default namespace used when deploying Kubernetes objects on a create request. This value is only used when the object does not have a specified namespace in the metadata section of it's configuration |
 | driverNamespace     | Value of defaultObjectNamepsace/default_object_namespace      | N | Sets the namespace to be used by the driver for any Kubernetes objects it creates for management purposes |
-| helm.version     | 3.13.2      | N | Determines the helm client version to use when deploying helm charts (allowed values: 3.13.2) |
+| helm.version     | 3.13.3      | N | Determines the helm client version to use when deploying helm charts (allowed values: 3.13.3) |
 | helm.tls.cacert | - | N | Contents of the CA certificate (if used) |
 | helm.tls.cert | - | N | Contents of the helm client certificate |
 | helm.tls.key | - | N | Contents of the helm client key |
 
-**Note:** when using Helm your target deployment location must be using a compatible server version for 3.13.2 (check with `helm version` on the server).
+**Note:** when using Helm your target deployment location must be using a compatible server version for 3.13.3 (check with `helm version` on the server).
 
 # Obtaining clientConfig
 
