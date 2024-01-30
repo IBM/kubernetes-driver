@@ -99,7 +99,7 @@ For other systems, look at the contents of the script to see the steps and adapt
 - Extract the archive 
 - Copy the `helm` binary included in the archive to any bin directory on your PATH
 - Rename the `helm` binary to `helm$version` e.g helm3.13.3
-- Run `helm3.13.3 --help` to verify this has worked
+- Run `helm3.13.3 --help` to verify this has worked 
 
 ## Install the build dependencies
 
