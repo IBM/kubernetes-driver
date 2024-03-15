@@ -1,5 +1,10 @@
 # Change Log
 
+## [2.4.4](https://github.com/IBM/kubernetes-driver/tree/2.4.4) (2024-03-15)
+[Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.4.3...2.4.4)
+
+- helm charts fails to run with kubedriver by default [\#195](https://github.com/IBM/kubernetes-driver/issues/195)
+
 ## [2.4.3](https://github.com/IBM/kubernetes-driver/tree/2.4.3) (2024-01-18)
 [Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.4.2...2.4.3)
 
