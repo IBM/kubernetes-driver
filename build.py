@@ -216,6 +216,11 @@ class Builder:
                 self.py_normalized_version = self.py_normalized_version.replace('-alpha-', 'a')
                 self.py_normalized_version = self.py_normalized_version.replace('-beta-', 'b')
                 self.py_normalized_version = self.py_normalized_version.replace('-rc', 'rc')
+                self.helm_normalized_version = self.py_normalized_version.replace('a', '-alpha.')
+                self.helm_normalized_version = self.py_normalized_version.replace('b', '-beta.')
+                self.helm_normalized_version = self.py_normalized_version.replace('rc', '-rc.')
+                self.helm_normalized_version = self.py_normalized_version.replace('.dev', '-dev.')
+                
 
     def run_unit_tests(self):
         with self.stage('Run Unit Tests') as s:
@@ -263,7 +268,7 @@ class Builder:
             helm_chart_path = os.path.join(self.project_path, HELM_CHART_PATH)
             template_loader = jinja.FileSystemLoader(searchpath=helm_chart_path)
             template_env = jinja.Environment(variable_start_string='${', variable_end_string='}', loader=template_loader)
-            resolvable_props = {'version': self.project_version}
+            resolvable_props = {'version': self.helm_normalized_version}
             for item in os.listdir(helm_chart_path):
                 full_item_path = os.path.join(helm_chart_path, item)
                 if os.path.isdir(full_item_path):
