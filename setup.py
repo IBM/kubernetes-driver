@@ -20,8 +20,9 @@ setup(
         'openshift==0.12.0',
         'python-dateutil==2.8.1',
         'RestrictedPython==5.4',
-        'gunicorn==20.1.0'
-    ],
+        'gunicorn==21.2.0',
+        'uvicorn==0.27.0'
+        ],
     entry_points='''
         [console_scripts]
         kubedriver-dev=kubedriver.__main__:main
