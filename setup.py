@@ -21,7 +21,7 @@ setup(
         'python-dateutil==2.8.1',
         'RestrictedPython==5.4',
         'gunicorn==21.2.0',
-        'uvicorn==0.27.0'
+        'uvicorn==0.29.0'
         ],
     entry_points='''
         [console_scripts]
