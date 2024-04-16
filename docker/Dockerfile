@@ -36,4 +36,5 @@ WORKDIR /home/kubedriver
 EXPOSE 8294
 
 CMD if [ $SSL_ENABLED | tr [:upper:] [:lower:] == "true" ]; then SSL="--certfile /var/kubedriver/certs/tls.crt --keyfile /var/kubedriver/certs/tls.key" ; fi \
-&& gunicorn --workers $NUM_PROCESSES --bind [::]:$DRIVER_PORT $SSL "kubedriver:create_wsgi_app()"
+&& gunicorn -k uvicorn.workers.UvicornWorker --workers $NUM_PROCESSES --bind [::]:$DRIVER_PORT $SSL "kubedriver:create_wsgi_app()"
+ 
