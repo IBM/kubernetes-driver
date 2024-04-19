@@ -1,5 +1,10 @@
 # Change Log
 
+## [2.5.0](https://github.com/IBM/kubernetes-driver/tree/2.5.0) (2024-04-19)
+[Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.4.4...2.5.0)
+
+- Updated Ignition to 3.6.0 that uses connexion 3.0.5 (ASGI) [\#199](https://github.com/IBM/kubernetes-driver/issues/199)
+
 ## [2.4.4](https://github.com/IBM/kubernetes-driver/tree/2.4.4) (2024-03-15)
 [Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.4.3...2.4.4)
 
