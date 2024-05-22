@@ -32,7 +32,7 @@ Commit and push these changes.
 
 ## 4. Merge Develop to Main
 
-Development work is normally carried out on the `develop` branch. Merge this branch to `main`, by creating a PR, 
+Development work is normally carried out on the `develop` branch. Merge this branch to `main`, by creating a PR.
 
 Then perform the release from the `main` branch. This ensures the `main` branch is tagged correctly. 
 
@@ -64,9 +64,7 @@ The job will publish the artifacts and create a [release on Github](https://gith
 
 Verify the CI/CD job has created a [release on Github](https://github.com/IBM/kubernetes-driver/releases).
 
-Ensure the tag, title and changelog are all correct. Also ensure the documentation `tgz` file has been attached. 
-
-Verify the release has been published to [pypi](https://pypi.org/manage/project/kubernetes-driver/releases/).
+Ensure the tag, title and changelog are all correct. Also ensure the documentation and helm `tgz` files have been attached.
 
 ## 8. Cleanup
 
@@ -74,7 +72,7 @@ Complete the following steps to ensure development can continue as normal:
 
 - Merge `main` to `develop` so any release updates and the post-version are copied over from main (doesn't require a PR)
 - Close the Milestone for this release on [Github](https://github.com/IBM/kubernetes-driver/milestones)
-- Create a new Milestone for next release (if one does not exist). Use the value of the `--post-version` option from earlier
+- Create a new Milestone for next release (if one does not exist).
 
 # Manual Approach
 
