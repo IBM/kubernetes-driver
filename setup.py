@@ -20,7 +20,7 @@ setup(
         'openshift==0.12.0',
         'python-dateutil==2.8.1',
         'RestrictedPython==5.4',
-        'gunicorn==21.2.0',
+        'gunicorn==22.0.0',
         'uvicorn==0.29.0'
         ],
     entry_points='''

@@ -16,7 +16,7 @@ The Helm chart for this driver includes the following features:
 
 # Build Helm Chart
 
-To build the Helm chart you will need to install Helm v3.13.3
+To build the Helm chart you will need to install Helm v3.14.4
 
 ## Full Build
 
@@ -34,7 +34,7 @@ python3 build.py --skip-docker
 
 # Deploy Helm Chart
 
-To deploy the Helm chart will need Helm v3.13.3 installed
+To deploy the Helm chart will need Helm v3.14.4 installed
 
 Install the chart with the default configuration using the install command:
 
