@@ -1,5 +1,14 @@
 # Change Log
 
+## [2.5.1](https://github.com/IBM/kubernetes-driver/tree/2.5.1) (2024-05-29)
+[Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.5.0...2.5.1)
+
+- Update ignition version to 3.6.1 [\#208](https://github.com/IBM/kubernetes-driver/issues/208)
+- Uplift helm version to fix vulnerability CVE-2024-24557 [\#206](https://github.com/IBM/kubernetes-driver/issues/206)
+- Security vulnerability CVE-2024-1135 [\#204](https://github.com/IBM/kubernetes-driver/issues/204)
+
+
+
 ## [2.5.0](https://github.com/IBM/kubernetes-driver/tree/2.5.0) (2024-04-19)
 [Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.4.4...2.5.0)
 
