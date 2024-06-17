@@ -1,5 +1,10 @@
 # Change Log
 
+## [2.5.2](https://github.com/IBM/kubernetes-driver/tree/2.5.1) (2024-06-17)
+[Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.5.1...2.5.2)
+
+- Update ignition version to 3.6.2 to fix for CP4NA UI driver log messages issue with ansible-lifecycle-driver
+
 ## [2.5.1](https://github.com/IBM/kubernetes-driver/tree/2.5.1) (2024-05-29)
 [Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.5.0...2.5.1)
 
