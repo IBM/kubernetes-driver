@@ -56,7 +56,7 @@ class TestHelmClient3(unittest.TestCase):
     """
 
     def setUp(self):
-        self.client = HelmClient('kubeconfig', '3.14.4')
+        self.client = HelmClient('kubeconfig', '3.15.2')
 
     def tearDown(self):
         self.client.close()
@@ -120,7 +120,7 @@ class TestHelmClient3(unittest.TestCase):
 
     @patch('kubedriver.helmclient.client.subprocess')
     def test_purge(self, mock_subprocess):
-        self.client = HelmClient('kubeconfig', '3.14.4')
+        self.client = HelmClient('kubeconfig', '3.15.2')
         self.__mock_subprocess_response(mock_subprocess, 0, EXAMPLE_MANIFEST)
         result = self.client.purge('name', 'namespace')
         self.assertEqual(result, None)
