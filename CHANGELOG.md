@@ -4,6 +4,7 @@
 [Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.5.2...2.5.3)
 
 - Update Ignition to 3.6.3 to fix the issue of request transfer-encoding with chunked format
+- Update Helm to v3.15.0 for fixing security vulnerability - CVE-2023-45288
 
 ## [2.5.2](https://github.com/IBM/kubernetes-driver/tree/2.5.2) (2024-06-17)
 [Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.5.1...2.5.2)
