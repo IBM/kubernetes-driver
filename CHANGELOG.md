@@ -1,6 +1,11 @@
 # Change Log
 
-## [2.5.2](https://github.com/IBM/kubernetes-driver/tree/2.5.1) (2024-06-17)
+## [2.5.3](https://github.com/IBM/kubernetes-driver/tree/2.5.3) (2024-07-18)
+[Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.5.2...2.5.3)
+
+- Update Ignition to 3.6.3 to fix the issue of request transfer-encoding with chunked format
+
+## [2.5.2](https://github.com/IBM/kubernetes-driver/tree/2.5.2) (2024-06-17)
 [Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.5.1...2.5.2)
 
 - Update ignition version to 3.6.2 to fix for CP4NA UI driver log messages issue with ansible-lifecycle-driver
@@ -11,8 +16,6 @@
 - Update ignition version to 3.6.1 [\#208](https://github.com/IBM/kubernetes-driver/issues/208)
 - Uplift helm version to fix vulnerability CVE-2024-24557 [\#206](https://github.com/IBM/kubernetes-driver/issues/206)
 - Security vulnerability CVE-2024-1135 [\#204](https://github.com/IBM/kubernetes-driver/issues/204)
-
-
 
 ## [2.5.0](https://github.com/IBM/kubernetes-driver/tree/2.5.0) (2024-04-19)
 [Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.4.4...2.5.0)
