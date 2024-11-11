@@ -1,5 +1,10 @@
 # Change Log
 
+## [2.5.4](https://github.com/IBM/kubernetes-driver/tree/2.5.4) (2024-11-11)
+[Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.5.3...2.5.4)
+
+- Rebuild to pick up security patches for CVE-2024-45490, CVE-2024-45491 and CVE-2024-45492
+
 ## [2.5.3](https://github.com/IBM/kubernetes-driver/tree/2.5.3) (2024-07-18)
 [Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.5.2...2.5.3)
 
