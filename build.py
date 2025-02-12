@@ -265,7 +265,10 @@ class Builder:
             helm_chart_path = os.path.join(self.project_path, HELM_CHART_PATH)
             template_loader = jinja.FileSystemLoader(searchpath=helm_chart_path)
             template_env = jinja.Environment(variable_start_string='${', variable_end_string='}', loader=template_loader)
-            resolvable_props = {'version': self.project_version}
+            chart_version = self.project_version
+            if '.dev' in chart_version:
+                chart_version = chart_version.replace('.dev', '-dev-')
+            resolvable_props = {'version': chart_version, 'image_version': self.project_version}
             for item in os.listdir(helm_chart_path):
                 full_item_path = os.path.join(helm_chart_path, item)
                 if os.path.isdir(full_item_path):
