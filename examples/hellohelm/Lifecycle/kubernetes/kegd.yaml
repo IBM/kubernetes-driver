@@ -5,3 +5,9 @@ compose:
           chart: nginx-19.0.0.tgz
           name: hello-{{ system_properties.resource_id_label }}
           namespace: "{{ chartNamespace }}"
+    checkReady:
+      script: post-create.py
+      maxAttempts: 20
+      timeoutSeconds: 60
+      intervalSeconds: 5
+    getOutputs: outputs.py

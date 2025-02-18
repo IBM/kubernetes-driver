@@ -1,4 +1,10 @@
 description: descriptor for hellohelm
+properties:
+  chartNamespace: 
+    type: string 
+  deploymentName: 
+    type: string 
+    read-only: true
 infrastructure:
   Kubernetes: {}
 lifecycle:

@@ -1,4 +1,4 @@
-def checkReady(keg, props, resultBuilder, log, *args, **kwargs):
+def getOutputs(keg, props, resultBuilder, log, *args, **kwargs):
     namespace = props['chartNamespace']
     releaseName = "hello-" + props['system_properties']['resource_id_label']
 
@@ -12,9 +12,5 @@ def checkReady(keg, props, resultBuilder, log, *args, **kwargs):
         resultBuilder.failed("Deployment not found")
         return
 
-
-    if 'readyReplicas' in deployment['status'] and deployment['status']['readyReplicas'] > 0:
-        resultBuilder.ready()
-    else:
-        resultBuilder.notReady()
+    resultBuilder.setOutput("deploymentName", deployment['metadata']['name'])
         
