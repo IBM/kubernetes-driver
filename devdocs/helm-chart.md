@@ -5,25 +5,25 @@ The Helm chart for this driver includes the following features:
 - A Deployment to create pods for your driver application
 - A Service to expose your application internally and externally (with a NodePort)
 - Configurable options for:
-    - Location and version of Docker image
-    - Number of replicas of the driver
-    - Property groups configured on your application (i.e. override the properties in the default_config file)
-    - Log level
-    - Pod affinity/anti-affinity
-    - Node affinity/anti/affinity
-    - NodePort
+  - Location and version of Docker image
+  - Number of replicas of the driver
+  - Property groups configured on your application (i.e. override the properties in the default_config file)
+  - Log level
+  - Pod affinity/anti-affinity
+  - Node affinity/anti/affinity
+  - NodePort
 - Necessary Deployment labels so logs from the driver may be viewed in the dashboard provided with LM (Kibana)
 
 # Build Helm Chart
 
-To build the Helm chart you will need to install Helm v3.15.2
+To build the Helm chart you will need to install Helm v3.x
 
 ## Full Build
 
 Run the build script, the command will print the location of the generated `.tgz` Helm package.
 
 ```
-python3 build.py 
+python3 build.py
 ```
 
 This command will build the docker image as well, to avoid this use the skip option:
@@ -34,7 +34,7 @@ python3 build.py --skip-docker
 
 # Deploy Helm Chart
 
-To deploy the Helm chart will need Helm v3.15.2 installed
+To deploy the Helm chart will need Helm v3.x installed
 
 Install the chart with the default configuration using the install command:
 
@@ -42,7 +42,7 @@ Install the chart with the default configuration using the install command:
 helm install --name kubedriver <path to chart>
 ```
 
-Configuration for the Helm deployment can be provided with a **Helm values file** on the `-f` option. 
+Configuration for the Helm deployment can be provided with a **Helm values file** on the `-f` option.
 
 ```
 helm install --name kubedriver <path to chart> -f <path to Helm values file>
@@ -56,7 +56,7 @@ To override configuration for your driver application (e.g. Kafka address, other
 app:
   override:
     ## Add the properties to configure as YAML here
-    propA: valueA 
+    propA: valueA
 ```
 
 Once you have installed the chart you can check the status of your deployment with:
@@ -76,16 +76,19 @@ helm status kubedriver
 To transfer it to the node you can use `docker save` locally, then `docker load` on the node:
 
 Locally:
+
 ```
 docker save -o kubedriver-img.tar kubedriver:<release version number>
 ```
 
 Transfer the file using scp:
+
 ```
 scp kubedriver-img.tar <user>@<worker-node-ip>:/home/<user>
 ```
 
 On Node:
+
 ```
 docker load -i /home/<user>/kubedriver-img.tar
 ```

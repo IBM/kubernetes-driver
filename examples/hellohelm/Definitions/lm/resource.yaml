@@ -1,0 +1,11 @@
+description: descriptor for hellohelm
+infrastructure:
+  Kubernetes: {}
+lifecycle:
+  Create: {}
+  Delete: {}
+default-driver:
+  kubernetes:
+    selector:
+      infrastructure-type:
+      - '*'

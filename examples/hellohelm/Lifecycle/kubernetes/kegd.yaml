@@ -1,0 +1,7 @@
+compose:
+  - name: Create
+    deploy:
+      - helm:
+          chart: nginx-19.0.0.tgz
+          name: hello-{{ system_properties.resource_id_label }}
+          namespace: "{{ chartNamespace }}"

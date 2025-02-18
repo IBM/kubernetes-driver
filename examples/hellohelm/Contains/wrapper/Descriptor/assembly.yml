@@ -1,0 +1,20 @@
+description: descriptor for wrapper
+properties: 
+  deploymentLocation: 
+    type: string 
+    default: localkube
+  chartNamespace: 
+    type: string
+    default: test
+
+composition:
+  node: 
+    type: resource::hellohelm::1.0
+    properties:
+      chartNamespace: 
+        value: ${chartNamespace}
+      deploymentLocation: 
+        value: ${deploymentLocation}
+      resourceManager: 
+        value: brent
+  
