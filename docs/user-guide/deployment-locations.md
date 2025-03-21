@@ -6,22 +6,21 @@ A deployment location must be provided to an infrastructure request to indicate 
 
 The following properties are supported by the driver:
 
+| Name                   | Default                                                  | Required | Detail                                                                                                                                                                                                           |
+| ---------------------- | -------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| clientConfig           | -                                                        | Y        | A multiline string version of the kubectl config file used to access the target cluster (see more details [below](#obtaining-clientconfig))                                                                      |
+| defaultObjectNamespace | default                                                  | N        | Sets the default namespace used when deploying Kubernetes objects on a create request. This value is only used when the object does not have a specified namespace in the metadata section of it's configuration |
+| driverNamespace        | Value of defaultObjectNamepsace/default_object_namespace | N        | Sets the namespace to be used by the driver for any Kubernetes objects it creates for management purposes                                                                                                        |
+| helm.version           | 3.16.4                                                   | N        | Determines the helm client version to use when deploying helm charts (allowed values: 3.16.4)                                                                                                                    |
+| helm.tls.cacert        | -                                                        | N        | Contents of the CA certificate (if used)                                                                                                                                                                         |
+| helm.tls.cert          | -                                                        | N        | Contents of the helm client certificate                                                                                                                                                                          |
+| helm.tls.key           | -                                                        | N        | Contents of the helm client key                                                                                                                                                                                  |
 
-| Name            | Default | Required                           | Detail                                                                                                                     |
-| --------------- | ------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| clientConfig      | -       | Y                                  | A multiline string version of the kubectl config file used to access the target cluster (see more details [below](#obtaining-clientconfig)) |
-| defaultObjectNamespace | default | N | Sets the default namespace used when deploying Kubernetes objects on a create request. This value is only used when the object does not have a specified namespace in the metadata section of it's configuration |
-| driverNamespace     | Value of defaultObjectNamepsace/default_object_namespace      | N | Sets the namespace to be used by the driver for any Kubernetes objects it creates for management purposes |
-| helm.version     | 3.15.2      | N | Determines the helm client version to use when deploying helm charts (allowed values: 3.15.2) |
-| helm.tls.cacert | - | N | Contents of the CA certificate (if used) |
-| helm.tls.cert | - | N | Contents of the helm client certificate |
-| helm.tls.key | - | N | Contents of the helm client key |
-
-**Note:** when using Helm your target deployment location must be using a compatible server version for 3.15.2 (check with `helm version` on the server).
+**Note:** when using Helm your target deployment location must be using a compatible server version for 3.16.4 (check with `helm version` on the server).
 
 # Obtaining clientConfig
 
-## Kubeadm 
+## Kubeadm
 
 The easiest way to obtain the client configuration for your Kubernetes cluster is to run the `config view` command from a machine with existing kubectl access:
 
@@ -82,7 +81,7 @@ You need to configure the `helm.tls` properties if you would normally add the `-
 helm ls --tls
 ```
 
-If you remove the `--tls` option you'll likely see `Error: transport is closing`. 
+If you remove the `--tls` option you'll likely see `Error: transport is closing`.
 
 If TLS is enabled, you must add the contents of the certificate and keys to the deployment location. These files will usually be in the helm home directory (on the server you use the helm CLI from):
 
@@ -92,7 +91,7 @@ ls $(helm home)
 cache  ca.pem  cert.pem  key.pem  plugins  repository  starters
 ```
 
-The files may have different names and you may not have a CA file (`ca.pem`). 
+The files may have different names and you may not have a CA file (`ca.pem`).
 
 If you normally provide custom paths with the `--tls-ca-cert`, `--tls-cert` and `--tls-key` options then use those files instead.
 
@@ -143,6 +142,7 @@ helm.tls.key: |
 # Complete Deployment Location Properties Example
 
 YAML:
+
 ```yaml
 driverNamespace: kubedriver
 defaultObjectNamespace: default
@@ -285,5 +285,4 @@ helm.tls.key: |
   txPhkgLtMsXNhHWTysDRuz3bdzBt4NUU5W/aOZ8KXsXBlEKYwAZq5gWHXyL6Bk6w
   sodtxV6twi+hKaLrv33pDGkfIyJM4tkLRzRYGIanRR+NdWFqS+/X9bSvmY8=
   -----END RSA PRIVATE KEY-----
-
 ```
