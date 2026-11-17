@@ -1,3 +1,4 @@
+import re
 import uuid
 import logging
 from ignition.service.framework import Service, Capability
@@ -13,6 +14,8 @@ from .processor import KegdStrategyLocationProcessor
 from ignition.service.logging import logging_context
 
 logger = logging.getLogger(__name__)
+
+HELM_IDENTIFIER_PATTERN = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._-]*$')
 
 class KegdStrategyManager(Service, Capability):
 
@@ -207,6 +210,12 @@ class KegdStrategyLocationManager:
             output_script_content = f.read()
         return OutputExtractionTask(output_script_content, output_script_name)
 
+    def __validate_helm_identifier(self, field, value):
+        # Rendered values may originate from user-supplied Resource properties. Reject anything that
+        # could be interpreted as a command-line flag or contain unexpected characters
+        if not isinstance(value, str) or not HELM_IDENTIFIER_PATTERN.fullmatch(value):
+            raise InvalidDeploymentStrategyError(f'Rendered helm {field} is not valid: it must start with an alphanumeric character and only contain alphanumeric characters, "-", "_" or "."')
+
     def __expand_helm_action(self, deploy_task, kegd_files, render_context):
         deploy_action = deploy_task.action
         if deploy_action.chart != None:
@@ -216,9 +225,11 @@ class KegdStrategyLocationManager:
                 deploy_action.chart_encoded = True
         if deploy_action.name != None:
             deploy_action.name = self.templating.render(deploy_action.name, render_context)
+            self.__validate_helm_identifier('name', deploy_action.name)
         namespace = self.kube_location.default_object_namespace
         if deploy_action.namespace != None:
             namespace = self.templating.render(deploy_action.namespace, render_context)
+            self.__validate_helm_identifier('namespace', namespace)
         deploy_action.namespace = namespace
         if deploy_action.values != None:
             expanded_valuefiles = []
