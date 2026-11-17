@@ -1,0 +1,7 @@
+compose:
+  - name: Create
+    deploy:
+      - helm:
+          chart: mychart
+          name: "{{ releaseName }}"
+          namespace: "{{ releaseNamespace }}"
