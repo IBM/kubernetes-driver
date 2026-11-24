@@ -65,6 +65,25 @@ class TestHelmClient3(unittest.TestCase):
         mock_subprocess.run.return_value = MagicMock(returncode=returncode, stdout=stdout)
 
     @patch('kubedriver.helmclient.client.subprocess')
+    def test_install_does_not_use_shell_and_passes_args_verbatim(self, mock_subprocess):
+        self.__mock_subprocess_response(mock_subprocess, 0, EXAMPLE_MANIFEST)
+        payload = '$(cat $KUBECONFIG > /tmp/leak; printf legit-release)'
+        self.client.install('chart', payload, 'ns; id')
+        cmd = mock_subprocess.run.call_args[0][0]
+        self.assertEqual(cmd, ['helm3.16.4', 'install', payload, 'chart', '--namespace', 'ns; id'])
+        env = mock_subprocess.run.call_args[1]['env']
+        self.assertEqual(env['KUBECONFIG'], self.client.kube_conf_path)
+        self.assertEqual(env['HELM_HOME'], self.client.helm_home_path)
+
+    @patch('kubedriver.helmclient.client.subprocess')
+    def test_get_does_not_use_shell_and_passes_args_verbatim(self, mock_subprocess):
+        self.__mock_subprocess_response(mock_subprocess, 0, EXAMPLE_MANIFEST)
+        payload = '`id`'
+        self.client.get(payload, 'default')
+        cmd = mock_subprocess.run.call_args[0][0]
+        self.assertEqual(cmd, ['helm3.16.4', 'get', 'all', payload, '--namespace', 'default'])
+
+    @patch('kubedriver.helmclient.client.subprocess')
     def test_install(self, mock_subprocess):
         self.__mock_subprocess_response(mock_subprocess, 0, EXAMPLE_MANIFEST)
         name = self.client.install('chart', 'name', 'namespace')

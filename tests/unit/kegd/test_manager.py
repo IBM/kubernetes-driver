@@ -109,4 +109,34 @@ class TestKegdStrategyLocationManager(unittest.TestCase):
         self.assertEqual(task_group.name, 'Create')
         self.assertEqual(task_group.removal_tasks, [])
         self.assertEqual(len(task_group.deploy_tasks), 1)
+
+    def __build_helm_job(self, release_name, release_namespace='default'):
+        system_properties = {'resourceId': '123', 'resourceName': 'just-testing'}
+        resource_properties = {'releaseName': release_name, 'releaseNamespace': release_namespace}
+        render_context = render_context_builder.build(system_properties, resource_properties, {}, {})
+        kegd_files = get_kegd_files('helm-release-name')
+        kegd_strategy = parse_strategy(kegd_files.get_strategy_file())
+        return self.worker.build_process_strategy_job('just-testing', kegd_strategy, 'Create', kegd_files, render_context)
+
+    def test_build_process_strategy_job_renders_valid_helm_name_and_namespace(self):
+        self.kube_location.default_object_namespace = 'default'
+        job = self.__build_helm_job('my-release.1', 'my-namespace')
+        action = job.strategy_execution.task_groups[0].deploy_tasks[0].action
+        self.assertEqual(action.name, 'my-release.1')
+        self.assertEqual(action.namespace, 'my-namespace')
+
+    def test_build_process_strategy_job_rejects_helm_name_with_shell_syntax(self):
+        self.kube_location.default_object_namespace = 'default'
+        for bad_name in ['$(id)', '`id`', 'a;id', 'a b', 'a|b', '--set=x', '', 'a\nb', 'abc\n']:
+            with self.subTest(name=bad_name):
+                with self.assertRaises(kegd_model.InvalidDeploymentStrategyError):
+                    self.__build_helm_job(bad_name)
+
+    def test_build_process_strategy_job_rejects_helm_namespace_with_shell_syntax(self):
+        self.kube_location.default_object_namespace = 'default'
+        for bad_namespace in ['$(id)', 'ns; id', '--kubeconfig=/x', '']:
+            with self.subTest(namespace=bad_namespace):
+                with self.assertRaises(kegd_model.InvalidDeploymentStrategyError):
+                    self.__build_helm_job('release', bad_namespace)
+
         

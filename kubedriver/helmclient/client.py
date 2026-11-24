@@ -65,19 +65,21 @@ class HelmClient:
                     f.write(self.tls.key)
 
     def __helm_cmd(self, *args):
-        tmp_script = '#!/bin/sh'
-        tmp_script += f'\nexport KUBECONFIG={self.kube_conf_path}'
-        tmp_script += f'\nexport HELM_HOME={self.helm_home_path}'
-        tmp_script += f'\n{self.helm}'
-        for arg in args:
-            tmp_script += f' {arg}'
+        # Build an argv list, never a shell script: arguments (release name, namespace etc.)
+        # may contain user-controlled values and must not be parsed as shell syntax
+        cmd = [self.helm] + [str(arg) for arg in args]
         if self.tls.enabled is True:
-            tmp_script += ' --tls'
-        script_path = os.path.join(self.tmp_dir, f'script-{uuid.uuid4()}.sh')
-        with open(script_path, 'w') as w:
-            w.write(tmp_script)
-        cmd = ['sh', script_path]
+            cmd.append('--tls')
         return cmd
+
+    def __run_helm(self, cmd, stderr):
+        env = dict(os.environ, KUBECONFIG=self.kube_conf_path, HELM_HOME=self.helm_home_path)
+        try:
+            return subprocess.run(cmd, env=env, stdout=subprocess.PIPE, stderr=stderr)
+        except FileNotFoundError as e:
+            # Without a shell, a missing helm binary raises instead of returning exit code 127
+            msg = str(e).encode()
+            return CompletedProcess(cmd, 127, stdout=msg, stderr=msg if stderr == subprocess.PIPE else None)
 
     def install(self, chart, name, namespace, values=None, setfiles=None, wait=None, timeout=None, driver_request_id=None):
         logger.debug("Invoking helm install command")
@@ -117,14 +119,14 @@ class HelmClient:
                     args.append(str(timeout))                   
         cmd = self.__helm_cmd(*args)
         
+        external_request_id = str(uuid.uuid4())
         try:
             cmd_string = "helm"
             for ele in args:
                 cmd_string += " " + ele
-            external_request_id = str(uuid.uuid4())
             self._generate_additional_logs(cmd_string, 'sent', external_request_id, "text/plain",
                                         'request', 'cmd', "", driver_request_id)
-            process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            process_result = self.__run_helm(cmd, subprocess.STDOUT)
             self._generate_additional_logs(process_result, 'received', external_request_id, "text/plain",
                                        'response', 'cmd', {'exit_code': process_result.returncode}, driver_request_id)
         except Exception as e:
@@ -173,14 +175,14 @@ class HelmClient:
                     args.append(str(timeout)) 
         cmd = self.__helm_cmd(*args)
 
+        external_request_id = str(uuid.uuid4())
         try:
             cmd_string = "helm"
             for ele in args:
                 cmd_string += " " + ele
-            external_request_id = str(uuid.uuid4())
             self._generate_additional_logs(cmd_string, 'sent', external_request_id, "text/plain",
                                         'request', 'cmd', "", driver_request_id)
-            process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            process_result = self.__run_helm(cmd, subprocess.STDOUT)
             self._generate_additional_logs(process_result, 'received', external_request_id, "text/plain",
                                        'response', 'cmd', {'exit_code': process_result.returncode}, driver_request_id)
         except Exception as e:
@@ -208,14 +210,14 @@ class HelmClient:
             cmd = self.__helm_cmd('get', name)
             args = ['get', name]
         
+        external_request_id = str(uuid.uuid4())
         try:
             cmd_string = "helm"
             for ele in args:
                 cmd_string += " " + ele
-            external_request_id = str(uuid.uuid4())
             self._generate_additional_logs(cmd_string, 'sent', external_request_id, "text/plain",
                                         'request', 'cmd', "", driver_request_id)
-            process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            process_result = self.__run_helm(cmd, subprocess.PIPE)
             self._generate_additional_logs(process_result, 'received', external_request_id, "text/plain",
                                        'response', 'cmd', {'exit_code': process_result.returncode}, driver_request_id)
         except Exception as e:
@@ -259,14 +261,14 @@ class HelmClient:
             cmd = self.__helm_cmd('delete', name)
             args = ['delete', name]
 
+        external_request_id = str(uuid.uuid4())
         try:
             cmd_string = "helm"
             for ele in args:
                 cmd_string += " " + ele
-            external_request_id = str(uuid.uuid4())
             self._generate_additional_logs(cmd_string, 'sent', external_request_id, "text/plain",
                                         'request', 'cmd', "", driver_request_id)
-            process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            process_result = self.__run_helm(cmd, subprocess.STDOUT)
             self._generate_additional_logs(process_result, 'received', external_request_id, "text/plain",
                                        'response', 'cmd', {'exit_code': process_result.returncode}, driver_request_id)
         except Exception as e:
@@ -292,14 +294,14 @@ class HelmClient:
             cmd = self.__helm_cmd('delete', name, '--purge')
             args = ['delete', name, '--purge']
 
+        external_request_id = str(uuid.uuid4())
         try:
             cmd_string = "helm"
             for ele in args:
                 cmd_string += " " + ele
-            external_request_id = str(uuid.uuid4())
             self._generate_additional_logs(cmd_string, 'sent', external_request_id, "text/plain",
                                         'request', 'cmd', "", driver_request_id)
-            process_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            process_result = self.__run_helm(cmd, subprocess.STDOUT)
             self._generate_additional_logs(process_result, 'received', external_request_id, "text/plain",
                                        'response', 'cmd', {'exit_code': process_result.returncode}, driver_request_id)
         except Exception as e:

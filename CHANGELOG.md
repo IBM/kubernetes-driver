@@ -1,5 +1,11 @@
 # Change Log
 
+## [2.5.6](https://github.com/IBM/kubernetes-driver/tree/2.5.6) (2026-11-24)
+
+[Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.5.5...2.5.6)
+
+- Validate Helm arguments before running Helm commands
+
 ## [2.5.5](https://github.com/IBM/kubernetes-driver/tree/2.5.5) (2025-04-08)
 
 [Full Changelog](https://github.com/IBM/kubernetes-driver/compare/2.5.4...2.5.5)
